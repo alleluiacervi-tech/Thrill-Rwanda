@@ -2,7 +2,6 @@ import Image from "next/image";
 import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 import { Container } from "@/components/ui/primitives";
-import { authImage } from "@/lib/images";
 import { getSite } from "@/lib/settings";
 
 /**
@@ -46,9 +45,9 @@ export async function AuthShell({
         <div className="mx-auto flex w-full max-w-md flex-1 flex-col justify-center py-8">
           {/* Deliberately smaller than a page headline. These screens are a
               single task, and the form has to clear the fold. */}
-          <h1 className="text-3xl sm:text-4xl">{title}</h1>
+          <h1 className="text-4xl tracking-[-0.025em] sm:text-5xl">{title}</h1>
           {lede ? (
-            <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">
+            <p className="mt-3 text-[0.9375rem] leading-relaxed text-[var(--ink-muted)]">
               {lede}
             </p>
           ) : null}
@@ -80,10 +79,10 @@ export async function AuthShell({
       <aside className="on-dark relative hidden overflow-hidden bg-forest-900 lg:sticky lg:top-0 lg:block lg:h-svh lg:self-start">
      
         <Image
-          src={authImage}
+          src="/media/photos/volcanoes-summit-mist.jpeg"
           alt=""
           fill
-          priority
+          preload
           sizes="(max-width: 1024px) 0px, 45vw"
           className="object-cover"
         />
@@ -92,33 +91,21 @@ export async function AuthShell({
           className="absolute inset-0"
           style={{
             background:
-              "linear-gradient(to top, rgb(15 58 44 / 0.95) 0%, rgb(15 58 44 / 0.80) 26%, rgb(21 74 56 / 0.42) 52%, rgb(21 74 56 / 0.14) 100%)",
+              "linear-gradient(to top, rgb(8 20 15 / 0.92) 0%, rgb(8 20 15 / 0.7) 30%, rgb(8 20 15 / 0.2) 60%, rgb(8 20 15 / 0.05) 100%)",
           }}
         />
         {/* Keeps the frame in the brand's green rather than whatever the
             photograph's own cast happens to be. Kept light — at 30% it
             turned the sunset olive. */}
-        <div
-          aria-hidden
-          className="absolute inset-0 bg-forest-900/18 mix-blend-multiply"
-        />
-        <div
-          aria-hidden
-          className="contours absolute inset-0 opacity-[0.09] [background-size:640px_640px]"
-        />
-        <div
-          aria-hidden
-          className="pointer-events-none absolute -right-16 top-10 size-[28rem] rounded-full bg-ember-500/15 blur-[110px]"
-        />
 
         <Container className="relative flex h-full flex-col justify-end pb-16">
           {/* What the service actually does. No invented testimonial or trip counts. */}
-          <p className="max-w-md font-display text-3xl leading-snug text-bone-50">
-            Safaris, stays, car hire and airport transfers, on one booking with
+          <p className="max-w-md font-display text-4xl leading-[1.1] text-white">
+            Safaris, stays, car hire and airport transfers, <em className="text-ember-300">on one booking</em> with
             one team in Kigali.
           </p>
 
-          <ul className="mt-12 grid gap-6 border-t border-forest-400/20 pt-8 sm:grid-cols-3">
+          <ul className="mt-12 grid gap-6 border-t border-white/20 pt-8 sm:grid-cols-3">
             {[
               { t: "Verified providers", d: "Licence and insurance checked before a listing goes live." },
               { t: "Mobile money or card", d: "Paid securely through Pesapal." },
@@ -126,7 +113,7 @@ export async function AuthShell({
             ].map((s) => (
               <li key={s.t}>
                 <span className="block text-sm font-semibold text-bone-50">{s.t}</span>
-                <span className="mt-1 block text-2xs leading-relaxed text-forest-300">{s.d}</span>
+                <span className="mt-1 block text-xs leading-relaxed text-white/70">{s.d}</span>
               </li>
             ))}
           </ul>

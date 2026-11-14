@@ -99,7 +99,7 @@ export function PageHero({
   return (
     <section
       className={cn(
-        "on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-900 pb-14 pt-[8.5rem] lg:-mt-24 lg:pt-44",
+        "on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-900 pb-12 pt-[8.5rem] sm:pb-16 lg:-mt-24 lg:pt-48",
         className,
       )}
     >
@@ -114,23 +114,40 @@ export function PageHero({
             className="object-cover"
             style={{ objectPosition: imagePosition }}
           />
-          {/* Heavier at the top for the nav and on the left where the type sits. */}
-          <div aria-hidden className="absolute inset-0 bg-gradient-to-r from-forest-950/90 via-forest-950/65 to-forest-950/25" />
-          <div aria-hidden className="absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-forest-950/70 to-transparent" />
+          {/* Heavier at the top for the nav and lower left where the type sits; neutral, so the photograph keeps its colour. */}
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(90deg, rgb(8 20 15 / 0.78) 0%, rgb(8 20 15 / 0.5) 45%, rgb(8 20 15 / 0.12) 100%), linear-gradient(to top, rgb(8 20 15 / 0.6), transparent 55%)",
+            }}
+          />
+          <div aria-hidden className="scrim-t absolute inset-x-0 top-0 h-40" />
         </>
       ) : (
-        <div aria-hidden className="absolute inset-0 bg-forest-900" />
+        <>
+          <div
+            aria-hidden
+            className="absolute inset-0"
+            style={{
+              background:
+                "radial-gradient(60% 90% at 85% 0%, rgb(47 128 96 / 0.5), transparent 70%), linear-gradient(180deg, var(--color-forest-950), var(--color-forest-900))",
+            }}
+          />
+          <div aria-hidden className="contours-light absolute inset-0 opacity-[0.05]" />
+        </>
       )}
 
       <Container wide className="relative">
         {crumbs ? (
-          <Breadcrumbs items={crumbs} className="mb-8 text-forest-200" />
+          <Breadcrumbs items={crumbs} className="on-media mb-8 text-white/90" />
         ) : null}
-        {eyebrow ? <Eyebrow className="text-ember-400">{eyebrow}</Eyebrow> : null}
+        {eyebrow ? <Eyebrow className="on-media text-ember-300">{eyebrow}</Eyebrow> : null}
         {/* Not cn(): tailwind-merge reads text-display-sm and text-bone-50 as two colours and drops the size. */}
-        <h1 className={`max-w-3xl text-display-sm text-bone-50 ${eyebrow ? "mt-2" : ""}`}>{title}</h1>
+        <h1 className={`on-media max-w-4xl text-display text-white ${eyebrow ? "mt-3" : ""}`}>{title}</h1>
         {lede ? (
-          <p className="mt-5 max-w-2xl text-base leading-relaxed text-forest-100/80 sm:text-lg">
+          <p className="on-media mt-5 max-w-2xl text-base leading-relaxed text-white/88 sm:text-lg">
             {lede}
           </p>
         ) : null}

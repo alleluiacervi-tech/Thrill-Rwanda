@@ -23,6 +23,19 @@ export const reels: Reel[] = [
   { src: "/media/videos/cultural-village-drive.m4v", poster: "/media/posters/cultural-village-drive.webp", title: "Welcome to Volcanoes National Park", place: "Musanze, Northern Province", duration: 53 },
 ];
 
+/**
+ * Short silent loops cut from the reels above for the homepage hero: 5 to 8
+ * seconds, 600px wide, cross-faded at the seam, about 1.4 MB for all three.
+ * Re-cut with ffmpeg from /media/videos when the footage changes.
+ */
+export type HeroClip = { src: string; poster: string; place: string; alt: string };
+
+export const heroClips = {
+  gorilla: { src: "/media/hero/gorilla.mp4", poster: "/media/hero/gorilla.webp", place: "Volcanoes National Park", alt: "A mountain gorilla in the bamboo of Volcanoes National Park" },
+  kivu: { src: "/media/hero/kivu.mp4", poster: "/media/hero/kivu.webp", place: "Lake Kivu", alt: "Lake Kivu's wooded peninsulas seen from the air" },
+  crater: { src: "/media/hero/crater.mp4", poster: "/media/hero/crater.webp", place: "Virunga volcanoes", alt: "A crater lake high in the Virunga volcanoes" },
+} satisfies Record<string, HeroClip>;
+
 export type TrailPhoto = {
   src: string;
   alt: string;

@@ -49,13 +49,13 @@ function Field({
   return (
     <label
       className={cn(
-        "group flex min-w-0 flex-col justify-center gap-1 px-5 py-3.5 transition-colors",
-        "hover:bg-bone-100/70 focus-within:bg-bone-100/70",
+        "group flex min-w-0 flex-col justify-center gap-1 bg-white px-4 py-3 transition-colors lg:px-5 lg:py-3.5",
+        "hover:bg-bone-50 focus-within:bg-bone-50",
         className,
       )}
     >
-      <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-bone-500">
-        <Icon className="size-3 text-clay-600" />
+      <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.1em] text-bone-600">
+        <Icon className="size-3.5 text-forest-600" />
         {label}
       </span>
       {children}
@@ -63,8 +63,12 @@ function Field({
   );
 }
 
+// 16px on phones: anything smaller makes iOS zoom the whole page when a field takes focus.
 const inputCls =
-  "w-full bg-transparent text-sm font-medium text-bone-900 outline-none placeholder:text-bone-400 tnum";
+  "w-full bg-transparent text-base font-medium text-bone-900 outline-none placeholder:font-normal placeholder:text-bone-500 tnum lg:text-[0.9375rem]";
+
+// Phones lay the fields out two-up; the wide ones take the full row.
+const wide = "col-span-2 lg:col-span-1";
 
 export function SearchPanel({
   className,
@@ -144,9 +148,14 @@ export function SearchPanel({
   );
 
   return (
-    <div className={cn("w-full", className)}>
-      {/* Tabs sit on top of the panel, sharing its rounded top edge */}
-      <div role="tablist" aria-label="What are you booking?" className="flex gap-1 overflow-x-auto no-bar">
+    <div
+      className={cn(
+        "w-full rounded-[var(--radius-panel)] bg-white p-2 shadow-[var(--shadow-float)] ring-1 ring-forest-950/5",
+        className,
+      )}
+    >
+      {/* One object: the tabs are a segmented control inside the panel, not folders on top of it. */}
+      <div role="tablist" aria-label="What are you booking?" className="flex gap-1 overflow-x-auto p-1 no-bar">
         {tabs.map((t) => {
           const isActive = t.key === tab;
           return (
@@ -157,11 +166,11 @@ export function SearchPanel({
               aria-selected={isActive}
               onClick={() => switchTab(t.key)}
               className={cn(
-                "relative flex items-center gap-2 whitespace-nowrap rounded-t-xl px-5 py-3 text-sm font-medium transition-all duration-300",
+                "relative flex h-11 shrink-0 items-center gap-2 whitespace-nowrap rounded-full px-4 text-sm font-semibold transition-colors duration-300 sm:px-5",
                 "[transition-timing-function:var(--ease-out-expo)]",
                 isActive
-                  ? "bg-bone-50 text-forest-800"
-                  : "bg-forest-950/35 text-bone-100/75 backdrop-blur hover:bg-forest-950/55 hover:text-bone-50",
+                  ? "bg-forest-800 text-bone-50 shadow-[0_1px_2px_rgb(7_28_21/0.25)]"
+                  : "text-bone-700 hover:bg-bone-100 hover:text-forest-900",
               )}
             >
               <t.icon className="size-4" />
@@ -171,10 +180,11 @@ export function SearchPanel({
         })}
       </div>
 
-      <form onSubmit={submit} className="rounded-b-2xl rounded-tr-2xl bg-bone-50 p-2 shadow-[var(--shadow-float)]">
+      <form onSubmit={submit} className="mt-1">
+        {/* Hairlines come from the 1px gap over a tinted ground, so they stay right at every column count. */}
         <div
           className={cn(
-            "grid grid-cols-1 divide-y divide-bone-200 sm:grid-cols-2 sm:divide-y-0 lg:divide-x",
+            "grid grid-cols-2 gap-px overflow-hidden rounded-[1.25rem] border border-bone-200 bg-bone-200",
             // Cars and transfers carry times, so their row has more columns.
             tab === "cars"
               ? "lg:grid-cols-[1.25fr_1fr_0.9fr_1fr_0.9fr_auto]"
@@ -185,7 +195,7 @@ export function SearchPanel({
         >
           {tab === "transfers" ? (
             <>
-              <Field label="Pick-up" icon={MapPin}>
+              <Field label="Pick-up" icon={MapPin} className={wide}>
                 <select
                   className={cn(inputCls, "cursor-pointer")}
                   value={point}
@@ -202,7 +212,7 @@ export function SearchPanel({
                   ))}
                 </select>
               </Field>
-              <Field label="Destination" icon={MapPin}>
+              <Field label="Destination" icon={MapPin} className={wide}>
                 <TypeAhead
                   options={areaGroups.flatMap((g) =>
                     g.zones.flatMap((z) =>
@@ -220,7 +230,7 @@ export function SearchPanel({
               </Field>
             </>
           ) : tab === "cars" ? (
-            <Field label={copy.where} icon={Car}>
+            <Field label={copy.where} icon={Car} className={wide}>
               <select className={cn(inputCls, "cursor-pointer")} value={car} onChange={(e) => setCar(e.target.value)}>
                 <option value="">{copy.placeholder}</option>
                 {carCategories.map((category) => (
@@ -237,7 +247,7 @@ export function SearchPanel({
               </select>
             </Field>
           ) : (
-            <Field label={copy.where} icon={MapPin}>
+            <Field label={copy.where} icon={MapPin} className={wide}>
               <input
                 className={inputCls}
                 placeholder={copy.placeholder}
@@ -266,7 +276,7 @@ export function SearchPanel({
           {tab === "cars" ? timeField("Drop-off time", toTime, setToTime) : null}
 
           {copy.people ? (
-            <Field label={copy.people} icon={Users}>
+            <Field label={copy.people} icon={Users} className={wide}>
               <select
                 className={cn(inputCls, "cursor-pointer")}
                 value={people}
@@ -281,10 +291,10 @@ export function SearchPanel({
             </Field>
           ) : null}
 
-          <div className="flex items-center p-1.5">
-            <Button type="submit" variant="accent" size="lg" className="w-full lg:aspect-square lg:w-auto lg:px-0">
-              <Search className="size-5" />
-              <span className="lg:sr-only">Search</span>
+          <div className={cn("flex items-center bg-white p-2", wide)}>
+            <Button type="submit" variant="accent" size="lg" className="h-13 w-full gap-2.5 px-7 font-semibold lg:h-14">
+              <Search className="size-[1.125rem]" strokeWidth={2.25} />
+              Search
             </Button>
           </div>
         </div>

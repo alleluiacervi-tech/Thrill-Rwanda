@@ -27,7 +27,7 @@ export default async function AboutPage() {
         title="A Rwanda travel platform in progress"
         lede={`${site.name} is a demo being adapted around Rwanda destinations. Listings, providers, prices, contacts and legal details still need to be configured and verified.`}
         crumbs={[{ label: "About" }]}
-        image={destinationImages["volcanoes-national-park"]}
+        image="/media/photos/volcanoes-trek.jpeg"
       />
 
       {/* ------------------------------------------------------------ Story */}

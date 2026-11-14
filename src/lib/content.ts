@@ -13,6 +13,8 @@ export type Destination = {
   name: string;
   region: string;
   blurb: string;
+  /** Height above sea level, shown on the destination panels. Rwanda is sold on its hills. */
+  elevation?: string;
   stays: number;
   tours: number;
 };
@@ -23,6 +25,7 @@ export const destinations: Destination[] = [
     name: "Volcanoes National Park",
     region: "Northwestern Rwanda",
     blurb: "A highland landscape shaped by volcanic peaks and montane forest.",
+    elevation: "Up to 4,507 m",
     stays: 0,
     tours: 0,
   },
@@ -31,6 +34,7 @@ export const destinations: Destination[] = [
     name: "Nyungwe National Park",
     region: "Southwestern Rwanda",
     blurb: "Montane rainforest, canopy walks and rich biodiversity.",
+    elevation: "Up to 2,950 m",
     stays: 0,
     tours: 0,
   },
@@ -39,6 +43,7 @@ export const destinations: Destination[] = [
     name: "Akagera National Park",
     region: "Eastern Rwanda",
     blurb: "Savannah, lakes and wildlife along Rwanda's eastern border.",
+    elevation: "1,300–1,825 m",
     stays: 0,
     tours: 0,
   },
@@ -47,6 +52,7 @@ export const destinations: Destination[] = [
     name: "Lake Kivu",
     region: "Western Rwanda",
     blurb: "Calm shores, island trips and the Congo Nile Trail.",
+    elevation: "1,460 m",
     stays: 0,
     tours: 0,
   },
@@ -55,6 +61,7 @@ export const destinations: Destination[] = [
     name: "Kigali",
     region: "Central Rwanda",
     blurb: "A city base for museums, markets and onward journeys.",
+    elevation: "1,567 m",
     stays: 0,
     tours: 0,
   },

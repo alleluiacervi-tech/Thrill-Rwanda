@@ -1,13 +1,15 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Karla } from "next/font/google";
+import { Fraunces, Instrument_Sans } from "next/font/google";
 import { SiteProvider } from "@/components/layout/site-context";
 import { site } from "@/lib/site";
 import { getSite } from "@/lib/settings";
 import "./globals.css";
 
 /**
- * Fraunces carries the brand voice — its SOFT and WONK axes give headings
- * a hand-cut, editorial warmth that a neutral grotesque cannot.
+ * Fraunces carries the brand voice. Its optical-size axis is what makes the
+ * big headlines look cut for their size; SOFT and WONK are saved for italics.
+ * Instrument Sans is the working face: narrow, even and clear at 12px, where
+ * most of a booking flow lives.
  */
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -16,9 +18,9 @@ const fraunces = Fraunces({
   axes: ["SOFT", "WONK", "opsz"],
 });
 
-const karla = Karla({
+const body = Instrument_Sans({
   subsets: ["latin"],
-  variable: "--font-karla",
+  variable: "--font-body",
   display: "swap",
 });
 
@@ -75,13 +77,13 @@ export default async function RootLayout({
       // Tells Next the smooth scroll in globals.css is intentional, so it
       // suppresses it during route transitions rather than warning.
       data-scroll-behavior="smooth"
-      className={`${fraunces.variable} ${karla.variable}`}
+      className={`${fraunces.variable} ${body.variable}`}
     >
       {/* Browser extensions (ColorZilla, Grammarly) add attributes to body before React hydrates. */}
       <body className="grain antialiased" suppressHydrationWarning>
         <a
           href="#main"
-          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-forest-800 focus:px-5 focus:py-3 focus:text-sm focus:font-medium focus:text-bone-50"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-forest-800 focus:px-5 focus:py-3 focus:text-sm focus:font-medium focus:text-bone-50 focus:shadow-[var(--shadow-float)]"
         >
           Skip to content
         </a>

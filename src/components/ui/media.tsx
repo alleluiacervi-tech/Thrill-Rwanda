@@ -103,14 +103,7 @@ export function Media({
           under a white sky left the eyebrow and stat line barely readable
           with a lighter gradient. Concentrated in the bottom third, where
           captions sit, so the photograph above it stays open. */}
-      <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          background:
-            "linear-gradient(to top, rgb(15 58 44 / 0.92) 0%, rgb(15 58 44 / 0.62) 22%, rgb(15 58 44 / 0.22) 46%, rgb(15 58 44 / 0.04) 70%, transparent 100%)",
-        }}
-      />
+      <div aria-hidden className="scrim-b absolute inset-0" />
       {children}
     </div>
   );

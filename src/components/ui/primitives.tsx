@@ -32,7 +32,7 @@ export function Eyebrow({
 }) {
   return (
     // A plain label, not rule + spaced capitals: that pairing above every heading is the template tell.
-    <span className={cn("inline-flex items-center text-sm font-medium text-[var(--label)]", className)}>
+    <span className={cn("inline-flex items-center text-sm font-semibold tracking-[-0.005em] text-[var(--label)]", className)}>
       {children}
     </span>
   );
@@ -58,16 +58,16 @@ export function SectionHead({
   return (
     <div
       className={cn(
-        "flex flex-col gap-6 md:flex-row md:items-end md:justify-between",
+        "flex flex-col gap-6 md:flex-row md:items-end md:justify-between md:gap-10",
         align === "center" && "md:flex-col md:items-center md:text-center",
         className,
       )}
     >
       <div className={cn("max-w-2xl", align === "center" && "mx-auto")}>
         {eyebrow ? <Eyebrow>{eyebrow}</Eyebrow> : null}
-        <h2 className={cn("text-display-sm", eyebrow && "mt-2")}>{title}</h2>
+        <h2 className={cn("text-display-sm", eyebrow && "mt-3")}>{title}</h2>
         {lede ? (
-          <p className="mt-4 text-base leading-relaxed text-[var(--ink-muted)] sm:text-lg">
+          <p className={cn("mt-5 max-w-xl text-base leading-relaxed text-[var(--ink-muted)] sm:text-[1.0625rem]", align === "center" && "mx-auto")}>
             {lede}
           </p>
         ) : null}
@@ -100,7 +100,7 @@ export function Badge({
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-[0.1em]",
+        "inline-flex items-center gap-1.5 whitespace-nowrap rounded-full px-3 py-1 text-2xs font-semibold uppercase tracking-[0.08em]",
         badgeTones[tone],
         className,
       )}

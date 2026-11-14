@@ -92,7 +92,7 @@ export default async function HotelDetailPage({
           alt={hotel.name}
           className="h-[58svh] min-h-[24rem] w-full"
         >
-          <div aria-hidden className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-forest-950/75 to-transparent" />
+          <div aria-hidden className="scrim-t absolute inset-x-0 top-0 h-44" />
         </ListingGallery>
         <Container
           wide
@@ -111,7 +111,7 @@ export default async function HotelDetailPage({
                 </span>
               ) : null}
             </div>
-            <h1 className="mt-4 max-w-3xl text-display-sm text-bone-50">
+            <h1 className="on-media mt-4 max-w-4xl text-display text-white">
               {hotel.name}
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-bone-100/80">
