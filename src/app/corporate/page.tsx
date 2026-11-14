@@ -284,7 +284,7 @@ export default async function CorporatePage() {
         <div aria-hidden className="contours absolute inset-0 opacity-[0.07]" />
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-0 size-[36rem] -translate-x-1/2 rounded-full bg-ember-500/10 blur-[120px]"
+          className="pointer-events-none absolute left-1/2 top-0 size-[36rem] -translate-x-1/2 rounded-full bg-sun-500/10 blur-[120px]"
         />
         <Container className="relative grid items-center gap-12 lg:grid-cols-[1fr_1.1fr]">
           <div>

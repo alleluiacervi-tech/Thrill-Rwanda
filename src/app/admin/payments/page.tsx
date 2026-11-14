@@ -18,11 +18,11 @@ import type { PaymentStatus } from "@/generated/prisma/enums";
 
 const STATUSES = new Set(["INITIATED", "PENDING", "SUCCEEDED", "FAILED", "REFUNDED"]);
 
-const TONE: Record<PaymentStatus, "forest" | "clay" | "ember" | "outline"> = {
+const TONE: Record<PaymentStatus, "forest" | "clay" | "sun" | "outline"> = {
   SUCCEEDED: "forest",
   PENDING: "clay",
   INITIATED: "clay",
-  FAILED: "ember",
+  FAILED: "sun",
   REFUNDED: "outline",
 };
 

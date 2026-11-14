@@ -15,7 +15,7 @@ import { cn } from "@/lib/utils";
 // uses — against near-black values a brown placeholder reads as dim text
 // rather than as a hint.
 export const fieldCls =
-  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm text-[var(--ink)] placeholder:text-[#9a9a9a] outline-none transition-colors focus-visible:border-ember-500";
+  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm text-[var(--ink)] placeholder:text-[#9a9a9a] outline-none transition-colors focus-visible:border-lake-600";
 
 const labelCls =
   "flex flex-col gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]";

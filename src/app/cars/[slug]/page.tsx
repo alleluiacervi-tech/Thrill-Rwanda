@@ -79,7 +79,7 @@ export default async function VehicleDetailPage({
           />
           <div className="flex flex-wrap items-center gap-3">
             <Badge tone="forest">{vehicle.category}</Badge>
-            {vehicle.badge ? <Badge tone="ember">{vehicle.badge}</Badge> : null}
+            {vehicle.badge ? <Badge tone="sun">{vehicle.badge}</Badge> : null}
           </div>
           <h1 className="mt-4 text-display-sm">
             {name}{" "}

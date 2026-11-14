@@ -96,7 +96,7 @@ export default async function MyBookingsPage({
                   <p className="tnum text-right font-display text-xl font-semibold">
                     {formatMoney(b.totalMinor, b.currency)}
                   </p>
-                  <ArrowUpRight className="size-4 text-[var(--ink-faint)] transition-transform duration-400 [transition-timing-function:var(--ease-out-expo)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-ember-500" />
+                  <ArrowUpRight className="size-4 text-[var(--ink-faint)] transition-transform duration-400 [transition-timing-function:var(--ease-out-expo)] group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-lake-600" />
                 </div>
               </Link>
             </li>

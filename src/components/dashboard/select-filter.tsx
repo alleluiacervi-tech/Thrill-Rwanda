@@ -42,7 +42,7 @@ export function SelectFilter({
           router.push(query ? `${pathname}?${query}` : pathname);
         }}
         className={cn(
-          "h-10 w-full appearance-none rounded-[var(--radius-inset)] border bg-[var(--paper-raised)] pl-3.5 pr-9 text-sm outline-none transition-colors focus-visible:border-ember-500",
+          "h-10 w-full appearance-none rounded-[var(--radius-inset)] border bg-[var(--paper-raised)] pl-3.5 pr-9 text-sm outline-none transition-colors focus-visible:border-lake-600",
           // A set filter reads as active, like a selected chip did.
           current ? "border-forest-800 font-medium text-forest-900" : "border-[var(--line-strong)]",
         )}

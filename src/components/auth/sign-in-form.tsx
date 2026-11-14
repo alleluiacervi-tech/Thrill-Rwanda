@@ -95,7 +95,7 @@ export function SignInForm() {
         </label>
         <Link
           href="/forgot-password"
-          className="link-draw text-sm text-clay-700"
+          className="link-draw text-sm text-lake-700"
         >
           Forgot password?
         </Link>

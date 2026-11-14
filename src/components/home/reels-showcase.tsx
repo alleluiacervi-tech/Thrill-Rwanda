@@ -98,7 +98,7 @@ function ReelCard({
           type="button"
           onClick={() => (playing ? onStop() : onPlay())}
           aria-label={playing ? `Pause: ${reel.title}` : `Play: ${reel.title}`}
-          className="absolute inset-0 flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-ember-400"
+          className="absolute inset-0 flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-sun-400"
         >
           <span
             className={cn(
@@ -122,7 +122,7 @@ function ReelCard({
         )}
 
         <div className="pointer-events-none absolute inset-x-0 bottom-0 p-4 text-bone-50">
-          <p className="text-xs font-medium text-ember-300">{reel.place}</p>
+          <p className="text-xs font-medium text-sun-300">{reel.place}</p>
           <p className="mt-1 text-[0.95rem] font-semibold leading-snug">{reel.title}</p>
           <p className="mt-1 text-xs text-bone-50/70">0:{String(reel.duration).padStart(2, "0")}</p>
         </div>

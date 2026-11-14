@@ -32,13 +32,13 @@ export function NotificationList({ items }: { items: NotificationPreview[] }) {
                 "flex cursor-pointer gap-4 rounded-[var(--radius-card)] border p-5 transition-colors",
                 n.read
                   ? "border-[var(--line)] bg-[var(--paper-raised)] hover:border-[var(--line-strong)]"
-                  : "border-ember-200 bg-ember-100/40 hover:border-ember-300",
+                  : "border-sun-200 bg-sun-100/40 hover:border-sun-300",
               )}
             >
               <span
                 className={cn(
                   "mt-0.5 grid size-9 shrink-0 place-items-center rounded-full",
-                  n.read ? "bg-[var(--paper-sunken)] text-[var(--ink-faint)]" : "bg-ember-500 text-[#2a1605]",
+                  n.read ? "bg-[var(--paper-sunken)] text-[var(--ink-faint)]" : "bg-sun-500 text-forest-950",
                 )}
               >
                 <Bell className="size-4" />
@@ -49,7 +49,7 @@ export function NotificationList({ items }: { items: NotificationPreview[] }) {
                     {n.title}
                     {!n.read ? <span className="sr-only"> (unread)</span> : null}
                   </span>
-                  {!n.read ? <span aria-hidden className="mt-2 size-2 shrink-0 rounded-full bg-ember-500" /> : null}
+                  {!n.read ? <span aria-hidden className="mt-2 size-2 shrink-0 rounded-full bg-sun-500" /> : null}
                 </span>
                 {n.body ? (
                   <span className="mt-1 block text-sm leading-relaxed text-[var(--ink-muted)]">{n.body}</span>

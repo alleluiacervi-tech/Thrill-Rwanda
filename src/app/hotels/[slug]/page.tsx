@@ -104,9 +104,9 @@ export default async function HotelDetailPage({
               className="mb-6 text-bone-100/75"
             />
             <div className="flex flex-wrap items-center gap-3">
-              {hotel.badge ? <Badge tone="ember">{hotel.badge}</Badge> : null}
+              {hotel.badge ? <Badge tone="sun">{hotel.badge}</Badge> : null}
               {hotel.stars ? (
-                <span className="text-sm text-ember-400" aria-label={`${hotel.stars} star`}>
+                <span className="text-sm text-sun-400" aria-label={`${hotel.stars} star`}>
                   {"★".repeat(hotel.stars)}
                 </span>
               ) : null}
@@ -117,7 +117,7 @@ export default async function HotelDetailPage({
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-bone-100/80">
               {hotel.rating !== null ? <Rating value={hotel.rating} count={hotel.reviews} /> : null}
               <span className="inline-flex items-center gap-1.5">
-                <MapPin className="size-4 text-ember-400" />
+                <MapPin className="size-4 text-sun-400" />
                 {hotel.location}
               </span>
             </div>

@@ -81,7 +81,7 @@ export function ReviewForm({ reference }: { reference: string }) {
                 className={cn(
                   "size-7 transition-colors",
                   n <= shown
-                    ? "fill-ember-500 text-ember-500"
+                    ? "fill-sun-500 text-sun-700"
                     : "text-[var(--line-strong)]",
                 )}
               />
@@ -103,7 +103,7 @@ export function ReviewForm({ reference }: { reference: string }) {
           name="comment"
           rows={4}
           placeholder="What went well? What should the next traveller know?"
-          className="w-full resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-4 py-3 text-sm leading-relaxed outline-none focus-visible:border-ember-500"
+          className="w-full resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-4 py-3 text-sm leading-relaxed outline-none focus-visible:border-lake-600"
         />
       </label>
 

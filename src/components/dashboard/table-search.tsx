@@ -65,7 +65,7 @@ export function TableSearch({
         onChange={(e) => setValue(e.target.value)}
         aria-label={label}
         placeholder={placeholder}
-        className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] py-2.5 pl-10 pr-20 text-sm outline-none transition-colors focus-visible:border-ember-500"
+        className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] py-2.5 pl-10 pr-20 text-sm outline-none transition-colors focus-visible:border-lake-600"
       />
       {value ? (
         <button

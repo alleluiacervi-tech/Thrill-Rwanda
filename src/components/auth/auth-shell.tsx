@@ -101,7 +101,7 @@ export async function AuthShell({
         <Container className="relative flex h-full flex-col justify-end pb-16">
           {/* What the service actually does. No invented testimonial or trip counts. */}
           <p className="max-w-md font-display text-4xl leading-[1.1] text-white">
-            Safaris, stays, car hire and airport transfers, <em className="text-ember-300">on one booking</em> with
+            Safaris, stays, car hire and airport transfers, <em className="text-sun-300">on one booking</em> with
             one team in Kigali.
           </p>
 

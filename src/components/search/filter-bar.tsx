@@ -97,7 +97,7 @@ export function FilterBar({
             onChange={(e) => setTerm(e.target.value)}
             aria-label={searchLabel}
             placeholder={searchLabel}
-            className="w-full rounded-full border border-[var(--line-strong)] bg-[var(--paper-raised)] py-2 pl-9 pr-9 text-sm outline-none transition-colors focus-visible:border-ember-500"
+            className="w-full rounded-full border border-[var(--line-strong)] bg-[var(--paper-raised)] py-2 pl-9 pr-9 text-sm outline-none transition-colors focus-visible:border-lake-600"
           />
           {term ? (
             <button
@@ -123,7 +123,7 @@ export function FilterBar({
           <SlidersHorizontal className="size-4" />
           Filters
           {activeCount > 0 && (
-            <span className="tnum grid size-5 place-items-center rounded-full bg-ember-500 text-2xs text-[#2a1605]">
+            <span className="tnum grid size-5 place-items-center rounded-full bg-sun-500 text-2xs text-forest-950">
               {activeCount}
             </span>
           )}
@@ -168,7 +168,7 @@ export function FilterBar({
             <select
               value={current("sort")}
               onChange={(e) => apply("sort", e.target.value)}
-              className="cursor-pointer rounded-full border border-[var(--line-strong)] bg-transparent py-1.5 pl-3 pr-7 text-sm font-medium outline-none focus-visible:border-ember-500"
+              className="cursor-pointer rounded-full border border-[var(--line-strong)] bg-transparent py-1.5 pl-3 pr-7 text-sm font-medium outline-none focus-visible:border-lake-600"
             >
               {sorts.map((s) => (
                 <option key={s.value} value={s.value}>
@@ -250,7 +250,7 @@ function FilterMenu({
                 className="flex w-full items-center justify-between gap-3 px-4 py-2.5 text-left text-sm transition-colors hover:bg-[color-mix(in_oklab,var(--ink)_6%,transparent)]"
               >
                 {option.label}
-                {isActive && <Check className="size-4 text-ember-500" />}
+                {isActive && <Check className="size-4 text-lake-600" />}
               </button>
             );
           })}

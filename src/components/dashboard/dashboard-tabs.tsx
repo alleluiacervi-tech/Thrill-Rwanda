@@ -24,13 +24,13 @@ export function DashboardTabs({ nav, label }: { nav: NavItem[]; label: string })
                 className={cn(
                   "inline-block whitespace-nowrap border-b-2 px-4 py-3 text-sm transition-colors",
                   active
-                    ? "border-ember-500 font-medium text-[var(--ink)]"
+                    ? "border-sun-500 font-medium text-[var(--ink)]"
                     : "border-transparent text-[var(--ink-muted)] hover:text-[var(--ink)]",
                 )}
               >
                 {item.label}
                 {item.badge ? (
-                  <span className="tnum ml-2 inline-grid size-4.5 place-items-center rounded-full bg-ember-500 align-middle text-[0.625rem] font-semibold text-[#2a1605]">
+                  <span className="tnum ml-2 inline-grid size-4.5 place-items-center rounded-full bg-sun-500 align-middle text-[0.625rem] font-semibold text-forest-950">
                     {item.badge > 9 ? "9+" : item.badge}
                   </span>
                 ) : null}

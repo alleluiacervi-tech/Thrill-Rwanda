@@ -5,7 +5,7 @@ import { AlertTriangle, Eye, EyeOff } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const fieldCls =
-  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm outline-none transition-colors focus-visible:border-ember-500 disabled:opacity-50";
+  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm outline-none transition-colors focus-visible:border-lake-600 disabled:opacity-50";
 
 export function Field({
   label,

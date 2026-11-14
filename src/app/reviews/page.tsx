@@ -57,7 +57,7 @@ export default async function ReviewsPage() {
                         aria-label={`${row.share}% gave ${row.stars} stars`}
                       >
                         <span
-                          className="block h-full rounded-full bg-ember-500"
+                          className="block h-full rounded-full bg-sun-500"
                           style={{ width: `${row.share}%` }}
                         />
                       </span>

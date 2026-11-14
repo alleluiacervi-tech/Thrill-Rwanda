@@ -92,7 +92,7 @@ export function Media({
             className="absolute inset-0"
             style={{
               background:
-                "radial-gradient(120% 80% at 70% 15%, rgb(232 139 42 / 0.22), transparent 60%)",
+                "radial-gradient(120% 80% at 70% 15%, rgb(248 195 0 / 0.22), transparent 60%)",
             }}
           />
         </div>

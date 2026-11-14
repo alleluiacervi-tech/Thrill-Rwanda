@@ -66,7 +66,7 @@ export default async function ContactPage() {
                   href={c.href}
                   className="group flex items-start gap-4 rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] p-5 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-lift)]"
                 >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-forest-800 text-bone-50 transition-colors group-hover:bg-ember-500 group-hover:text-[#2a1605]">
+                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-forest-800 text-bone-50 transition-colors group-hover:bg-sun-500 group-hover:text-forest-950">
                     <c.icon className="size-5" />
                   </span>
                   <span className="min-w-0">

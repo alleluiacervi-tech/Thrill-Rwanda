@@ -60,14 +60,14 @@ export function TourCard({
         className="aspect-[4/3]"
       >
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
-          {tour.badge ? <Badge tone="ember">{tour.badge}</Badge> : <span />}
+          {tour.badge ? <Badge tone="sun">{tour.badge}</Badge> : <span />}
           <span className="tnum rounded-full bg-white/92 px-3 py-1 text-2xs font-semibold text-forest-950 shadow-[0_1px_2px_rgb(8_20_15/0.2)]">
             {tour.durationDays} {tour.durationDays === 1 ? "day" : "days"}
             {tour.nights > 0 ? ` · ${tour.nights} ${tour.nights === 1 ? "night" : "nights"}` : ""}
           </span>
         </div>
         <p className="on-media absolute bottom-4 left-4 inline-flex items-center gap-1.5 text-sm font-semibold text-white">
-          <MapPin className="size-3.5 text-ember-400" />
+          <MapPin className="size-3.5 text-sun-400" />
           {tour.destination}
         </p>
       </Media>
@@ -84,7 +84,7 @@ export function TourCard({
           </h3>
           <span
             aria-hidden
-            className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--line)] text-[var(--ink-muted)] transition-colors duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:border-ember-500 group-hover:bg-ember-500 group-hover:text-[#2a1605]"
+            className="grid size-8 shrink-0 place-items-center rounded-full border border-[var(--line)] text-[var(--ink-muted)] transition-colors duration-500 [transition-timing-function:var(--ease-out-expo)] group-hover:border-sun-500 group-hover:bg-sun-500 group-hover:text-forest-950"
           >
             <ArrowUpRight className="size-4" />
           </span>
@@ -141,7 +141,7 @@ export function HotelCard({
         className="aspect-[16/10] w-full shrink-0 sm:aspect-auto sm:min-h-[13.5rem] sm:w-[42%]"
       >
         {hotel.badge ? (
-          <Badge tone="ember" className="absolute left-3 top-3">
+          <Badge tone="sun" className="absolute left-3 top-3">
             {hotel.badge}
           </Badge>
         ) : null}
@@ -150,7 +150,7 @@ export function HotelCard({
       <div className="flex min-w-0 flex-1 flex-col p-5 sm:p-6">
         <p className="flex items-center gap-1 text-xs text-[var(--ink-faint)]">
           {hotel.stars ? (
-            <span className="text-ember-500" aria-label={`${hotel.stars} star`}>
+            <span className="text-sun-600" aria-label={`${hotel.stars} star`}>
               {"★".repeat(hotel.stars)}
             </span>
           ) : null}
@@ -221,7 +221,7 @@ export function VehicleCard({
       >
         <div className="absolute inset-x-0 top-0 flex items-start justify-between p-4">
           <Badge tone="forest">{vehicle.category}</Badge>
-          {vehicle.badge ? <Badge tone="ember">{vehicle.badge}</Badge> : null}
+          {vehicle.badge ? <Badge tone="sun">{vehicle.badge}</Badge> : null}
         </div>
       </Media>
 
@@ -309,7 +309,7 @@ export function DestinationPanel({
       </div>
 
       <div className="on-media absolute inset-x-0 bottom-0 p-4 text-white sm:p-5">
-        <p className="hidden text-2xs font-semibold uppercase tracking-[0.12em] text-ember-300 @[12rem]:block">{destination.region}</p>
+        <p className="hidden text-2xs font-semibold uppercase tracking-[0.12em] text-sun-300 @[12rem]:block">{destination.region}</p>
         <h3 className="mt-1.5 text-[1.625rem] leading-[1.05] @[17rem]:text-4xl">{destination.name}</h3>
         <div className="grid grid-rows-[0fr] opacity-0 transition-[grid-template-rows,opacity] duration-500 [transition-timing-function:var(--ease-out-expo)] @[17rem]:grid-rows-[1fr] @[17rem]:opacity-100">
           <div className="overflow-hidden">
@@ -317,7 +317,7 @@ export function DestinationPanel({
             <p className="mt-4 flex items-center gap-3 text-sm font-semibold">
               <span className="inline-flex items-center gap-1.5">
                 Explore
-                <ArrowUpRight className="size-4 text-ember-400" aria-hidden />
+                <ArrowUpRight className="size-4 text-sun-400" aria-hidden />
               </span>
               {hasCounts ? (
                 <span className="tnum font-normal text-white/70">

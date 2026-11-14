@@ -140,7 +140,7 @@ export function SignUpForm() {
 
       <p className="border-t border-[var(--line)] pt-5 text-2xs leading-relaxed text-[var(--ink-faint)]">
         Running a lodge, camp or fleet?{" "}
-        <Link href="/partner" className="link-draw text-clay-700">
+        <Link href="/partner" className="link-draw text-lake-700">
           Apply as a provider
         </Link>{" "}
         — provider accounts are verified by our team before going live.

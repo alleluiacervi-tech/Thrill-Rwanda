@@ -493,10 +493,10 @@ export const STATUS_LABEL: Record<BookingStatus, string> = {
 
 export const STATUS_TONE: Record<
   BookingStatus,
-  "neutral" | "forest" | "ember" | "clay" | "outline"
+  "neutral" | "forest" | "sun" | "clay" | "outline"
 > = {
   PENDING: "neutral",
-  AWAITING_PAYMENT: "ember",
+  AWAITING_PAYMENT: "sun",
   PAID: "forest",
   CONFIRMED: "forest",
   REJECTED: "clay",
