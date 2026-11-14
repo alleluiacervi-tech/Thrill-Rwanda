@@ -1,8 +1,10 @@
-import Image from "next/image";
 import {
   ArrowRight,
+  ArrowUpRight,
   Clock3,
+  MapPin,
   Plane,
+  PlaneLanding,
 } from "lucide-react";
 import { AnnouncementBar } from "@/components/layout/page-shell";
 import { SiteHeader } from "@/components/layout/site-header";
@@ -10,7 +12,7 @@ import { SiteFooter } from "@/components/layout/site-footer";
 import { WhatsAppButton } from "@/components/layout/whatsapp-button";
 import { SearchPanel } from "@/components/search/search-panel";
 import {
-  DestinationTile,
+  DestinationPanel,
   HotelCard,
   TourCard,
   VehicleCard,
@@ -34,9 +36,11 @@ import {
 } from "@/lib/catalogue";
 import { whyUs, type Destination } from "@/lib/content";
 import { platformRating, recentReviews, type PublicReview } from "@/lib/reviews";
-import { heroImage } from "@/lib/images";
+import { heroClips, type HeroClip } from "@/lib/media";
+import { HeroReel } from "@/components/home/hero-reel";
 import { InMotion, TrailPhotos } from "@/components/home/media-sections";
 import { getSite } from "@/lib/settings";
+import { cn } from "@/lib/utils";
 
 // Listings come from the database. Edits refresh this at once; this is only the safety net.
 export const revalidate = 300;
@@ -60,7 +64,8 @@ export default async function HomePage() {
         <TrustStrip />
         <Destinations destinations={destinations} />
         <FeaturedTours tours={tours} />
-        <StaysAndFleet hotels={hotels} vehicles={vehicles} />
+        <Stays hotels={hotels} />
+        <Fleet vehicles={vehicles} />
         <InMotion />
         <TrailPhotos />
         <Transfers />
@@ -76,6 +81,13 @@ export default async function HomePage() {
 
 /* ==================================================================== Hero */
 
+/**
+ * The hero is built from Thrill Rwanda's own footage rather than a stock
+ * landscape. Desktop: type on the left, a triptych of silent loops on the
+ * right. Phone: the lake reel fills the screen behind the type, because a
+ * vertical clip is exactly the shape of a phone. The search panel closes the
+ * section either way and stays on the first screen.
+ */
 async function Hero({
   hotels,
   tours,
@@ -87,73 +99,61 @@ async function Hero({
 }) {
   const site = await getSite();
   return (
-    <section className="on-dark relative -mt-[4.5rem] flex min-h-[92svh] flex-col justify-end overflow-hidden bg-forest-900 pt-[clamp(6.5rem,13vh,10rem)] lg:-mt-24">
-      {/* Photograph first, then the brand gradient over it. The gradient is
-          translucent rather than opaque so the palette still reads as ours
-          while the type keeps its contrast. */}
-      <Image
-        src={heroImage}
-        alt=""
-        fill
-        priority
+    <section className="on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-950 lg:-mt-24">
+      {/* Phone ground: footage, then a scrim that is heaviest where the type and panel sit. */}
+      <HeroReel
+        {...heroClips.kivu}
+        media="(max-width: 1023px)"
         sizes="100vw"
-        className="object-cover"
+        eager
+        className="absolute inset-0 lg:hidden"
       />
-      {/* A directional scrim, not a blanket. Heavy on the left where the
-          headline and search panel sit, clearing to the right so the
-          photograph is actually visible — an image you can't see is worse
-          than no image, it just costs bandwidth. */}
       <div
         aria-hidden
-        className="absolute inset-0"
+        className="absolute inset-0 bg-gradient-to-b from-forest-950/75 via-forest-950/45 to-forest-950 lg:hidden"
+      />
+
+      {/* Desktop ground: the brand green, lit from the upper right, with the contour motif. */}
+      <div
+        aria-hidden
+        className="absolute inset-0 hidden lg:block"
         style={{
           background:
-            "linear-gradient(100deg, rgb(15 58 44 / 0.94) 0%, rgb(15 58 44 / 0.82) 28%, rgb(21 74 56 / 0.45) 58%, rgb(21 74 56 / 0.18) 100%)",
+            "radial-gradient(60% 70% at 78% 30%, rgb(47 128 96 / 0.55), transparent 70%), linear-gradient(180deg, var(--color-forest-950), var(--color-forest-900))",
         }}
       />
-      {/* Low-opacity forest tint keeps the palette ours across the whole frame. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-forest-900/25 mix-blend-multiply"
-      />
-      <div
-        aria-hidden
-        className="contours absolute inset-0 opacity-[0.09] [background-size:760px_760px]"
-      />
-      {/* Low sun */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-24 top-4 size-[34rem] rounded-full bg-ember-500/20 blur-[110px]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-x-0 bottom-0 h-40 bg-gradient-to-t from-forest-950 to-transparent"
-      />
+      <div aria-hidden className="contours-light absolute inset-0 hidden opacity-[0.05] [background-size:820px_820px] lg:block" />
 
-      <Container wide className="relative pb-10">
-        <div className="max-w-4xl">
-          <p className="anim-fade [animation-delay:120ms]">
-            <Eyebrow className="text-forest-200">Rwanda</Eyebrow>
-          </p>
-
-          <h1 className="mt-[clamp(0.75rem,2.2vh,1.75rem)] text-display-lg text-bone-50">
-            <span className="reveal-line">
-              <span className="pb-[0.16em] [animation-delay:200ms]">{site.heroTitle}</span>
-            </span>
-            {/* Smaller, so the long line stays on one row on a laptop. */}
-            <span className="reveal-line">
-              <span className="pb-[0.12em] text-[0.62em] italic text-ember-500 [animation-delay:320ms]">
-                {site.heroSubtitle}
+      <Container wide className="relative pb-6 pt-[clamp(7.5rem,15vh,10.5rem)] sm:pb-10 lg:pb-12">
+        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.98fr)] lg:items-center lg:gap-14">
+          <div className="max-w-2xl">
+            <p className="anim-fade [animation-delay:120ms]">
+              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-bone-50 ring-1 ring-white/20 backdrop-blur-md">
+                <span aria-hidden className="size-1.5 rounded-full bg-ember-500" />
+                The Land of a Thousand Hills
               </span>
-            </span>
-          </h1>
+            </p>
 
-          <p className="anim-rise mt-[clamp(0.75rem,2.2vh,1.75rem)] max-w-2xl text-base leading-relaxed text-forest-100/85 [animation-delay:520ms] sm:text-lg lg:text-xl">
-            {site.heroText}
-          </p>
+            <h1 className="on-media mt-5 text-display-lg text-white lg:mt-7 lg:[text-shadow:none]">
+              <span className="reveal-line">
+                <span className="pb-[0.14em] [animation-delay:200ms]">{site.heroTitle}</span>
+              </span>
+              <span className="reveal-line">
+                <em className="pb-[0.1em] text-[0.62em] leading-[1.05] text-ember-400 [animation-delay:320ms]">
+                  {site.heroSubtitle}
+                </em>
+              </span>
+            </h1>
+
+            <p className="on-media anim-rise mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-white/90 [animation-delay:520ms] lg:mt-6 lg:text-lg lg:text-forest-100/90 lg:[text-shadow:none]">
+              {site.heroText}
+            </p>
+          </div>
+
+          <HeroTriptych />
         </div>
 
-        <div className="anim-rise mt-[clamp(1.25rem,3.5vh,3rem)] [animation-delay:660ms]">
+        <div className="anim-rise mt-8 [animation-delay:660ms] lg:mt-12">
           {/* Each tab suggests its own places: hotel towns for stays, destinations for safaris. */}
           <SearchPanel
             hotelPlaces={[...new Set([...hotels.map((h) => h.location), ...hotels.map((h) => h.name)])]}
@@ -166,9 +166,41 @@ async function Hero({
             }))}
           />
         </div>
-
       </Container>
     </section>
+  );
+}
+
+/** Three film panels, staggered like frames pinned to a wall. Desktop only; decorative. */
+function HeroTriptych() {
+  const panels: { clip: HeroClip; frame: string; drift: string; delay: string; eager?: boolean }[] = [
+    { clip: heroClips.gorilla, frame: "h-[78%] translate-y-[9%]", drift: "[--drift-to:-8px]", delay: "[animation-delay:420ms]" },
+    { clip: heroClips.kivu, frame: "h-full", eager: true, drift: "[--drift-from:-6px] [--drift-to:6px] [animation-delay:-2s]", delay: "[animation-delay:300ms]" },
+    { clip: heroClips.crater, frame: "h-[78%] -translate-y-[9%]", drift: "[--drift-to:10px] [animation-delay:-4s]", delay: "[animation-delay:540ms]" },
+  ];
+  return (
+    <div className="hidden h-[min(52vh,32rem)] grid-cols-[1fr_1.3fr_1fr] items-center gap-3 lg:grid xl:gap-4">
+      {panels.map(({ clip, frame, drift, delay, eager }) => (
+        <div key={clip.src} className={cn("anim-rise", frame, delay)}>
+          <HeroReel
+            {...clip}
+            media="(min-width: 1024px)"
+            sizes="(min-width: 1024px) 18vw, 1px"
+            eager={eager}
+            className={cn(
+              "drift h-full rounded-[1.5rem] shadow-[0_30px_60px_-30px_rgb(4_14_10/0.8)] ring-1 ring-white/15",
+              drift,
+            )}
+          >
+            <div aria-hidden className="scrim-b absolute inset-0" />
+            <p className="on-media absolute inset-x-0 bottom-0 flex items-center gap-1.5 p-4 text-xs font-semibold text-white">
+              <MapPin className="size-3.5 shrink-0 text-ember-400" aria-hidden />
+              {clip.place}
+            </p>
+          </HeroReel>
+        </div>
+      ))}
+    </div>
   );
 }
 
@@ -182,15 +214,17 @@ function TrustStrip() {
     { icon: Clock3, label: "Business contacts pending" },
   ];
   return (
-    <section className="border-b border-[var(--line)] bg-[var(--paper-sunken)]">
+    <section className="border-b border-[var(--line)] bg-bone-100">
       <Container wide>
-        <ul className="grid gap-x-8 gap-y-4 py-6 sm:grid-cols-2 lg:grid-cols-4">
+        <ul className="grid grid-cols-2 gap-x-6 gap-y-4 py-5 lg:grid-cols-4 lg:py-6">
           {items.map((item) => (
             <li
               key={item.label}
-              className="flex items-center gap-3 text-sm text-[var(--ink-muted)]"
+              className="flex items-center gap-3 text-sm font-medium leading-snug text-bone-700"
             >
-              <item.icon className="size-4 shrink-0 text-clay-700" />
+              <span className="grid size-8 shrink-0 place-items-center rounded-full bg-white text-forest-700 ring-1 ring-bone-300">
+                <item.icon className="size-4" aria-hidden />
+              </span>
               {item.label}
             </li>
           ))}
@@ -203,9 +237,8 @@ function TrustStrip() {
 /* ============================================================ Destinations */
 
 function Destinations({ destinations }: { destinations: Destination[] }) {
-  const [hero, ...rest] = destinations;
   return (
-    <section className="py-24 sm:py-32">
+    <section className="overflow-hidden py-20 sm:py-28">
       <Container wide>
         <SectionHead
           eyebrow="Destinations"
@@ -219,29 +252,16 @@ function Destinations({ destinations }: { destinations: Destination[] }) {
           }
         />
 
-        {/* Asymmetric editorial grid. Cell maths: a 4x3 grid is 12 cells —
-            the hero tile takes 4 (2x2), six tiles take one each, and the
-            last tile takes 2. That fills the grid exactly, with no ragged
-            hole, while still reading as composed rather than uniform. */}
-        <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:grid-rows-3">
-          <DestinationTile
-            destination={hero}
-            size="lg"
-            className="min-h-[22rem] sm:col-span-2 lg:row-span-2 lg:min-h-[30rem]"
-          />
-          {rest.map((d, i) => (
-            <DestinationTile
-              key={d.slug}
-              destination={d}
-              size={i === rest.length - 1 ? "lg" : "sm"}
-              className={
-                i === rest.length - 1
-                  ? "min-h-[15rem] sm:col-span-2"
-                  : "min-h-[15rem]"
-              }
-            />
+        {/* A swipe rail on phones; on desktop one row where the panel under
+            the pointer widens. Works for any number of destinations, so there
+            is never a hole in the grid when one is added or removed. */}
+        <ul className="dest-rail no-bar -mx-5 mt-10 flex snap-x snap-mandatory gap-3 overflow-x-auto px-5 sm:-mx-8 sm:px-8 lg:mx-0 lg:mt-14 lg:h-[34rem] lg:gap-3 lg:overflow-visible lg:px-0">
+          {destinations.map((d, i) => (
+            <li key={d.slug} className="h-[27rem] w-[78vw] max-w-[22rem] shrink-0 snap-center lg:h-auto lg:w-auto lg:max-w-none lg:shrink">
+              <DestinationPanel destination={d} index={i} className="h-full" />
+            </li>
           ))}
-        </div>
+        </ul>
       </Container>
     </section>
   );
@@ -251,33 +271,29 @@ function Destinations({ destinations }: { destinations: Destination[] }) {
 
 function FeaturedTours({ tours }: { tours: CatalogueTour[] }) {
   return (
-    <section className="on-dark relative overflow-hidden bg-forest-900 py-24 sm:py-32">
-      <div aria-hidden className="contours absolute inset-0 opacity-[0.07]" />
+    <section className="relative overflow-hidden bg-bone-100 py-20 sm:py-28">
+      <div aria-hidden className="contours absolute inset-0 opacity-[0.035] [background-size:760px_760px]" />
       <Container wide className="relative">
         <SectionHead
           eyebrow="Tours & Safaris"
-          title="Guided by people who live there"
+          title={
+            <>
+              Guided by people <em>who live there</em>
+            </>
+          }
           lede="These are sample listings for development only. Provider details, permissions, availability and prices must be verified before launch."
           action={
-            <Button
-              href="/tours"
-              variant="outline"
-              className="border-forest-400/40 text-bone-50 hover:bg-bone-50 hover:text-forest-900"
-            >
+            <Button href="/tours" variant="primary">
               Browse all safaris
               <ArrowRight className="size-4" />
             </Button>
           }
         />
 
-        <div className="mt-14 grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {/* Swipe rail on phones, so three trips don't cost three screens of scrolling. */}
+        <div className="no-bar -mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0 sm:grid-cols-2 sm:gap-5 lg:mt-14 lg:grid-cols-3 lg:gap-6">
           {tours.slice(0, 3).map((tour, i) => (
-            <TourCard
-              key={tour.slug}
-              tour={tour}
-              priority={i === 0}
-
-            />
+            <TourCard key={tour.slug} tour={tour} priority={i === 0} className="w-[84vw] max-w-[22rem] shrink-0 snap-center sm:w-auto sm:max-w-none" />
           ))}
         </div>
       </Container>
@@ -285,50 +301,56 @@ function FeaturedTours({ tours }: { tours: CatalogueTour[] }) {
   );
 }
 
-/* ========================================================== StaysAndFleet */
+/* =================================================================== Stays */
 
-function StaysAndFleet({
-  hotels,
-  vehicles,
-}: {
-  hotels: CatalogueHotel[];
-  vehicles: CatalogueVehicle[];
-}) {
+function Stays({ hotels }: { hotels: CatalogueHotel[] }) {
   return (
-    <section className="py-24 sm:py-32">
-      <Container wide className="grid gap-16 lg:grid-cols-2 lg:gap-12">
-        <div>
+    <section className="py-20 sm:py-28">
+      <Container wide className="grid gap-10 lg:grid-cols-[minmax(0,5fr)_minmax(0,8fr)] lg:gap-20">
+        {/* The heading holds still while the list scrolls past it. */}
+        <div className="lg:sticky lg:top-28 lg:self-start">
           <SectionHead
             eyebrow="Hotels & Concierge"
             title="Somewhere good to land"
             lede="Beach lodges, tented camps and city apartments, with our concierge desk behind every stay."
           />
-          <div className="mt-10 flex flex-col gap-4">
-            {hotels.slice(0, 3).map((hotel) => (
-              <HotelCard key={hotel.slug} hotel={hotel} />
-            ))}
-          </div>
-          <Button href="/hotels" variant="quiet" className="mt-8">
+          <Button href="/hotels" variant="outline" className="mt-8">
             See all stays
             <ArrowRight className="size-4" />
           </Button>
         </div>
 
-        <div>
-          <SectionHead
-            eyebrow="Car Hire"
-            title="A vehicle that suits the road"
-            lede="Self-drive or chauffeured, from compact city SUVs to safari-rigged 4x4s."
-          />
-          <div className="mt-10 grid gap-5 sm:grid-cols-2">
-            {vehicles.slice(0, 4).map((v) => (
-              <VehicleCard key={v.slug} vehicle={v} />
-            ))}
-          </div>
-          <Button href="/cars" variant="quiet" className="mt-8">
-            See the full fleet
-            <ArrowRight className="size-4" />
-          </Button>
+        <div className="flex flex-col gap-5">
+          {hotels.slice(0, 3).map((hotel) => (
+            <HotelCard key={hotel.slug} hotel={hotel} />
+          ))}
+        </div>
+      </Container>
+    </section>
+  );
+}
+
+/* =================================================================== Fleet */
+
+function Fleet({ vehicles }: { vehicles: CatalogueVehicle[] }) {
+  return (
+    <section className="border-t border-[var(--line)] bg-bone-100 py-20 sm:py-28">
+      <Container wide>
+        <SectionHead
+          eyebrow="Car Hire"
+          title="A vehicle that suits the road"
+          lede="Self-drive or chauffeured, from compact city SUVs to safari-rigged 4x4s."
+          action={
+            <Button href="/cars" variant="outline">
+              See the full fleet
+              <ArrowRight className="size-4" />
+            </Button>
+          }
+        />
+        <div className="no-bar -mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:overflow-visible sm:px-0 sm:pb-0 sm:grid-cols-2 sm:gap-5 lg:mt-14 lg:grid-cols-4 lg:gap-6">
+          {vehicles.slice(0, 4).map((v) => (
+            <VehicleCard key={v.slug} vehicle={v} className="w-[78vw] max-w-[20rem] shrink-0 snap-center sm:w-auto sm:max-w-none" />
+          ))}
         </div>
       </Container>
     </section>
@@ -339,18 +361,18 @@ function StaysAndFleet({
 
 function Transfers() {
   return (
-    <section className="relative overflow-hidden bg-clay-100 py-24 sm:py-32">
+    <section className="relative overflow-hidden bg-clay-100 py-20 sm:py-28">
       <div
         aria-hidden
         className="contours absolute inset-0 opacity-[0.05] [background-size:800px_800px]"
       />
-      <Container wide className="relative grid gap-14 lg:grid-cols-[1fr_1.1fr] lg:items-center">
+      <Container wide className="relative grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
         <div>
           <Eyebrow>Airport Transfers</Eyebrow>
-          <h2 className="mt-5 text-display-sm text-clay-900">
-            Someone is already waiting when you land
+          <h2 className="mt-3 text-display-sm text-clay-900">
+            Someone is already waiting <em>when you land</em>
           </h2>
-          <p className="mt-5 max-w-lg text-lg leading-relaxed text-clay-800/80">
+          <p className="mt-5 max-w-lg text-[1.0625rem] leading-relaxed text-clay-900/75">
             Rwanda airport routes, providers and prices are still being
             configured. No transfer service is available to book yet.
           </p>
@@ -358,13 +380,25 @@ function Transfers() {
           <div className="mt-8 flex flex-wrap gap-3">
             <Button href="/contact" variant="primary" size="lg">
               Get launch updates
+              <ArrowRight className="size-4" />
             </Button>
           </div>
         </div>
 
-        <div className="rounded-[var(--radius-card)] border border-clay-700/15 bg-bone-50/80 p-8 text-center text-sm text-bone-700">
-          Rwanda transfer zones and RWF rates will be added after local
-          providers and prices are confirmed.
+        <div className="rounded-[var(--radius-panel)] bg-white p-6 shadow-[var(--shadow-lift)] ring-1 ring-clay-700/10 sm:p-8">
+          <div className="flex items-center justify-between gap-4">
+            <span className="grid size-12 place-items-center rounded-full bg-clay-100 text-clay-700">
+              <PlaneLanding className="size-5" aria-hidden />
+            </span>
+            <Badge tone="clay">In preparation</Badge>
+          </div>
+          <p className="mt-6 font-display text-2xl leading-tight text-clay-900">
+            Transfer zones and fixed rates
+          </p>
+          <p className="mt-3 text-[0.9375rem] leading-relaxed text-bone-700">
+            Rwanda transfer zones and RWF rates will be added after local
+            providers and prices are confirmed.
+          </p>
         </div>
       </Container>
     </section>
@@ -375,25 +409,27 @@ function Transfers() {
 
 function WhyUs() {
   return (
-    <section className="py-24 sm:py-32">
+    <section className="py-20 sm:py-28">
       <Container wide>
         <SectionHead
           eyebrow="Why book with us"
           title="A Booking That Actually Holds — Guaranteed."
-          align="center"
           lede="This booking platform is being adapted for Rwanda. Provider checks, payment and fulfilment processes must be confirmed before launch."
         />
 
-        <ul className="mt-14 grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
-          {whyUs.map((item) => (
+        <ol className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4">
+          {whyUs.map((item, i) => (
             <li key={item.title} className="border-t border-[var(--line-strong)] pt-6">
-              <h3 className="text-xl">{item.title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">
+              <span aria-hidden className="display-italic tnum font-display text-2xl text-ember-600">
+                {String(i + 1).padStart(2, "0")}
+              </span>
+              <h3 className="mt-4 text-2xl">{item.title}</h3>
+              <p className="mt-3 text-[0.9375rem] leading-relaxed text-[var(--ink-muted)]">
                 {item.body}
               </p>
             </li>
           ))}
-        </ul>
+        </ol>
       </Container>
     </section>
   );
@@ -412,24 +448,24 @@ function Testimonials({
   if (reviews.length === 0 || rating.value === null) return null;
 
   return (
-    <section className="border-y border-[var(--line)] bg-[var(--paper-sunken)] py-24 sm:py-32">
+    <section className="border-y border-[var(--line)] bg-bone-100 py-20 sm:py-28">
       <Container wide>
         <div className="flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <Eyebrow>Reviews</Eyebrow>
-            <h2 className="mt-2 text-display-sm">What travellers told us</h2>
+            <h2 className="mt-3 text-display-sm">What travellers told us</h2>
           </div>
           <Rating value={rating.value} count={rating.count} className="text-base" />
         </div>
 
-        <div className="mt-14 grid gap-5 lg:grid-cols-3">
+        <div className="mt-10 grid gap-5 lg:mt-14 lg:grid-cols-3 lg:gap-6">
           {reviews.map((r) => (
             <figure
               key={r.id}
               className="flex flex-col rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] p-7"
             >
               <Rating value={r.rating} />
-              <blockquote className="mt-4 flex-1 text-[0.9375rem] leading-relaxed text-[var(--ink)]">
+              <blockquote className="mt-5 flex-1 font-display text-xl leading-snug text-[var(--ink)]">
                 {r.comment}
               </blockquote>
               <figcaption className="mt-6 border-t border-[var(--line)] pt-5">
@@ -450,25 +486,29 @@ function Testimonials({
 
 /* ============================================================== ClosingCta */
 
-async function ClosingCta() {
+function ClosingCta() {
   return (
-    <section className="on-dark relative overflow-hidden bg-forest-950 py-28 sm:py-36">
-      <div aria-hidden className="contours absolute inset-0 opacity-[0.08]" />
+    <section className="on-dark relative overflow-hidden bg-forest-900 py-24 sm:py-32">
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 size-[42rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-ember-500/12 blur-[130px]"
+        className="absolute inset-0"
+        style={{
+          background:
+            "radial-gradient(55% 80% at 50% 110%, rgb(232 139 42 / 0.2), transparent 70%), linear-gradient(180deg, var(--color-forest-900), var(--color-forest-950))",
+        }}
       />
+      <div aria-hidden className="contours-light absolute inset-0 opacity-[0.05]" />
       <Container className="relative text-center">
         <Badge tone="ember">Free to enquire · No booking fee</Badge>
-        <h2 className="mx-auto mt-7 max-w-3xl text-display text-bone-50">
-          Share your dates. We handle the rest.
+        <h2 className="mx-auto mt-7 max-w-4xl text-display text-white">
+          Share your dates. <em className="text-ember-400">We handle the rest.</em>
         </h2>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-forest-100/80">
+        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-forest-100/85">
           Rwanda itinerary ideas are in progress. This preview uses sample
           listings and is not accepting real bookings yet.
         </p>
-        <div className="mt-10 flex flex-wrap justify-center gap-3">
-          <Button href="/tours" variant="accent" size="lg">
+        <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
+          <Button href="/tours" variant="accent" size="lg" className="font-semibold">
             Start planning
             <ArrowRight className="size-4" />
           </Button>
@@ -476,12 +516,13 @@ async function ClosingCta() {
             href="/contact"
             variant="outline"
             size="lg"
-            className="border-forest-400/40 text-bone-50 hover:bg-bone-50 hover:text-forest-900"
+            className="border-white/30 text-white hover:border-white hover:bg-white hover:text-forest-900"
           >
             Talk to a person
+            <ArrowUpRight className="size-4" />
           </Button>
         </div>
-        <p className="mt-8 text-sm text-forest-300">
+        <p className="mt-8 text-sm text-forest-200">
           Contact and booking channels are not configured.
         </p>
       </Container>

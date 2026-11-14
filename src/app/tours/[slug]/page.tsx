@@ -117,7 +117,7 @@ export default async function TourDetailPage({
           alt={`${tour.name}, ${tour.destination}`}
           className="h-[62svh] min-h-[26rem] w-full"
         >
-          <div aria-hidden className="absolute inset-x-0 top-0 h-44 bg-gradient-to-b from-forest-950/75 to-transparent" />
+          <div aria-hidden className="scrim-t absolute inset-x-0 top-0 h-44" />
         </ListingGallery>
         <Container
           wide
@@ -138,7 +138,7 @@ export default async function TourDetailPage({
                 {tour.destination}
               </span>
             </div>
-            <h1 className="mt-4 max-w-4xl text-display-sm text-bone-50">
+            <h1 className="on-media mt-4 max-w-4xl text-display text-white">
               {tour.name}
             </h1>
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-bone-100/80">

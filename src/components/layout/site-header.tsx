@@ -73,7 +73,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
           "sticky top-0 z-50 transition-all duration-500 [transition-timing-function:var(--ease-out-expo)]",
           floating
             ? "on-dark bg-transparent"
-            : "border-b border-[var(--line)] bg-[color-mix(in_oklab,white_88%,transparent)] backdrop-blur-xl",
+            : "border-b border-[var(--line)] bg-[color-mix(in_oklab,white_86%,transparent)] shadow-[0_1px_0_rgb(20_24_22/0.02),0_8px_24px_-18px_rgb(20_24_22/0.25)] backdrop-blur-xl backdrop-saturate-150",
         )}
       >
         <Container wide>
@@ -107,16 +107,16 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                     key={item.href}
                     href={item.href}
                     className={cn(
-                      "relative rounded-full px-4 py-2 text-sm transition-colors duration-300",
+                      "relative rounded-full px-3.5 py-2 text-sm font-medium transition-colors duration-300 xl:px-4",
                       floating
-                        ? "text-bone-100/85 hover:text-bone-50"
-                        : "text-[var(--ink-muted)] hover:text-forest-800",
-                      active && (floating ? "text-bone-50" : "text-forest-800"),
+                        ? "text-white/80 hover:bg-white/10 hover:text-white"
+                        : "text-bone-700 hover:bg-bone-100 hover:text-forest-900",
+                      active && (floating ? "bg-white/12 text-white" : "bg-forest-100 text-forest-800"),
                     )}
                   >
                     {item.label}
                     {active && (
-                      <span className="absolute inset-x-4 -bottom-0.5 h-px bg-ember-500" />
+                      <span aria-hidden className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-ember-500" />
                     )}
                   </Link>
                 );
@@ -142,7 +142,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   ? (session.user.name?.split(" ")[0] ?? "Account")
                   : "Sign in"}
               </Button>
-              <Button href="/tours" variant="accent" size="sm">
+              <Button href="/tours" variant="accent" size="sm" className="font-semibold">
                 Book now
               </Button>
               <button
@@ -191,7 +191,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                 onClick={() => setOpen(false)}
                 style={{ animationDelay: `${80 + i * 55}ms` }}
                 className={cn(
-                  "border-b border-forest-400/15 py-4 font-display text-3xl text-bone-50",
+                  "flex items-center justify-between border-b border-white/10 py-4 font-display text-[2rem] leading-tight text-bone-50",
                   open && "anim-rise",
                 )}
               >

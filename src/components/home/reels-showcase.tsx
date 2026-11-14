@@ -91,7 +91,7 @@ function ReelCard({
         />
         <div
           aria-hidden
-          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-forest-950/90 via-forest-950/10 to-forest-950/30"
+          className="pointer-events-none absolute inset-0 bg-gradient-to-t from-[rgb(8_20_15/0.85)] via-transparent to-[rgb(8_20_15/0.25)]"
         />
 
         <button

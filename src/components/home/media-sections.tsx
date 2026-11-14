@@ -48,12 +48,12 @@ export function TrailPhotos() {
           lede="Canopy bridges, misty volcano slopes and Kigali at night, photographed on Thrill Rwanda trips."
         />
         <div className="mt-14 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <figure className="group relative min-h-[20rem] overflow-hidden rounded-2xl sm:col-span-2 sm:row-span-2 lg:min-h-[34rem]">
+          <figure className="group relative min-h-[20rem] overflow-hidden rounded-[var(--radius-card)] sm:col-span-2 sm:row-span-2 lg:min-h-[34rem]">
             <Image src={lead.src} alt={lead.alt} fill sizes="(min-width:1024px) 50vw, 100vw" className="object-cover transition duration-700 group-hover:scale-105" />
             <Caption>{lead.caption}</Caption>
           </figure>
           {rest.map((p) => (
-            <figure key={p.src} className="group relative aspect-square overflow-hidden rounded-2xl">
+            <figure key={p.src} className="group relative aspect-square overflow-hidden rounded-[var(--radius-card)]">
               <Image src={p.src} alt={p.alt} fill sizes="(min-width:1024px) 25vw, 50vw" className="object-cover transition duration-700 group-hover:scale-105" />
               <Caption>{p.caption}</Caption>
             </figure>
@@ -66,7 +66,7 @@ export function TrailPhotos() {
 
 function Caption({ children }: { children: React.ReactNode }) {
   return (
-    <figcaption className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-forest-950/85 to-transparent p-4 pt-12 text-sm font-medium text-bone-50">
+    <figcaption className="absolute inset-x-0 bottom-0 scrim-b p-4 pt-16 text-sm font-semibold text-white sm:p-5">
       {children}
     </figcaption>
   );
