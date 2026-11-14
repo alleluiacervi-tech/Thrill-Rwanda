@@ -32,6 +32,7 @@ export async function AuthShell({
       id="main"
       className="min-h-svh lg:grid lg:h-svh lg:grid-cols-[1fr_0.9fr] lg:overflow-hidden"
     >
+      <div aria-hidden className="flag-ribbon fixed inset-x-0 top-0 z-50" />
       {/* ------------------------------------------------------------ Form */}
       <div className="flex min-w-0 flex-col px-5 py-6 sm:px-8 lg:h-svh lg:overflow-y-auto lg:px-14 lg:py-7">
         <Link

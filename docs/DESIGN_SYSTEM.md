@@ -30,3 +30,13 @@ Contrast rules:
 ## Photography
 
 Text over photos uses the neutral `.scrim-b` and `.scrim-t` overlays plus `.on-media`, never a green wash.
+
+## Signature elements
+
+These are what make the brand recognisably Rwandan. Keep them consistent.
+
+- **Imigongo lattice** (`.imigongo`, `.imigongo-light`; the old `.contours` names point to the same pattern). Nested diamonds from the Imigongo relief art of Nyakarambi, used as a hairline texture at 3–9% opacity behind dark or tinted sections. Never put it over photographs.
+- **Imigongo band** (`.imigongo-band`). A 12px strip of gold peaks on green, used as a seam between major bands. Today it appears only between the footer's welcome and its directory.
+- **Flag ribbon** (`.flag-ribbon`). A 4px strip in sky blue, sun gold and green, in the flag's proportions. It sits at the top of every public and auth page and closes the footer.
+- **Thousand-hills edge** (`<HillsEdge />` in `page-shell.tsx`). Layered ridgelines with a gold crest line close every page banner. Set `--edge` on the banner when the section below isn't white.
+- **Murakaza neza.** The footer opens with the Kinyarwanda welcome. Mark any Kinyarwanda text with `lang="rw"`.

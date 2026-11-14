@@ -92,7 +92,8 @@ export default async function CorporatePage() {
         title="Ground logistics your finance team won't argue with"
         lede="One invoice. Fixed rates. No cash handling. We move your visiting teams, conference delegates & incentive trips across Rwanda — with vetted drivers and live trip reports on WhatsApp."
         crumbs={[{ label: "Corporate & Events" }]}
-      >
+      
+        className="[--edge:var(--color-bone-200)]">
         <div className="mt-8 flex flex-wrap gap-3">
           <Button href="#rate-card-form" variant="accent" size="lg">
             Get corporate rates

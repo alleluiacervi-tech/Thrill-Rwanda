@@ -35,7 +35,7 @@ import { cn, formatMoney, localDatePlus, todayLocal } from "@/lib/utils";
 const OTHER = "other";
 
 const control =
-  "w-full min-w-0 cursor-pointer appearance-none bg-transparent text-sm font-medium text-[var(--ink)] outline-none tnum";
+  "w-full min-w-0 cursor-pointer appearance-none bg-transparent text-base font-medium text-[var(--ink)] outline-none tnum lg:text-[0.9375rem]";
 
 /** One cell of the search bar: small label over the control, like the home search. */
 function BarField({
@@ -52,12 +52,12 @@ function BarField({
   return (
     <label
       className={cn(
-        "flex min-w-0 flex-col justify-center gap-1 rounded-[var(--radius-inset)] bg-[var(--paper-raised)] px-4 py-3 transition-colors focus-within:ring-2 focus-within:ring-sun-500",
+        "flex min-w-0 flex-col justify-center gap-1 rounded-[0.875rem] bg-bone-50 px-4 py-3 ring-1 ring-bone-200 transition-colors hover:bg-white focus-within:bg-white focus-within:ring-2 focus-within:ring-lake-600",
         className,
       )}
     >
-      <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
-        <Icon className="size-3 text-clay-600" />
+      <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.1em] text-bone-600">
+        <Icon className="size-3.5 text-forest-600" />
         {label}
       </span>
       {children}
@@ -239,7 +239,7 @@ export function TransferForm({
       <input type="hidden" name="direction" value={direction} />
 
       {/* ------------------------------------------------------ Search bar */}
-      <div role="radiogroup" aria-label="Region" className="flex gap-1">
+      <div role="radiogroup" aria-label="Region" className="mb-3 flex gap-2">
         {(["KIGALI", "HIGHLANDS"] as Region[]).map((r) => (
           <button
             key={r}
@@ -248,8 +248,10 @@ export function TransferForm({
             aria-checked={region === r}
             onClick={() => pickRegion(r)}
             className={cn(
-              "rounded-t-xl px-5 py-2.5 text-sm font-medium transition-colors",
-              region === r ? "bg-sun-500 text-forest-950" : "bg-forest-900/80 text-bone-100/80 hover:text-bone-50",
+              "h-10 rounded-full px-5 text-sm font-semibold transition-colors",
+              region === r
+                ? "bg-white text-forest-900 shadow-[var(--shadow-lift)]"
+                : "bg-forest-950/40 text-white/85 ring-1 ring-white/20 backdrop-blur-md hover:bg-forest-950/60 hover:text-white",
             )}
           >
             {REGION_LABEL[r]}
@@ -257,7 +259,7 @@ export function TransferForm({
         ))}
       </div>
 
-      <div className="grid gap-1 rounded-b-2xl rounded-tr-2xl bg-sun-500 p-1 shadow-[var(--shadow-float)] lg:grid-cols-[1.5fr_auto_1.5fr_1fr_0.75fr_0.75fr_auto]">
+      <div className="grid gap-1.5 rounded-[var(--radius-panel)] bg-white p-2 shadow-[var(--shadow-float)] ring-1 ring-forest-950/5 lg:grid-cols-[1.5fr_auto_1.5fr_1fr_0.75fr_0.75fr_auto]">
         <BarField label="Pick-up" icon={MapPin}>
           {pickupCell}
         </BarField>
@@ -265,7 +267,7 @@ export function TransferForm({
           type="button"
           onClick={() => setDirection((d) => (d === "from" ? "to" : "from"))}
           aria-label="Swap pick-up and destination"
-          className="grid place-items-center rounded-[var(--radius-inset)] bg-[var(--paper-raised)] px-3 py-2 text-[var(--ink-muted)] transition-colors hover:text-forest-800"
+          className="grid place-items-center rounded-[0.875rem] bg-bone-50 px-3 py-2 text-[var(--ink-muted)] ring-1 ring-bone-200 transition-colors hover:bg-white hover:text-forest-800"
         >
           <ArrowLeftRight className="size-4 rotate-90 lg:rotate-0" />
         </button>
@@ -294,7 +296,7 @@ export function TransferForm({
             ))}
           </select>
         </BarField>
-        <Button type="button" onClick={search} variant="primary" size="lg" className="h-auto min-h-14 rounded-[var(--radius-inset)]">
+        <Button type="button" onClick={search} variant="accent" size="lg" className="h-auto min-h-14 rounded-[0.875rem] px-7">
           <Search className="size-5" />
           Search
         </Button>

@@ -3,7 +3,7 @@
 import * as React from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Menu, X, Phone, UserRound } from "lucide-react";
+import { Menu, X, UserRound } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
@@ -45,28 +45,9 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
 
   return (
     <>
-      {/* Utility strip — preview status + provider entry, hidden on mobile */}
-      <div className="hidden bg-forest-950 py-2 text-bone-100 lg:block">
-        <Container wide className="flex items-center justify-between">
-          <p className="text-2xs tracking-wide text-forest-200">
-            Rwanda travel demo · Sample listings · Configuration in progress
-          </p>
-          <div className="flex items-center gap-6 text-2xs">
-            {site.contact.phone && site.contact.phoneHref ? (
-              <a
-                href={site.contact.phoneHref}
-                className="link-draw inline-flex items-center gap-1.5 hover:text-sun-400"
-              >
-                <Phone className="size-3" />
-                {site.contact.phone}
-              </a>
-            ) : null}
-            <Link href="/partner" className="link-draw hover:text-sun-400">
-              List your property or fleet
-            </Link>
-          </div>
-        </Container>
-      </div>
+      {/* The flag as a ribbon, in place of a utility bar: the phone line lives
+          in the menu and footer, the provider link in the footer. */}
+      <div aria-hidden className="flag-ribbon relative z-[51]" />
 
       <header
         className={cn(

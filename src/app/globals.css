@@ -293,15 +293,45 @@
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
 }
 
-/* Topographic contour lines — the motif. Derived from terrain maps. */
-.contours {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Cg fill='none' stroke='%230f3d2e' stroke-width='1'%3E%3Cpath d='M-40 300c60-90 160-130 260-96s150 130 250 108 130-70 170-120'/%3E%3Cpath d='M-40 340c70-96 172-140 276-104s154 136 256 114 132-74 172-124'/%3E%3Cpath d='M-40 380c80-102 184-150 292-112s158 142 262 120 134-78 174-128'/%3E%3Cpath d='M-40 424c90-108 196-160 308-120s162 148 268 126 136-82 176-132'/%3E%3Cpath d='M-40 472c100-114 208-170 324-128s166 154 274 132 138-86 178-136'/%3E%3Cpath d='M-40 524c110-120 220-180 340-136s170 160 280 138 140-90 180-140'/%3E%3Cpath d='M-40 176c50-72 132-104 214-78s124 106 206 88 106-56 140-98'/%3E%3Cpath d='M-40 120c42-62 114-90 184-68s106 92 178 76 92-48 120-84'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 600px 600px;
+/* IMIGONGO — the brand's signature texture.
+   Imigongo is the geometric relief art of Nyakarambi in eastern Rwanda:
+   nested lozenges and zigzags, traditionally black, white and red earth.
+   Here it is reduced to a hairline lattice of concentric diamonds so it
+   reads as texture, never as decoration competing with photographs.
+   (.contours / .contours-light keep their names so every existing use
+   picks the pattern up.) */
+.contours,
+.imigongo {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%230f3a2c' stroke-width='1.1'%3E%3Cpath d='M48 0 96 48 48 96 0 48Z'/%3E%3Cpath d='M48 16 80 48 48 80 16 48Z'/%3E%3Cpath d='M48 32 64 48 48 64 32 48Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 96px 96px;
 }
 
-.contours-light {
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='600' height='600' viewBox='0 0 600 600'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1'%3E%3Cpath d='M-40 300c60-90 160-130 260-96s150 130 250 108 130-70 170-120'/%3E%3Cpath d='M-40 340c70-96 172-140 276-104s154 136 256 114 132-74 172-124'/%3E%3Cpath d='M-40 380c80-102 184-150 292-112s158 142 262 120 134-78 174-128'/%3E%3Cpath d='M-40 424c90-108 196-160 308-120s162 148 268 126 136-82 176-132'/%3E%3Cpath d='M-40 472c100-114 208-170 324-128s166 154 274 132 138-86 178-136'/%3E%3Cpath d='M-40 524c110-120 220-180 340-136s170 160 280 138 140-90 180-140'/%3E%3Cpath d='M-40 176c50-72 132-104 214-78s124 106 206 88 106-56 140-98'/%3E%3Cpath d='M-40 120c42-62 114-90 184-68s106 92 178 76 92-48 120-84'/%3E%3C/g%3E%3C/svg%3E");
-  background-size: 600px 600px;
+.contours-light,
+.imigongo-light {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='96' height='96' viewBox='0 0 96 96'%3E%3Cg fill='none' stroke='%23ffffff' stroke-width='1.1'%3E%3Cpath d='M48 0 96 48 48 96 0 48Z'/%3E%3Cpath d='M48 16 80 48 48 80 16 48Z'/%3E%3Cpath d='M48 32 64 48 48 64 32 48Z'/%3E%3C/g%3E%3C/svg%3E");
+  background-size: 96px 96px;
+}
+
+/* An Imigongo border: a run of gold peaks on green, the way the panels
+   are edged. Used as a seam between major bands, never inside content. */
+.imigongo-band {
+  height: 12px;
+  background-color: var(--color-forest-900);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='12' viewBox='0 0 24 12'%3E%3Cpath d='M0 12 12 0 24 12Z' fill='%23f8c300'/%3E%3Cpath d='M6 12 12 6 18 12Z' fill='%23154a38'/%3E%3C/svg%3E");
+  background-size: 24px 12px;
+  background-repeat: repeat-x;
+}
+
+/* The flag, as a ribbon: sky blue, sun gold, hill green, in the flag's
+   proportions. Top of every public page. */
+.flag-ribbon {
+  height: 4px;
+  background: linear-gradient(
+    90deg,
+    var(--color-lake-600) 0 50%,
+    var(--color-sun-500) 50% 75%,
+    var(--color-forest-700) 75% 100%
+  );
 }
 
 /* Hairline rule with a warm gradient falloff — used between sections */
