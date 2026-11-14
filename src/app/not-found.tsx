@@ -20,7 +20,7 @@ export default async function NotFound() {
         />
         <div
           aria-hidden
-          className="contours absolute inset-0 opacity-[0.09] [background-size:700px_700px]"
+          className="contours absolute inset-0 opacity-[0.09]"
         />
 
         <Container className="relative py-20 text-center">

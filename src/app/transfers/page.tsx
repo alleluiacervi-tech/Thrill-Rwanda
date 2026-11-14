@@ -59,11 +59,12 @@ export default async function TransfersPage({
         lede="Between Kigali International Airport, the volcano and lake towns and your hotel. One fixed price per vehicle, a driver waiting at arrivals."
         crumbs={[{ label: "Airport Transfers" }]}
         image={destinationImages["kigali"]}
-        className="pb-28"
+        className="pb-36 sm:pb-40"
       />
 
-      {/* The search bar overlaps the banner, the way a booking site leads with it. */}
-      <Container wide className="relative -mt-20">
+      {/* The search bar overlaps the banner, the way a booking site leads with it.
+          The banner's bottom padding leaves room for it below the lede at every width. */}
+      <Container wide className="relative z-10 -mt-20">
         <TransferForm
           zones={zones}
           initial={{ point: one("point"), area: one("area"), date: one("date"), time: one("time"), passengers: one("passengers") }}

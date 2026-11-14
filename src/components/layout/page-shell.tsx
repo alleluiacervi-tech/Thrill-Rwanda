@@ -20,6 +20,46 @@ export async function AnnouncementBar() {
 }
 
 /** Header + footer wrapper so interior pages don't repeat the chrome. */
+/**
+ * The bottom edge of a banner: overlapping ridgelines, drawn from the view
+ * north from Kigali toward the Virungas. The page below "rises" out of the
+ * banner instead of meeting it at a ruler-straight line, and the back
+ * ridge in gold picks up the logo's path.
+ */
+export function HillsEdge({ className }: { className?: string }) {
+  return (
+    <svg
+      aria-hidden
+      viewBox="0 0 1440 80"
+      preserveAspectRatio="none"
+      className={cn("pointer-events-none absolute inset-x-0 bottom-0 h-[clamp(22px,4.2vw,64px)] w-full", className)}
+    >
+      {/* Far ridges, then the near one, then the gold path along its crest. */}
+      <path
+        d="M0 46 C120 22 210 30 320 44 S520 70 640 50 S860 12 980 30 S1210 62 1310 44 S1410 30 1440 34 V80 H0Z"
+        fill="#ffffff"
+        opacity="0.12"
+      />
+      <path
+        d="M0 58 C140 40 250 52 360 62 S560 76 700 60 S920 34 1040 48 S1260 72 1360 60 S1420 54 1440 56 V80 H0Z"
+        fill="#ffffff"
+        opacity="0.22"
+      />
+      <path
+        d="M0 66 C160 54 280 62 400 70 S620 80 760 70 S980 52 1100 62 S1300 78 1440 68 V80 H0Z"
+        fill="var(--edge, #ffffff)"
+      />
+      <path
+        d="M0 66 C160 54 280 62 400 70 S620 80 760 70 S980 52 1100 62 S1300 78 1440 68"
+        fill="none"
+        stroke="var(--color-sun-500)"
+        strokeWidth="2.5"
+        vectorEffect="non-scaling-stroke"
+      />
+    </svg>
+  );
+}
+
 export function PageShell({
   children,
   overHero = false,
@@ -99,7 +139,7 @@ export function PageHero({
   return (
     <section
       className={cn(
-        "on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-900 pb-12 pt-[8.5rem] sm:pb-16 lg:-mt-24 lg:pt-48",
+        "on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-900 pb-16 pt-[8.5rem] sm:pb-24 lg:-mt-24 lg:pt-48",
         className,
       )}
     >
@@ -153,6 +193,7 @@ export function PageHero({
         ) : null}
         {children}
       </Container>
+      <HillsEdge />
     </section>
   );
 }

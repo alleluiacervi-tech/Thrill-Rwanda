@@ -1,6 +1,5 @@
 import {
   ArrowRight,
-  ArrowUpRight,
   Clock3,
   MapPin,
   Plane,
@@ -71,7 +70,6 @@ export default async function HomePage() {
         <Transfers />
         <WhyUs />
         <Testimonials rating={rating} reviews={reviews} />
-        <ClosingCta />
       </main>
       <SiteFooter />
       <WhatsAppButton />
@@ -122,7 +120,7 @@ async function Hero({
             "radial-gradient(60% 70% at 78% 30%, rgb(47 128 96 / 0.55), transparent 70%), linear-gradient(180deg, var(--color-forest-950), var(--color-forest-900))",
         }}
       />
-      <div aria-hidden className="contours-light absolute inset-0 hidden opacity-[0.05] [background-size:820px_820px] lg:block" />
+      <div aria-hidden className="contours-light absolute inset-0 hidden opacity-[0.05] lg:block" />
 
       <Container wide className="relative pb-6 pt-[clamp(7.5rem,15vh,10.5rem)] sm:pb-10 lg:pb-12">
         <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.98fr)] lg:items-center lg:gap-14">
@@ -272,7 +270,7 @@ function Destinations({ destinations }: { destinations: Destination[] }) {
 function FeaturedTours({ tours }: { tours: CatalogueTour[] }) {
   return (
     <section className="relative overflow-hidden bg-bone-100 py-20 sm:py-28">
-      <div aria-hidden className="contours absolute inset-0 opacity-[0.035] [background-size:760px_760px]" />
+      <div aria-hidden className="contours absolute inset-0 opacity-[0.035]" />
       <Container wide className="relative">
         <SectionHead
           eyebrow="Tours & Safaris"
@@ -364,7 +362,7 @@ function Transfers() {
     <section className="relative overflow-hidden bg-clay-100 py-20 sm:py-28">
       <div
         aria-hidden
-        className="contours absolute inset-0 opacity-[0.05] [background-size:800px_800px]"
+        className="contours absolute inset-0 opacity-[0.05]"
       />
       <Container wide className="relative grid gap-10 lg:grid-cols-[1fr_1fr] lg:items-center lg:gap-20">
         <div>
@@ -479,52 +477,6 @@ function Testimonials({
           Read all reviews
           <ArrowRight className="size-4" />
         </Button>
-      </Container>
-    </section>
-  );
-}
-
-/* ============================================================== ClosingCta */
-
-function ClosingCta() {
-  return (
-    <section className="on-dark relative overflow-hidden bg-forest-900 py-24 sm:py-32">
-      <div
-        aria-hidden
-        className="absolute inset-0"
-        style={{
-          background:
-            "radial-gradient(55% 80% at 50% 110%, rgb(248 195 0 / 0.2), transparent 70%), linear-gradient(180deg, var(--color-forest-900), var(--color-forest-950))",
-        }}
-      />
-      <div aria-hidden className="contours-light absolute inset-0 opacity-[0.05]" />
-      <Container className="relative text-center">
-        <Badge tone="sun">Free to enquire · No booking fee</Badge>
-        <h2 className="mx-auto mt-7 max-w-4xl text-display text-white">
-          Share your dates. <em className="text-sun-400">We handle the rest.</em>
-        </h2>
-        <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-forest-100/85">
-          Rwanda itinerary ideas are in progress. This preview uses sample
-          listings and is not accepting real bookings yet.
-        </p>
-        <div className="mt-10 flex flex-col justify-center gap-3 sm:flex-row">
-          <Button href="/tours" variant="accent" size="lg" className="font-semibold">
-            Start planning
-            <ArrowRight className="size-4" />
-          </Button>
-          <Button
-            href="/contact"
-            variant="outline"
-            size="lg"
-            className="border-white/30 text-white hover:border-white hover:bg-white hover:text-forest-900"
-          >
-            Talk to a person
-            <ArrowUpRight className="size-4" />
-          </Button>
-        </div>
-        <p className="mt-8 text-sm text-forest-200">
-          Contact and booking channels are not configured.
-        </p>
       </Container>
     </section>
   );
