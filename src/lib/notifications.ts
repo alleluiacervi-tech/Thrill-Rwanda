@@ -435,8 +435,8 @@ export async function notifyBookingStatusChanged(
 /* ------------------------------------------------------ account events */
 
 export async function notifyWelcome(userId: string) {
-  const brand = await getSite();
   try {
+    const brand = await getSite();
     const user = await db.user.findUnique({
       where: { id: userId },
       select: { id: true, email: true, fullName: true },

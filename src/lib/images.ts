@@ -39,8 +39,8 @@ export const authImage = photo("photo-1621139261252-27d1a67449f4", 1400);
 export const tourImages: Record<string, string> = {
   "gorilla-trekking-volcanoes-2-day": photo("photo-1589442690840-1c2c880254ac"),
   "akagera-big-five-3-day": photo("photo-1519659528534-7fd733a832a0"),
-  "nyungwe-canopy-chimps-3-day": photo("photo-1621139261252-27d1a67449f4"),
-  "kigali-city-memorial-day": photo("photo-1708772565599-2c4e4b3ed9db"),
+  "nyungwe-canopy-chimps-3-day": "/media/photos/nyungwe-canopy-walk.jpeg",
+  "kigali-city-memorial-day": "/media/photos/kigali-convention-centre-night.jpeg",
   "lake-kivu-congo-nile-3-day": photo("photo-1514548383638-cef9251a73ec"),
   "grand-rwanda-7-day": photo("photo-1564101160531-4838e8a5f4e7"),
 };
@@ -61,14 +61,16 @@ export const vehicleImages: Record<string, string> = {
 
 export const destinationImages: Record<string, string> = {
   "volcanoes-national-park": photo("photo-1589442690840-1c2c880254ac"),
-  "nyungwe-national-park": photo("photo-1621139261252-27d1a67449f4"),
+  "nyungwe-national-park": "/media/photos/nyungwe-canopy-walk-2.jpeg",
   "akagera-national-park": photo("photo-1519659528534-7fd733a832a0"),
   "lake-kivu": photo("photo-1514548383638-cef9251a73ec"),
-  kigali: photo("photo-1708772565599-2c4e4b3ed9db"),
+  kigali: "/media/photos/kigali-convention-centre-night.jpeg",
 };
 
 /** Extra frames for detail-page galleries. */
 export const galleryImages = [
+  "/media/photos/volcanoes-trek.jpeg",
+  "/media/photos/volcanoes-summit-mist.jpeg",
   photo("photo-1554990772-0bea55d510d5"),
   photo("photo-1517846875602-2371528547d4"),
   photo("photo-1518709766631-a6a7f45921c3"),

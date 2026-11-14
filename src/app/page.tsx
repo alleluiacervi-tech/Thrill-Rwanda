@@ -35,6 +35,7 @@ import {
 import { whyUs, type Destination } from "@/lib/content";
 import { platformRating, recentReviews, type PublicReview } from "@/lib/reviews";
 import { heroImage } from "@/lib/images";
+import { InMotion, TrailPhotos } from "@/components/home/media-sections";
 import { getSite } from "@/lib/settings";
 
 // Listings come from the database. Edits refresh this at once; this is only the safety net.
@@ -60,6 +61,8 @@ export default async function HomePage() {
         <Destinations destinations={destinations} />
         <FeaturedTours tours={tours} />
         <StaysAndFleet hotels={hotels} vehicles={vehicles} />
+        <InMotion />
+        <TrailPhotos />
         <Transfers />
         <WhyUs />
         <Testimonials rating={rating} reviews={reviews} />

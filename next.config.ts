@@ -55,6 +55,16 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        // Our own footage and photographs never change under the same name
+        // (add a new file, or rename, to change one), so browsers and CDNs
+        // can keep them for a year and never ask again. Range requests, which
+        // video playback uses, are cached by the browser the same way.
+        source: "/media/:path*",
+        headers: [
+          { key: "Cache-Control", value: "public, max-age=31536000, immutable" },
+        ],
+      },
+      {
         // Dashboards and auth screens must never be cached by a shared proxy
         // — one customer's bookings served to another is the worst possible
         // caching bug.
@@ -94,6 +104,8 @@ const nextConfig: NextConfig = {
         : []),
     ],
     formats: ["image/avif", "image/webp"],
+    // Optimised copies are kept for a year rather than the 60-second default.
+    minimumCacheTTL: 31536000,
   },
 };
 
