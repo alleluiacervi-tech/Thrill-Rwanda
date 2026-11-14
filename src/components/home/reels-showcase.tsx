@@ -4,15 +4,24 @@ import { useEffect, useRef, useState } from "react";
 import { Pause, Play, Volume2, VolumeX } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { Reel } from "@/lib/media";
+import { useMotionAllowed } from "./hero-reel";
 
 /**
- * Vertical reels in a snap-scrolling rail. Nothing downloads beyond its poster image (until the visitor hovers, focuses or taps)
- * until a visitor taps a card; only one plays at a time; playback pauses when
- * a card scrolls out of view. Sound is opt-in per tap.
+ * Vertical reels in a snap-scrolling rail (a grid on desktop).
+ *
+ * Like a social feed, each reel starts on its own, silently, once most of it
+ * is on screen, and pauses when it leaves. On a phone that means the card in
+ * view; on a laptop, every card in the grid. A clip begins buffering just
+ * before it arrives, so it is already moving when it appears.
+ *
+ * Sound is opt-in and belongs to one reel at a time. Tapping a reel pauses or
+ * resumes it, and a reel the visitor paused stays paused until it has left
+ * the screen. With reduced motion or a data saver on, nothing starts by
+ * itself and a tap plays the clip, as before.
  */
 export function ReelsShowcase({ reels }: { reels: Reel[] }) {
-  const [active, setActive] = useState<number | null>(null);
-  const [muted, setMuted] = useState(true);
+  const autoplay = useMotionAllowed("all");
+  const [soundOn, setSoundOn] = useState<number | null>(null);
 
   return (
     <ul className="-mx-5 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-4 sm:-mx-8 sm:px-8 lg:mx-0 lg:grid lg:grid-cols-4 lg:overflow-visible lg:px-0 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
@@ -20,11 +29,10 @@ export function ReelsShowcase({ reels }: { reels: Reel[] }) {
         <ReelCard
           key={reel.src}
           reel={reel}
-          playing={active === i}
-          muted={muted}
-          onPlay={() => setActive(i)}
-          onStop={() => setActive((a) => (a === i ? null : a))}
-          onToggleMute={() => setMuted((m) => !m)}
+          autoplay={autoplay}
+          muted={soundOn !== i}
+          onToggleSound={() => setSoundOn((s) => (s === i ? null : i))}
+          onLeave={() => setSoundOn((s) => (s === i ? null : s))}
         />
       ))}
     </ul>
@@ -33,51 +41,69 @@ export function ReelsShowcase({ reels }: { reels: Reel[] }) {
 
 function ReelCard({
   reel,
-  playing,
+  autoplay,
   muted,
-  onPlay,
-  onStop,
-  onToggleMute,
+  onToggleSound,
+  onLeave,
 }: {
   reel: Reel;
-  playing: boolean;
+  autoplay: boolean;
   muted: boolean;
-  onPlay: () => void;
-  onStop: () => void;
-  onToggleMute: () => void;
+  onToggleSound: () => void;
+  onLeave: () => void;
 }) {
   const ref = useRef<HTMLVideoElement>(null);
-  // Warm the clip when someone shows intent (hover, focus, touch) so a tap
-  // starts at once; nothing downloads before that.
-  const [warm, setWarm] = useState(false);
+  /** Close enough to start buffering. */
+  const [near, setNear] = useState(false);
+  /** Mostly on screen: the moment it may play. */
+  const [inView, setInView] = useState(false);
+  /** The visitor's own choice; null until they tap. */
+  const [wanted, setWanted] = useState<boolean | null>(null);
+  const [playing, setPlaying] = useState(false);
+
+  const onLeaveRef = useRef(onLeave);
+  useEffect(() => {
+    onLeaveRef.current = onLeave;
+  });
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v || typeof IntersectionObserver === "undefined") return;
+    const nearIo = new IntersectionObserver(([e]) => e?.isIntersecting && setNear(true), {
+      rootMargin: "300px",
+    });
+    const viewIo = new IntersectionObserver(
+      ([e]) => {
+        const visible = !!e && e.intersectionRatio >= 0.6;
+        setInView(visible);
+        if (!visible) {
+          // Leaving resets a manual pause and takes the sound with it.
+          setWanted(null);
+          onLeaveRef.current();
+        }
+      },
+      { threshold: [0, 0.6] },
+    );
+    nearIo.observe(v);
+    viewIo.observe(v);
+    return () => {
+      nearIo.disconnect();
+      viewIo.disconnect();
+    };
+  }, []);
+
+  const shouldPlay = wanted ?? (autoplay && inView);
 
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
-    if (playing) v.play().catch(onStop);
+    if (shouldPlay) v.play().catch(() => setWanted(false));
     else v.pause();
-  }, [playing, onStop]);
-
-  // Pause when scrolled mostly out of view.
-  useEffect(() => {
-    const v = ref.current;
-    if (!v || typeof IntersectionObserver === "undefined") return;
-    const io = new IntersectionObserver(
-      ([e]) => {
-        if (!e.isIntersecting) onStop();
-      },
-      { threshold: 0.35 },
-    );
-    io.observe(v);
-    return () => io.disconnect();
-  }, [onStop]);
+  }, [shouldPlay]);
 
   return (
     <li className="w-[15.5rem] shrink-0 snap-center sm:w-[17rem] lg:w-auto">
-      <div
-        onPointerEnter={() => setWarm(true)}
-        onFocusCapture={() => setWarm(true)}
-        className="group relative aspect-[9/16] overflow-hidden rounded-2xl bg-forest-950 ring-1 ring-white/10">
+      <div className="group relative aspect-[9/16] overflow-hidden rounded-2xl bg-forest-950 ring-1 ring-white/10">
         <video
           ref={ref}
           src={reel.src}
@@ -85,8 +111,10 @@ function ReelCard({
           muted={muted}
           loop
           playsInline
-          preload={warm ? "auto" : "none"}
+          preload={near || wanted ? "auto" : "none"}
           aria-label={reel.title}
+          onPlay={() => setPlaying(true)}
+          onPause={() => setPlaying(false)}
           className="absolute inset-0 size-full object-cover"
         />
         <div
@@ -96,14 +124,16 @@ function ReelCard({
 
         <button
           type="button"
-          onClick={() => (playing ? onStop() : onPlay())}
+          onClick={() => setWanted(!playing)}
           aria-label={playing ? `Pause: ${reel.title}` : `Play: ${reel.title}`}
           className="absolute inset-0 flex items-center justify-center focus-visible:outline-2 focus-visible:outline-offset-[-4px] focus-visible:outline-sun-400"
         >
           <span
             className={cn(
               "grid size-14 place-items-center rounded-full bg-white/15 text-white backdrop-blur-md ring-1 ring-white/40 transition duration-300",
-              playing ? "scale-90 opacity-0 group-hover:opacity-100" : "group-hover:scale-110",
+              playing
+                ? "scale-90 opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100"
+                : "group-hover:scale-110",
             )}
           >
             {playing ? <Pause className="size-5" /> : <Play className="size-5 translate-x-0.5" />}
@@ -113,7 +143,7 @@ function ReelCard({
         {playing && (
           <button
             type="button"
-            onClick={onToggleMute}
+            onClick={onToggleSound}
             aria-label={muted ? "Turn sound on" : "Turn sound off"}
             className="absolute right-3 top-3 grid size-9 place-items-center rounded-full bg-black/45 text-white backdrop-blur"
           >

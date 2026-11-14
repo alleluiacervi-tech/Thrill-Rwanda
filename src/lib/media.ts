@@ -36,6 +36,31 @@ export const heroClips = {
   crater: { src: "/media/hero/crater.mp4", poster: "/media/hero/crater.webp", place: "Virunga volcanoes", alt: "A crater lake high in the Virunga volcanoes" },
 } satisfies Record<string, HeroClip>;
 
+/**
+ * The phone hero plays these in order, full-screen, a few seconds of each.
+ * They point at the 720p reels rather than the 600px desktop cuts: a phone
+ * screen is 1000px+ wide in device pixels, and the desktop cuts are cropped
+ * to 5:7, which a tall phone has to zoom ~1.5x to fill.
+ *
+ * `width`/`height` are the clip's real pixel size; the hero uses them to
+ * decide, per screen, whether a clip can fill it without heavy cropping or
+ * should be shown whole over a blurred copy of itself. `start`/`length` (in
+ * seconds) pick the moment shown. Re-cut to short 720x1280 files when the
+ * footage changes, and data use drops further.
+ */
+export type HeroSequenceClip = HeroClip & {
+  width: number;
+  height: number;
+  start: number;
+  length: number;
+};
+
+export const phoneHeroSequence: HeroSequenceClip[] = [
+  { src: "/media/videos/mountain-gorilla.m4v", poster: "/media/posters/mountain-gorilla.webp", place: "Volcanoes National Park", alt: "A mountain gorilla in the bamboo of Volcanoes National Park", width: 720, height: 1280, start: 0, length: 5 },
+  { src: "/media/videos/lake-kivu-aerial.m4v", poster: "/media/posters/lake-kivu-aerial.webp", place: "Lake Kivu", alt: "Lake Kivu's wooded peninsulas seen from the air", width: 720, height: 1280, start: 0, length: 5 },
+  { src: "/media/videos/crater-lake.m4v", poster: "/media/posters/crater-lake.webp", place: "Virunga volcanoes", alt: "A crater lake high in the Virunga volcanoes", width: 720, height: 720, start: 0, length: 5 },
+];
+
 export type TrailPhoto = {
   src: string;
   alt: string;
