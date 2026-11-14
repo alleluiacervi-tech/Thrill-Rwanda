@@ -35,8 +35,13 @@ import {
 } from "@/lib/catalogue";
 import { whyUs, type Destination } from "@/lib/content";
 import { platformRating, recentReviews, type PublicReview } from "@/lib/reviews";
-import { heroClips, type HeroClip } from "@/lib/media";
+import { heroClips, phoneHeroSequence, type HeroClip } from "@/lib/media";
 import { HeroReel } from "@/components/home/hero-reel";
+import {
+  HeroSequence,
+  HeroSequenceBackdrop,
+  HeroSequenceControls,
+} from "@/components/home/hero-sequence";
 import { InMotion, TrailPhotos } from "@/components/home/media-sections";
 import { getSite } from "@/lib/settings";
 import { cn } from "@/lib/utils";
@@ -82,8 +87,8 @@ export default async function HomePage() {
 /**
  * The hero is built from Thrill Rwanda's own footage rather than a stock
  * landscape. Desktop: type on the left, a triptych of silent loops on the
- * right. Phone: the lake reel fills the screen behind the type, because a
- * vertical clip is exactly the shape of a phone. The search panel closes the
+ * right. Phone: the three reels play full-screen in sequence behind the type,
+ * because a vertical clip is exactly the shape of a phone. The search panel closes the
  * section either way and stays on the first screen.
  */
 async function Hero({
@@ -98,73 +103,71 @@ async function Hero({
   const site = await getSite();
   return (
     <section className="on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-950 lg:-mt-24">
-      {/* Phone ground: footage, then a scrim that is heaviest where the type and panel sit. */}
-      <HeroReel
-        {...heroClips.kivu}
-        media="(max-width: 1023px)"
-        sizes="100vw"
-        eager
-        className="absolute inset-0 lg:hidden"
-      />
-      <div
-        aria-hidden
-        className="absolute inset-0 bg-gradient-to-b from-forest-950/75 via-forest-950/45 to-forest-950 lg:hidden"
-      />
+      <HeroSequence clips={phoneHeroSequence}>
+        {/* Phone ground: the three clips in sequence, then a scrim heaviest where the type and panel sit. */}
+        <HeroSequenceBackdrop className="absolute inset-0 lg:hidden" />
+        <div
+          aria-hidden
+          className="absolute inset-0 bg-gradient-to-b from-forest-950/75 via-forest-950/45 to-forest-950 lg:hidden"
+        />
 
-      {/* Desktop ground: the brand green, lit from the upper right, with the contour motif. */}
-      <div
-        aria-hidden
-        className="absolute inset-0 hidden lg:block"
-        style={{
-          background:
-            "radial-gradient(60% 70% at 78% 30%, rgb(47 128 96 / 0.55), transparent 70%), linear-gradient(180deg, var(--color-forest-950), var(--color-forest-900))",
-        }}
-      />
-      <div aria-hidden className="contours-light absolute inset-0 hidden opacity-[0.05] lg:block" />
+        {/* Desktop ground: the brand green, lit from the upper right, with the contour motif. */}
+        <div
+          aria-hidden
+          className="absolute inset-0 hidden lg:block"
+          style={{
+            background:
+              "radial-gradient(60% 70% at 78% 30%, rgb(47 128 96 / 0.55), transparent 70%), linear-gradient(180deg, var(--color-forest-950), var(--color-forest-900))",
+          }}
+        />
+        <div aria-hidden className="contours-light absolute inset-0 hidden opacity-[0.05] lg:block" />
 
-      <Container wide className="relative pb-6 pt-[clamp(7.5rem,15vh,10.5rem)] sm:pb-10 lg:pb-12">
-        <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.98fr)] lg:items-center lg:gap-14">
-          <div className="max-w-2xl">
-            <p className="anim-fade [animation-delay:120ms]">
-              <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-bone-50 ring-1 ring-white/20 backdrop-blur-md">
-                <span aria-hidden className="size-1.5 rounded-full bg-sun-500" />
-                The Land of a Thousand Hills
-              </span>
-            </p>
+        <Container wide className="relative pb-6 pt-[clamp(7.5rem,15vh,10.5rem)] sm:pb-10 lg:pb-12">
+          <div className="lg:grid lg:grid-cols-[minmax(0,1fr)_minmax(0,0.98fr)] lg:items-center lg:gap-14">
+            <div className="max-w-2xl">
+              <p className="anim-fade [animation-delay:120ms]">
+                <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-bone-50 ring-1 ring-white/20 backdrop-blur-md">
+                  <span aria-hidden className="size-1.5 rounded-full bg-sun-500" />
+                  The Land of a Thousand Hills
+                </span>
+              </p>
 
-            <h1 className="on-media mt-5 text-display-lg text-white lg:mt-7 lg:[text-shadow:none]">
-              <span className="reveal-line">
-                <span className="pb-[0.14em] [animation-delay:200ms]">{site.heroTitle}</span>
-              </span>
-              <span className="reveal-line">
-                <em className="pb-[0.1em] text-[0.62em] leading-[1.05] text-sun-400 [animation-delay:320ms]">
-                  {site.heroSubtitle}
-                </em>
-              </span>
-            </h1>
+              <h1 className="on-media mt-5 text-display-lg text-white lg:mt-7 lg:[text-shadow:none]">
+                <span className="reveal-line">
+                  <span className="pb-[0.14em] [animation-delay:200ms]">{site.heroTitle}</span>
+                </span>
+                <span className="reveal-line">
+                  <em className="pb-[0.1em] text-[0.62em] leading-[1.05] text-sun-400 [animation-delay:320ms]">
+                    {site.heroSubtitle}
+                  </em>
+                </span>
+              </h1>
 
-            <p className="on-media anim-rise mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-white/90 [animation-delay:520ms] lg:mt-6 lg:text-lg lg:text-forest-100/90 lg:[text-shadow:none]">
-              {site.heroText}
-            </p>
+              <p className="on-media anim-rise mt-4 max-w-xl text-[1.0625rem] leading-relaxed text-white/90 [animation-delay:520ms] lg:mt-6 lg:text-lg lg:text-forest-100/90 lg:[text-shadow:none]">
+                {site.heroText}
+              </p>
+
+              <HeroSequenceControls className="mt-5 lg:hidden" />
+            </div>
+
+            <HeroTriptych />
           </div>
 
-          <HeroTriptych />
-        </div>
-
-        <div className="anim-rise mt-8 [animation-delay:660ms] lg:mt-12">
-          {/* Each tab suggests its own places: hotel towns for stays, destinations for safaris. */}
-          <SearchPanel
-            hotelPlaces={[...new Set([...hotels.map((h) => h.location), ...hotels.map((h) => h.name)])]}
-            safariPlaces={[...new Set([...tours.map((t) => t.destination), ...tours.map((t) => t.name)])]}
-            transferZones={[]}
-            cars={vehicles.map((v) => ({
-              slug: v.slug,
-              name: `${v.make} ${v.model}`,
-              category: v.category,
-            }))}
-          />
-        </div>
-      </Container>
+          <div className="anim-rise mt-8 [animation-delay:660ms] lg:mt-12">
+            {/* Each tab suggests its own places: hotel towns for stays, destinations for safaris. */}
+            <SearchPanel
+              hotelPlaces={[...new Set([...hotels.map((h) => h.location), ...hotels.map((h) => h.name)])]}
+              safariPlaces={[...new Set([...tours.map((t) => t.destination), ...tours.map((t) => t.name)])]}
+              transferZones={[]}
+              cars={vehicles.map((v) => ({
+                slug: v.slug,
+                name: `${v.make} ${v.model}`,
+                category: v.category,
+              }))}
+            />
+          </div>
+        </Container>
+      </HeroSequence>
     </section>
   );
 }

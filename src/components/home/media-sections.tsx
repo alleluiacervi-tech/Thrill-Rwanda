@@ -15,7 +15,7 @@ export function InMotion() {
         <SectionHead
           eyebrow="Rwanda in motion"
           title="See the Land of a Thousand Hills before you go"
-          lede="Real footage from our own trips: gorilla families, crater lakes and the shores of Lake Kivu. Tap a clip to watch."
+          lede="Real footage from our own trips: gorilla families, crater lakes and the shores of Lake Kivu. Clips play as you scroll; tap the speaker for sound."
           action={
             <Button
               href="https://www.instagram.com/thrillrwanda"

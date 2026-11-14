@@ -21,7 +21,7 @@ function subscribeTo(query: string) {
   };
 }
 
-function useMotionAllowed(media: string) {
+export function useMotionAllowed(media: string) {
   const query = `${media} and (prefers-reduced-motion: no-preference)`;
   const subscribe = React.useMemo(() => subscribeTo(query), [query]);
   return React.useSyncExternalStore(
