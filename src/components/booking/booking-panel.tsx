@@ -229,7 +229,7 @@ export function BookingPanel({
             <select
               value={roomId}
               onChange={(e) => chooseRoom(e.target.value)}
-              className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-ember-500"
+              className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-lake-600"
             >
               {rooms.map((r) => (
                 <option key={r.id} value={r.id}>
@@ -251,7 +251,7 @@ export function BookingPanel({
               value={start}
               min={todayLocal()}
               onChange={(e) => setStart(e.target.value)}
-              className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-ember-500"
+              className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-lake-600"
             />
           </label>
           <label className="flex flex-col gap-1.5">
@@ -264,7 +264,7 @@ export function BookingPanel({
               value={end}
               min={start}
               onChange={(e) => setEnd(e.target.value)}
-              className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-ember-500"
+              className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-lake-600"
             />
           </label>
         </div>
@@ -449,7 +449,7 @@ export function BookingPanel({
                 name="leadTraveller"
                 maxLength={120}
                 placeholder="Full name"
-                className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm outline-none focus-visible:border-ember-500"
+                className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm outline-none focus-visible:border-lake-600"
               />
             </label>
             <label className="flex flex-col gap-1 text-2xs text-[var(--ink-muted)]">
@@ -458,7 +458,7 @@ export function BookingPanel({
                 name="leadPhone"
                 maxLength={40}
                 placeholder="+250…"
-                className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm outline-none focus-visible:border-ember-500"
+                className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm outline-none focus-visible:border-lake-600"
               />
             </label>
             <label className="flex flex-col gap-1 text-2xs text-[var(--ink-muted)]">
@@ -468,7 +468,7 @@ export function BookingPanel({
                 rows={3}
                 maxLength={2000}
                 placeholder="Dietary needs, accessibility, a second pickup…"
-                className="w-full resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm leading-relaxed outline-none focus-visible:border-ember-500"
+                className="w-full resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm leading-relaxed outline-none focus-visible:border-lake-600"
               />
             </label>
           </div>

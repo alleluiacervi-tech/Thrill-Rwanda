@@ -52,7 +52,7 @@ function BarField({
   return (
     <label
       className={cn(
-        "flex min-w-0 flex-col justify-center gap-1 rounded-[var(--radius-inset)] bg-[var(--paper-raised)] px-4 py-3 transition-colors focus-within:ring-2 focus-within:ring-ember-500",
+        "flex min-w-0 flex-col justify-center gap-1 rounded-[var(--radius-inset)] bg-[var(--paper-raised)] px-4 py-3 transition-colors focus-within:ring-2 focus-within:ring-sun-500",
         className,
       )}
     >
@@ -249,7 +249,7 @@ export function TransferForm({
             onClick={() => pickRegion(r)}
             className={cn(
               "rounded-t-xl px-5 py-2.5 text-sm font-medium transition-colors",
-              region === r ? "bg-ember-500 text-[#2a1605]" : "bg-forest-900/80 text-bone-100/80 hover:text-bone-50",
+              region === r ? "bg-sun-500 text-forest-950" : "bg-forest-900/80 text-bone-100/80 hover:text-bone-50",
             )}
           >
             {REGION_LABEL[r]}
@@ -257,7 +257,7 @@ export function TransferForm({
         ))}
       </div>
 
-      <div className="grid gap-1 rounded-b-2xl rounded-tr-2xl bg-ember-500 p-1 shadow-[var(--shadow-float)] lg:grid-cols-[1.5fr_auto_1.5fr_1fr_0.75fr_0.75fr_auto]">
+      <div className="grid gap-1 rounded-b-2xl rounded-tr-2xl bg-sun-500 p-1 shadow-[var(--shadow-float)] lg:grid-cols-[1.5fr_auto_1.5fr_1fr_0.75fr_0.75fr_auto]">
         <BarField label="Pick-up" icon={MapPin}>
           {pickupCell}
         </BarField>
@@ -395,7 +395,7 @@ export function TransferForm({
                       <input
                         name="flight"
                         placeholder="KQ101"
-                        className="rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm normal-case tracking-normal text-[var(--ink)] outline-none focus-visible:border-ember-500"
+                        className="rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm normal-case tracking-normal text-[var(--ink)] outline-none focus-visible:border-lake-600"
                       />
                     </label>
                     <label className="flex flex-col gap-1.5 text-2xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">
@@ -404,7 +404,7 @@ export function TransferForm({
                         name="notes"
                         rows={2}
                         placeholder="Child seat, a second stop…"
-                        className="resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm normal-case tracking-normal text-[var(--ink)] outline-none focus-visible:border-ember-500"
+                        className="resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm normal-case tracking-normal text-[var(--ink)] outline-none focus-visible:border-lake-600"
                       />
                     </label>
                   </div>

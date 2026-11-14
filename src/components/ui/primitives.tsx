@@ -22,7 +22,11 @@ export function Container({
 
 /* ------------------------------------------------------------------ Eyebrow */
 
-/** Small tracked label with a lead rule. Used above every section heading. */
+/**
+ * Section label: a short gold rule and tracked capitals, the same device as
+ * the "— RWANDA —" line under the logo's wordmark. Blue on light grounds,
+ * gold on dark (via --label).
+ */
 export function Eyebrow({
   children,
   className,
@@ -31,8 +35,13 @@ export function Eyebrow({
   className?: string;
 }) {
   return (
-    // A plain label, not rule + spaced capitals: that pairing above every heading is the template tell.
-    <span className={cn("inline-flex items-center text-sm font-semibold tracking-[-0.005em] text-[var(--label)]", className)}>
+    <span
+      className={cn(
+        "inline-flex items-center gap-3 text-2xs font-bold uppercase tracking-[0.2em] text-[var(--label)] sm:text-xs",
+        className,
+      )}
+    >
+      <span aria-hidden className="h-0.5 w-6 shrink-0 rounded-full bg-sun-500" />
       {children}
     </span>
   );
@@ -83,7 +92,7 @@ const badgeTones = {
   neutral:
     "bg-[color-mix(in_oklab,var(--ink)_7%,transparent)] text-[var(--ink-muted)]",
   forest: "bg-forest-800 text-forest-100",
-  ember: "bg-ember-500 text-[#2a1605]",
+  sun: "bg-sun-500 text-forest-950",
   clay: "bg-clay-100 text-clay-800",
   outline: "border border-[var(--line-strong)] text-[var(--ink-muted)]",
 } as const;
@@ -143,7 +152,7 @@ export function Rating({
       <svg
         viewBox="0 0 20 20"
         aria-hidden
-        className="size-4 fill-ember-500"
+        className="size-4 fill-sun-500"
       >
         <path d="M10 1.6l2.6 5.3 5.8.8-4.2 4.1 1 5.8L10 14.9 4.8 17.6l1-5.8L1.6 7.7l5.8-.8z" />
       </svg>

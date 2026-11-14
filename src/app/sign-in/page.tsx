@@ -21,7 +21,7 @@ export default async function SignInPage() {
       footer={
         <>
           New here?{" "}
-          <Link href="/sign-up" className="link-draw font-medium text-clay-700">
+          <Link href="/sign-up" className="link-draw font-medium text-lake-700">
             Create an account
           </Link>
         </>

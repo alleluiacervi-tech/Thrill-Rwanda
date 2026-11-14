@@ -13,7 +13,7 @@ export async function AnnouncementBar() {
   const { announcement } = await getSite();
   if (!announcement) return null;
   return (
-    <div role="status" className="relative z-50 bg-ember-500 px-4 py-2 text-center text-2xs font-semibold text-[#2a1605] sm:text-sm">
+    <div role="status" className="relative z-50 bg-sun-500 px-4 py-2 text-center text-2xs font-semibold text-forest-950 sm:text-sm">
       {announcement}
     </div>
   );
@@ -143,7 +143,7 @@ export function PageHero({
         {crumbs ? (
           <Breadcrumbs items={crumbs} className="on-media mb-8 text-white/90" />
         ) : null}
-        {eyebrow ? <Eyebrow className="on-media text-ember-300">{eyebrow}</Eyebrow> : null}
+        {eyebrow ? <Eyebrow className="on-media text-sun-300">{eyebrow}</Eyebrow> : null}
         {/* Not cn(): tailwind-merge reads text-display-sm and text-bone-50 as two colours and drops the size. */}
         <h1 className={`on-media max-w-4xl text-display text-white ${eyebrow ? "mt-3" : ""}`}>{title}</h1>
         {lede ? (

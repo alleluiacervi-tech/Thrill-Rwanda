@@ -111,7 +111,7 @@ export function SidebarLayout({
                         <Glyph
                           className={cn(
                             "size-4 shrink-0",
-                            active ? "text-ember-500" : "text-bone-50/40",
+                            active ? "text-sun-500" : "text-bone-50/40",
                           )}
                         />
                       ) : (
@@ -119,7 +119,7 @@ export function SidebarLayout({
                       )}
                       <span className="flex-1 truncate">{item.label}</span>
                       {item.badge ? (
-                        <span className="tnum rounded-full bg-ember-500 px-2 py-0.5 text-[0.625rem] font-semibold text-[#2a1605]">
+                        <span className="tnum rounded-full bg-sun-500 px-2 py-0.5 text-[0.625rem] font-semibold text-forest-950">
                           {item.badge > 9 ? "9+" : item.badge}
                         </span>
                       ) : null}
@@ -148,7 +148,7 @@ export function SidebarLayout({
           />
           <div className="absolute inset-y-0 left-0 flex w-72 max-w-[85vw] flex-col bg-forest-950">
             <div className="flex items-center justify-between border-b border-bone-50/10 px-4 py-3">
-              <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-ember-500">
+              <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-sun-500">
                 Admin
               </span>
               <button
@@ -175,7 +175,7 @@ export function SidebarLayout({
             <span className="block truncate font-display text-[0.9375rem] leading-tight text-bone-50">
               {site.name}
             </span>
-            <span className="block text-2xs uppercase tracking-[0.18em] text-ember-500">
+            <span className="block text-2xs uppercase tracking-[0.18em] text-sun-500">
               Admin
             </span>
           </span>
@@ -195,7 +195,7 @@ export function SidebarLayout({
           >
             <Menu className="size-5" />
           </button>
-          <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-ember-600 lg:hidden">
+          <span className="text-2xs font-semibold uppercase tracking-[0.18em] text-lake-700 lg:hidden">
             Admin
           </span>
 

@@ -132,9 +132,9 @@ export default async function TourDetailPage({
               className="mb-6 text-bone-100/75"
             />
             <div className="flex flex-wrap items-center gap-3">
-              {tour.badge ? <Badge tone="ember">{tour.badge}</Badge> : null}
+              {tour.badge ? <Badge tone="sun">{tour.badge}</Badge> : null}
               <span className="inline-flex items-center gap-1.5 text-sm text-bone-100">
-                <MapPin className="size-4 text-ember-400" />
+                <MapPin className="size-4 text-sun-400" />
                 {tour.destination}
               </span>
             </div>
@@ -144,12 +144,12 @@ export default async function TourDetailPage({
             <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-2 text-sm text-bone-100/80">
               {tour.rating !== null ? <Rating value={tour.rating} count={tour.reviews} /> : null}
               <span className="inline-flex items-center gap-1.5">
-                <Clock3 className="size-4 text-ember-400" />
+                <Clock3 className="size-4 text-sun-400" />
                 {tour.durationDays} days
                 {tour.nights > 0 ? ` / ${tour.nights} nights` : ""}
               </span>
               <span className="inline-flex items-center gap-1.5">
-                <Users className="size-4 text-ember-400" />
+                <Users className="size-4 text-sun-400" />
                 Max {tour.maxParticipants}
               </span>
             </div>

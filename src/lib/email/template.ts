@@ -6,7 +6,7 @@ import { buildSite, type SiteInfo } from "@/lib/site-config";
 const C = {
   forest: "#1c5c45",
   forestDark: "#154a38",
-  ember: "#e88b2a",
+  sun: "#f8c300",
   clay: "#8b4513",
   page: "#f7f3ec",
   card: "#ffffff",
@@ -58,7 +58,7 @@ export function renderEmail(c: EmailContent, brand: SiteInfo = buildSite(null)):
   const heading = c.heading ?? c.subject;
   const greeting = c.name !== undefined ? `Hi ${firstName(c.name)},` : null;
   const ctaUrl = c.cta ? absolute(c.cta.href) : null;
-  const accent = c.tone === "warning" ? C.danger : C.ember;
+  const accent = c.tone === "warning" ? C.danger : C.sun;
 
   const paragraphs = c.paragraphs
     .filter(Boolean)

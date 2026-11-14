@@ -111,7 +111,7 @@ export function ImageUploader({
         className={cn(
           "rounded-[var(--radius-inset)] border border-dashed p-6 text-center transition-colors",
           dragging
-            ? "border-ember-500 bg-ember-100"
+            ? "border-sun-500 bg-sun-100"
             : "border-[var(--line-strong)] bg-[var(--paper-sunken)]",
         )}
       >
@@ -244,7 +244,7 @@ function UrlAdder({
           if (onAdd(value)) setValue("");
         }}
         placeholder="…or paste an image link (https://…)"
-        className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-2.5 text-sm outline-none transition-colors focus-visible:border-ember-500 disabled:opacity-50"
+        className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-2.5 text-sm outline-none transition-colors focus-visible:border-lake-600 disabled:opacity-50"
       />
       <button
         type="button"

@@ -131,7 +131,7 @@ export default async function AdminUsersPage({
                     </span>
                   </Td>
                   <Td>
-                    <Badge tone={u.role === "ADMIN" ? "ember" : u.role === "PROVIDER" ? "forest" : "neutral"}>
+                    <Badge tone={u.role === "ADMIN" ? "sun" : u.role === "PROVIDER" ? "forest" : "neutral"}>
                       {u.role}
                     </Badge>
                   </Td>

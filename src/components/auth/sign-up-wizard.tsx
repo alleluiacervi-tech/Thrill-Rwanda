@@ -306,11 +306,11 @@ export function SignUpWizard() {
             />
             <span>
               I agree to the{" "}
-              <Link href="/legal/terms" className="link-draw text-clay-700">
+              <Link href="/legal/terms" className="link-draw text-lake-700">
                 Terms of Service
               </Link>{" "}
               and{" "}
-              <Link href="/legal/privacy" className="link-draw text-clay-700">
+              <Link href="/legal/privacy" className="link-draw text-lake-700">
                 Privacy Policy
               </Link>
               .
@@ -365,7 +365,7 @@ export function SignUpWizard() {
                 ? "How many vehicles, what types, where you operate."
                 : "Where you are, how many rooms, what makes it worth booking."
             }
-            className="w-full resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm font-normal normal-case leading-relaxed tracking-normal text-[var(--ink)] outline-none transition-colors focus-visible:border-ember-500"
+            className="w-full resize-y rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm font-normal normal-case leading-relaxed tracking-normal text-[var(--ink)] outline-none transition-colors focus-visible:border-lake-600"
           />
         </label>
       </fieldset>
@@ -411,7 +411,7 @@ export function SignUpWizard() {
 
       <p className="text-center text-sm text-[var(--ink-muted)]">
         Already have an account?{" "}
-        <Link href="/sign-in" className="link-draw font-medium text-clay-700">
+        <Link href="/sign-in" className="link-draw font-medium text-lake-700">
           Sign in
         </Link>
       </p>
@@ -437,7 +437,7 @@ function Stepper({ current, total }: { current: number; total: number }) {
               className={cn(
                 "tnum grid size-8 shrink-0 place-items-center rounded-full text-sm font-semibold transition-colors duration-300",
                 done && "bg-forest-800 text-bone-50",
-                active && "bg-ember-500 text-[#2a1605]",
+                active && "bg-sun-500 text-forest-950",
                 !done && !active && "bg-[var(--paper-sunken)] text-[var(--ink-faint)]",
               )}
             >

@@ -13,7 +13,7 @@ import { cn, formatMoney } from "@/lib/utils";
 const initial: EnquiryState = { status: "idle" };
 
 const field =
-  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm outline-none transition-colors focus-visible:border-ember-500";
+  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm outline-none transition-colors focus-visible:border-lake-600";
 
 const labelCls =
   "flex flex-col gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]";

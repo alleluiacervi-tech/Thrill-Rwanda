@@ -1,15 +1,14 @@
 import type { Metadata, Viewport } from "next";
-import { Fraunces, Instrument_Sans } from "next/font/google";
+import { Fraunces, Karla } from "next/font/google";
 import { SiteProvider } from "@/components/layout/site-context";
 import { site } from "@/lib/site";
 import { getSite } from "@/lib/settings";
 import "./globals.css";
 
 /**
- * Fraunces carries the brand voice. Its optical-size axis is what makes the
- * big headlines look cut for their size; SOFT and WONK are saved for italics.
- * Instrument Sans is the working face: narrow, even and clear at 12px, where
- * most of a booking flow lives.
+ * Fraunces carries the brand voice: a soft, warm old-style serif, with the
+ * wonky italic kept for accent lines. Karla is the working face — a
+ * grotesque with humanist warmth that pairs with Fraunces without fighting it.
  */
 const fraunces = Fraunces({
   subsets: ["latin"],
@@ -18,7 +17,7 @@ const fraunces = Fraunces({
   axes: ["SOFT", "WONK", "opsz"],
 });
 
-const body = Instrument_Sans({
+const body = Karla({
   subsets: ["latin"],
   variable: "--font-body",
   display: "swap",

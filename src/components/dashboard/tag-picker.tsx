@@ -76,7 +76,7 @@ export function TagPicker({
             if (add(draft)) setDraft("");
           }}
           placeholder="Add a feature"
-          className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-2.5 text-sm outline-none transition-colors focus-visible:border-ember-500"
+          className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-2.5 text-sm outline-none transition-colors focus-visible:border-lake-600"
         />
         <button
           type="button"

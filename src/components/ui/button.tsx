@@ -6,7 +6,7 @@ import { cn } from "@/lib/utils";
 const button = cva(
   [
     "relative inline-flex items-center justify-center gap-2 whitespace-nowrap",
-    "font-medium tracking-tight transition-all duration-300",
+    "font-medium transition-all duration-300",
     "[transition-timing-function:var(--ease-out-expo)]",
     "disabled:pointer-events-none disabled:opacity-45",
     "active:translate-y-px",
@@ -17,9 +17,9 @@ const button = cva(
         /** Primary action. Forest ground, warm lift on hover. */
         primary:
           "bg-forest-800 text-bone-50 shadow-[0_1px_2px_rgb(7_28_21/0.2)] hover:bg-forest-700 hover:shadow-[0_10px_28px_-12px_rgb(15_61_46/0.55)]",
-        /** The scalpel. Use once per view, on the money action. */
+        /** Sun gold, from the logo. Use once per view, on the money action. */
         accent:
-          "bg-ember-500 text-[#2a1605] shadow-[0_1px_2px_rgb(185_102_18/0.25)] hover:bg-ember-400 hover:shadow-[0_12px_30px_-12px_rgb(232_139_42/0.7)]",
+          "bg-sun-500 font-semibold text-forest-950 shadow-[0_1px_2px_rgb(92_67_10/0.25)] hover:bg-sun-300 hover:shadow-[0_12px_30px_-12px_rgb(217_163_0/0.75)]",
         outline:
           "border border-[var(--line-strong)] bg-transparent text-[var(--ink)] hover:border-forest-800 hover:bg-forest-800 hover:text-bone-50",
         ghost:

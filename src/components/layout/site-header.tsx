@@ -55,13 +55,13 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
             {site.contact.phone && site.contact.phoneHref ? (
               <a
                 href={site.contact.phoneHref}
-                className="link-draw inline-flex items-center gap-1.5 hover:text-ember-400"
+                className="link-draw inline-flex items-center gap-1.5 hover:text-sun-400"
               >
                 <Phone className="size-3" />
                 {site.contact.phone}
               </a>
             ) : null}
-            <Link href="/partner" className="link-draw hover:text-ember-400">
+            <Link href="/partner" className="link-draw hover:text-sun-400">
               List your property or fleet
             </Link>
           </div>
@@ -116,7 +116,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   >
                     {item.label}
                     {active && (
-                      <span aria-hidden className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-ember-500" />
+                      <span aria-hidden className="absolute bottom-1 left-1/2 size-1 -translate-x-1/2 rounded-full bg-sun-500" />
                     )}
                   </Link>
                 );

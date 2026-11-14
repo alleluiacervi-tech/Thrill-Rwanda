@@ -19,7 +19,7 @@ const TONE = {
   PENDING: "clay",
   VERIFIED: "forest",
   REJECTED: "outline",
-  SUSPENDED: "ember",
+  SUSPENDED: "sun",
 } as const;
 
 const STATUSES = new Set(["PENDING", "VERIFIED", "REJECTED", "SUSPENDED"]);

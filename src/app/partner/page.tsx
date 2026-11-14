@@ -122,7 +122,7 @@ export default async function PartnerPage() {
         <div aria-hidden className="contours absolute inset-0 opacity-[0.08]" />
         <div
           aria-hidden
-          className="pointer-events-none absolute left-1/2 top-1/2 size-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-ember-500/12 blur-[120px]"
+          className="pointer-events-none absolute left-1/2 top-1/2 size-[36rem] -translate-x-1/2 -translate-y-1/2 rounded-full bg-sun-500/12 blur-[120px]"
         />
         <Container className="relative text-center">
           <h2 className="mx-auto max-w-2xl text-display-sm text-bone-50">

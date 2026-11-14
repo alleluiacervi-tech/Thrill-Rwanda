@@ -14,7 +14,7 @@ export async function SiteFooter() {
       {/* warm horizon glow */}
       <div
         aria-hidden
-        className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[60rem] -translate-x-1/2 rounded-full bg-ember-500/10 blur-[100px]"
+        className="pointer-events-none absolute -top-40 left-1/2 h-80 w-[60rem] -translate-x-1/2 rounded-full bg-sun-500/10 blur-[100px]"
       />
 
       <Container wide className="relative">
@@ -30,9 +30,9 @@ export async function SiteFooter() {
                 {site.contact.phone && site.contact.phoneHref ? (
                   <a
                     href={site.contact.phoneHref}
-                    className="link-draw inline-flex items-center gap-3 text-forest-100 hover:text-ember-400"
+                    className="link-draw inline-flex items-center gap-3 text-forest-100 hover:text-sun-400"
                   >
-                    <Phone className="size-4 shrink-0 text-ember-500" />
+                    <Phone className="size-4 shrink-0 text-sun-500" />
                     {site.contact.phone}
                   </a>
                 ) : null}
@@ -42,9 +42,9 @@ export async function SiteFooter() {
                 <li>
                   <a
                     href={site.contact.phoneAltHref}
-                    className="link-draw inline-flex items-center gap-3 text-forest-100 hover:text-ember-400"
+                    className="link-draw inline-flex items-center gap-3 text-forest-100 hover:text-sun-400"
                   >
-                    <Phone className="size-4 shrink-0 text-ember-500" />
+                    <Phone className="size-4 shrink-0 text-sun-500" />
                     {site.contact.phoneAlt}
                   </a>
                 </li>
@@ -53,22 +53,22 @@ export async function SiteFooter() {
                 <li>
                   <a
                     href={`mailto:${site.contact.email}`}
-                    className="link-draw inline-flex items-center gap-3 text-forest-100 hover:text-ember-400"
+                    className="link-draw inline-flex items-center gap-3 text-forest-100 hover:text-sun-400"
                   >
-                    <Mail className="size-4 shrink-0 text-ember-500" />
+                    <Mail className="size-4 shrink-0 text-sun-500" />
                     {site.contact.email}
                   </a>
                 </li>
               ) : null}
               {site.contact.address ? (
                 <li className="inline-flex items-start gap-3 text-forest-200">
-                  <MapPin className="mt-0.5 size-4 shrink-0 text-ember-500" />
+                  <MapPin className="mt-0.5 size-4 shrink-0 text-sun-500" />
                   {site.contact.address}
                 </li>
               ) : null}
               {site.contact.hours ? (
                 <li className="inline-flex items-start gap-3 text-forest-200">
-                  <Clock3 className="mt-0.5 size-4 shrink-0 text-ember-500" />
+                  <Clock3 className="mt-0.5 size-4 shrink-0 text-sun-500" />
                   {site.contact.hours}
                 </li>
               ) : null}
@@ -83,7 +83,7 @@ export async function SiteFooter() {
                       href={link.url}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="inline-flex h-9 items-center rounded-full border border-forest-400/30 px-4 text-2xs font-semibold text-forest-100 transition-colors hover:border-ember-400 hover:text-ember-400"
+                      className="inline-flex h-9 items-center rounded-full border border-forest-400/30 px-4 text-2xs font-semibold text-forest-100 transition-colors hover:border-sun-400 hover:text-sun-400"
                     >
                       {link.label}
                     </a>

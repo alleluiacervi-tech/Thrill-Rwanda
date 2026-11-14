@@ -2,9 +2,11 @@
 
 /* ============================================================
    THRILL RWANDA — DESIGN SYSTEM
-   Direction: "Editorial Safari"
-   Deep forest ground, warm bone paper, orange as a scalpel.
-   Topographic contour motif as the connective visual tissue.
+   Direction: "Land of a Thousand Hills"
+   The palette is the logo's, which is the flag's: forest green for
+   ground, Imigongo sun gold for the one action that matters, Virunga
+   sky blue for labels and wayfinding, warm bone paper underneath.
+   Topographic contours are the connective texture.
    ============================================================ */
 
 @theme {
@@ -31,13 +33,31 @@
   --color-clay-200: #efdac4;
   --color-clay-100: #f7ece0;
 
-  --color-ember-700: #b96612;
-  --color-ember-600: #d4771c;
-  --color-ember-500: #e88b2a; /* BRAND Orange */
-  --color-ember-400: #f0a75a;
-  --color-ember-300: #f6c68f;
-  --color-ember-200: #fbe0c2;
-  --color-ember-100: #fdf2e4;
+  /* Sun gold — the logo's path and the flag's sun (#F8C300). Fills and
+     marks only: as text on white it fails contrast below 800. */
+  --color-sun-900: #5c430a;
+  --color-sun-800: #7d5b05;
+  --color-sun-700: #a87b00;
+  --color-sun-600: #d9a300;
+  --color-sun-500: #f8c300; /* BRAND Gold */
+  --color-sun-400: #fccb1a;
+  --color-sun-300: #ffd84d;
+  --color-sun-200: #ffe58a;
+  --color-sun-100: #fff3c4;
+  --color-sun-50: #fffbea;
+
+  /* Virunga sky — the logo's mountains and arc (#086DBB). Labels, links,
+     focus rings. 600 and up pass 4.5:1 on white. */
+  --color-lake-900: #0d3d66;
+  --color-lake-800: #0a4a7d;
+  --color-lake-700: #07599a;
+  --color-lake-600: #086dbb; /* BRAND Blue */
+  --color-lake-500: #1680d1;
+  --color-lake-400: #3f9ae3;
+  --color-lake-300: #7cbbe8;
+  --color-lake-200: #b3d6f1;
+  --color-lake-100: #d9ebf8;
+  --color-lake-50: #eef6fc;
 
   /* ---- Paper / neutrals (warm, never cold grey) ---- */
   --color-bone-50: #fdfbf7;
@@ -58,16 +78,17 @@
   /* Editorial type scale — generous top end for display moments */
   --text-2xs: 0.6875rem;
   --text-2xs--line-height: 1.4;
-  --text-display-sm: clamp(2.125rem, 1.35rem + 2.9vw, 3.5rem);
-  --text-display-sm--line-height: 1.04;
+  --text-display-sm: clamp(2.125rem, 1.45rem + 2.5vw, 3.25rem);
+  --text-display-sm--line-height: 1.06;
   --text-display-sm--letter-spacing: -0.02em;
-  --text-display: clamp(2.75rem, 1.5rem + 5vw, 5.5rem);
-  --text-display--line-height: 0.98;
-  --text-display--letter-spacing: -0.024em;
+  --text-display: clamp(2.75rem, 1.6rem + 4.4vw, 5.25rem);
+  --text-display--line-height: 1;
+  --text-display--letter-spacing: -0.02em;
 
-  --text-display-lg: clamp(3.25rem, min(6.4vw, 11.5vh), 6.5rem);
-  --text-display-lg--line-height: 0.94;
-  --text-display-lg--letter-spacing: -0.028em;
+  /* Sized to the hero's text column (it shares the row with the film panels), so "Discover Rwanda" holds one line. */
+  --text-display-lg: clamp(3.25rem, min(5.3vw, 11vh), 6rem);
+  --text-display-lg--line-height: 0.95;
+  --text-display-lg--letter-spacing: -0.02em;
 
   /* ---- Motion ---- */
   --ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
@@ -94,10 +115,11 @@
   --ink-faint: #7a6c57;
   --line: var(--color-bone-300);
   --line-strong: var(--color-bone-400);
-  --accent: var(--color-ember-500);
-  /* Section labels: clay on light ground, lifted to orange on dark sections so they stay legible. */
-  --label: var(--color-clay-700);
-  --accent-ink: #2a1605;
+  --accent: var(--color-sun-500);
+  /* Section labels: sky blue on light ground, sun gold on dark sections. */
+  --label: var(--color-lake-700);
+  --focus: var(--color-lake-600);
+  --accent-ink: var(--color-forest-950);
   --brand: var(--color-forest-800);
   --brand-ink: var(--color-forest-100);
 
@@ -129,7 +151,8 @@
   --ink-faint: color-mix(in oklab, var(--color-forest-300) 55%, transparent);
   --line: color-mix(in oklab, var(--color-forest-400) 26%, transparent);
   --line-strong: color-mix(in oklab, var(--color-forest-400) 45%, transparent);
-  --label: var(--color-ember-400);
+  --label: var(--color-sun-300);
+  --focus: var(--color-sun-400);
   color: var(--ink);
 }
 
@@ -199,22 +222,23 @@
     text-rendering: optimizeLegibility;
   }
 
-  /* Fraunces, set straight: no wonk in the roman, and the optical-size axis
-     left on auto so a 100px headline gets the fine, high-contrast display
-     cut while a 20px card title keeps the sturdier text cut. The italic is
-     where the character lives — it is reserved for accent lines. */
+  /* Fraunces with its corners softened and the optical size held at 60:
+     sturdy, warm strokes that stay readable over photographs, instead of
+     the hairline 144 cut that turns brittle at 100px. The roman stays
+     straight; the italic gets the wonky alternates and carries the voice. */
   h1,
   h2,
   h3,
   h4,
   .font-display {
     font-family: var(--font-display);
-    font-optical-sizing: auto;
+    font-optical-sizing: none;
     font-variation-settings:
-      "SOFT" 0,
-      "WONK" 0;
+      "SOFT" 30,
+      "WONK" 0,
+      "opsz" 60;
     font-weight: 400;
-    letter-spacing: -0.022em;
+    letter-spacing: -0.02em;
     text-wrap: balance;
   }
 
@@ -224,9 +248,10 @@
   .display-italic {
     font-style: italic;
     font-variation-settings:
-      "SOFT" 60,
-      "WONK" 1;
-    letter-spacing: -0.02em;
+      "SOFT" 100,
+      "WONK" 1,
+      "opsz" 60;
+    letter-spacing: -0.015em;
   }
 
   p {
@@ -234,12 +259,13 @@
   }
 
   ::selection {
-    background-color: var(--color-ember-500);
-    color: var(--accent-ink);
+    background-color: var(--color-sun-300);
+    color: var(--color-forest-950);
   }
 
+  /* Blue on light, gold on dark: either way at least 3:1 against the ground. */
   :focus-visible {
-    outline: 2px solid var(--color-ember-500);
+    outline: 2px solid var(--focus);
     outline-offset: 3px;
     border-radius: 2px;
   }
@@ -399,7 +425,7 @@
     border-radius: 99px;
   }
   ::-webkit-scrollbar-thumb:hover {
-    background: var(--color-clay-500);
+    background: var(--color-forest-500);
   }
 }
 

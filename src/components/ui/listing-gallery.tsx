@@ -276,7 +276,7 @@ function Lightbox({
               aria-current={n === i}
               className={cn(
                 "relative h-14 w-20 shrink-0 overflow-hidden rounded-[var(--radius-inset)] ring-2 transition-opacity",
-                n === i ? "ring-ember-500" : "opacity-60 ring-transparent hover:opacity-100",
+                n === i ? "ring-sun-500" : "opacity-60 ring-transparent hover:opacity-100",
               )}
             >
               <Image src={src} alt="" fill sizes="80px" className="object-cover" />

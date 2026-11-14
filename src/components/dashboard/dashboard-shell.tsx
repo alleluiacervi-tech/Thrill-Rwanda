@@ -39,7 +39,7 @@ function TopBar({
         <div className="flex items-center gap-3">
           {workspaces ? <WorkspaceSwitch workspaces={workspaces} className="hidden sm:flex" /> : null}
           {notifications ? <NotificationBell href={notifications.href} unread={notifications.unread} /> : null}
-          <Badge tone={role === "ADMIN" ? "ember" : "forest"}>{roleLabel}</Badge>
+          <Badge tone={role === "ADMIN" ? "sun" : "forest"}>{roleLabel}</Badge>
           <span className="hidden text-sm text-[var(--ink-muted)] sm:block">
             {userName}
           </span>

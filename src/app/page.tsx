@@ -129,7 +129,7 @@ async function Hero({
           <div className="max-w-2xl">
             <p className="anim-fade [animation-delay:120ms]">
               <span className="inline-flex items-center gap-2 rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-semibold text-bone-50 ring-1 ring-white/20 backdrop-blur-md">
-                <span aria-hidden className="size-1.5 rounded-full bg-ember-500" />
+                <span aria-hidden className="size-1.5 rounded-full bg-sun-500" />
                 The Land of a Thousand Hills
               </span>
             </p>
@@ -139,7 +139,7 @@ async function Hero({
                 <span className="pb-[0.14em] [animation-delay:200ms]">{site.heroTitle}</span>
               </span>
               <span className="reveal-line">
-                <em className="pb-[0.1em] text-[0.62em] leading-[1.05] text-ember-400 [animation-delay:320ms]">
+                <em className="pb-[0.1em] text-[0.62em] leading-[1.05] text-sun-400 [animation-delay:320ms]">
                   {site.heroSubtitle}
                 </em>
               </span>
@@ -194,7 +194,7 @@ function HeroTriptych() {
           >
             <div aria-hidden className="scrim-b absolute inset-0" />
             <p className="on-media absolute inset-x-0 bottom-0 flex items-center gap-1.5 p-4 text-xs font-semibold text-white">
-              <MapPin className="size-3.5 shrink-0 text-ember-400" aria-hidden />
+              <MapPin className="size-3.5 shrink-0 text-sun-400" aria-hidden />
               {clip.place}
             </p>
           </HeroReel>
@@ -420,7 +420,7 @@ function WhyUs() {
         <ol className="mt-12 grid gap-x-8 gap-y-10 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4">
           {whyUs.map((item, i) => (
             <li key={item.title} className="border-t border-[var(--line-strong)] pt-6">
-              <span aria-hidden className="display-italic tnum font-display text-2xl text-ember-600">
+              <span aria-hidden className="display-italic tnum font-display text-2xl text-lake-600">
                 {String(i + 1).padStart(2, "0")}
               </span>
               <h3 className="mt-4 text-2xl">{item.title}</h3>
@@ -494,14 +494,14 @@ function ClosingCta() {
         className="absolute inset-0"
         style={{
           background:
-            "radial-gradient(55% 80% at 50% 110%, rgb(232 139 42 / 0.2), transparent 70%), linear-gradient(180deg, var(--color-forest-900), var(--color-forest-950))",
+            "radial-gradient(55% 80% at 50% 110%, rgb(248 195 0 / 0.2), transparent 70%), linear-gradient(180deg, var(--color-forest-900), var(--color-forest-950))",
         }}
       />
       <div aria-hidden className="contours-light absolute inset-0 opacity-[0.05]" />
       <Container className="relative text-center">
-        <Badge tone="ember">Free to enquire · No booking fee</Badge>
+        <Badge tone="sun">Free to enquire · No booking fee</Badge>
         <h2 className="mx-auto mt-7 max-w-4xl text-display text-white">
-          Share your dates. <em className="text-ember-400">We handle the rest.</em>
+          Share your dates. <em className="text-sun-400">We handle the rest.</em>
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-lg leading-relaxed text-forest-100/85">
           Rwanda itinerary ideas are in progress. This preview uses sample

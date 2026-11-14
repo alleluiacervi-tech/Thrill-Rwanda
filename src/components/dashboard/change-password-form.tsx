@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 const MIN_LENGTH = 10;
 
 const field =
-  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition-colors focus-visible:border-ember-500";
+  "w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-3 text-sm text-[var(--ink)] outline-none transition-colors focus-visible:border-lake-600";
 const label =
   "flex flex-col gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]";
 

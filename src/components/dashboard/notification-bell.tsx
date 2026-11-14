@@ -114,7 +114,7 @@ export function NotificationBell({ href, unread }: { href: string; unread: numbe
         {count > 0 ? (
           <span
             aria-hidden
-            className="tnum absolute -right-0.5 -top-0.5 grid min-w-4.5 place-items-center rounded-full bg-ember-500 px-1 text-[0.625rem] font-semibold text-[#2a1605]"
+            className="tnum absolute -right-0.5 -top-0.5 grid min-w-4.5 place-items-center rounded-full bg-sun-500 px-1 text-[0.625rem] font-semibold text-forest-950"
           >
             {count > 9 ? "9+" : count}
           </span>
@@ -172,12 +172,12 @@ export function NotificationBell({ href, unread }: { href: string; unread: numbe
                       onClick={(e) => openItem(e, { ...n, href: n.href ?? href })}
                       className={cn(
                         "flex gap-3 px-4 py-3.5 transition-colors hover:bg-[var(--paper-sunken)]",
-                        !n.read && "bg-ember-100/40",
+                        !n.read && "bg-sun-100/40",
                       )}
                     >
                       <span
                         aria-hidden
-                        className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-ember-500")}
+                        className={cn("mt-1.5 size-2 shrink-0 rounded-full", n.read ? "bg-transparent" : "bg-sun-500")}
                       />
                       <span className="min-w-0 flex-1">
                         <span className={cn("block text-sm leading-snug text-[var(--ink)]", !n.read && "font-semibold")}>
