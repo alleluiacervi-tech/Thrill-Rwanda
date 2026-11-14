@@ -18,14 +18,14 @@ export type Placeholder = { token: string; describes: string; sample: string };
 /** Every placeholder any template may use. Unknown ones are left as typed. */
 export const PLACEHOLDERS: Placeholder[] = [
   { token: "{customerName}", describes: "The customer's first name", sample: "Amina" },
-  { token: "{reference}", describes: "Booking reference", sample: "SW-GPBG5C" },
+  { token: "{reference}", describes: "Booking reference", sample: "TR-GPBG5C" },
   { token: "{listing}", describes: "What was booked", sample: "2-Day Gorilla Trekking" },
   { token: "{provider}", describes: "The provider's business name", sample: "Volcano Trails Rwanda" },
   { token: "{dates}", describes: "Travel dates", sample: "29 Sept – 1 Oct" },
   { token: "{guests}", describes: "Guests or passengers", sample: "2 guests" },
-  { token: "{total}", describes: "Booking total", sample: "Ksh 84,000" },
-  { token: "{amount}", describes: "Amount just paid", sample: "Ksh 25,200" },
-  { token: "{balance}", describes: "What is still owed", sample: "Ksh 58,800" },
+  { token: "{total}", describes: "Booking total", sample: "$1,680" },
+  { token: "{amount}", describes: "Amount just paid", sample: "$504" },
+  { token: "{balance}", describes: "What is still owed", sample: "$1,176" },
   { token: "{siteName}", describes: "Your business name", sample: "Thrill Rwanda" },
   {
     token: "{nextStep}",

@@ -8,10 +8,10 @@ import { PLACEHOLDERS, TEMPLATES, fill, sampleValues } from "@/lib/email/templat
  */
 
 describe("fill", () => {
-  const values = { reference: "SW-GPBG5C", amount: "Ksh 25,200" };
+  const values = { reference: "TR-GPBG5C", amount: "Ksh 25,200" };
 
   it("replaces the details it was given", () => {
-    expect(fill("Booking {reference} received", values)).toBe("Booking SW-GPBG5C received");
+    expect(fill("Booking {reference} received", values)).toBe("Booking TR-GPBG5C received");
   });
 
   it("replaces every occurrence", () => {

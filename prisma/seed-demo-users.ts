@@ -13,7 +13,7 @@ const DEMO = [
 ];
 
 /** The seeded provider the demo provider account will own. */
-const PROVIDER_SLUG = "acacia-trails-kenya";
+const PROVIDER_SLUG = "volcano-trails-rwanda";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Refusing to seed demo accounts in production.");
@@ -89,7 +89,7 @@ async function create() {
   }
 
   /* The provider account needs a Provider record to have a dashboard. Point
-     the seeded Acacia Trails at it so there are real listings and bookings
+     the seeded Volcano Trails Rwanda at it so there are real listings and bookings
      to work with, and clean up the placeholder owner it replaces. */
   const provider = await db.provider.findFirst({ where: { slug: PROVIDER_SLUG } });
   const providerUser = await db.user.findUniqueOrThrow({
@@ -156,4 +156,6 @@ run()
   })
   .finally(async () => {
     await db.$disconnect();
+    // The auth stack opens the app's own pool, which would keep Node alive forever.
+    process.exit(process.exitCode ?? 0);
   });

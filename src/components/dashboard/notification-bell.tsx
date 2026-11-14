@@ -33,7 +33,9 @@ export function useOpenNotification(onRead?: (id: string) => void) {
   return (e: React.MouseEvent, n: { id: string; href: string | null; read: boolean }) => {
     if (!n.read) onRead?.(n.id);
     const modified = e.metaKey || e.ctrlKey || e.shiftKey || e.button === 1;
-    if (!n.href || modified) {
+    // mailto: and other external links (an enquiry's "reply") are the browser's job, not the router's.
+    const external = Boolean(n.href) && !n.href!.startsWith("/");
+    if (!n.href || modified || external) {
       if (!n.read) void markNotificationRead(n.id);
       return;
     }

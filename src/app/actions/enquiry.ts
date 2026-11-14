@@ -1,19 +1,16 @@
 "use server";
 
 import { z } from "zod";
+import { notifyAdminsOfEnquiry } from "@/lib/notifications";
 import { getSite } from "@/lib/settings";
 
 /**
  * Enquiry submission.
  *
- * This is the one server-side write the public site does today. It is
- * deliberately conservative: if email delivery is not configured, it says so
- * and points the customer at WhatsApp rather than swallowing the message and
- * showing a green tick. A booking enquiry that silently disappears is worse
- * than a form that admits it is unavailable.
- *
- * When Step 15 (notifications) lands, this should also write a
- * `notifications` row and copy the admin.
+ * Stored first, in every admin's notification inbox, then emailed to the
+ * business address if email is set up. The customer is told it was received
+ * only when one of the two actually happened; if neither did, the form says
+ * so and points them at WhatsApp rather than showing a false green tick.
  */
 
 const schema = z.object({
@@ -41,12 +38,6 @@ export async function submitEnquiry(
   formData: FormData,
 ): Promise<EnquiryState> {
   const site = await getSite();
-  if (!site.contact.email) {
-    return {
-      status: "unconfigured",
-      message: "Email delivery is not configured for this demo yet.",
-    };
-  }
   const parsed = schema.safeParse({
     name: formData.get("name") ?? "",
     email: formData.get("email") ?? "",
@@ -74,13 +65,32 @@ export async function submitEnquiry(
   // Honeypot tripped — accept silently so the bot learns nothing.
   if (data.company) return { status: "success" };
 
+  const stored = await notifyAdminsOfEnquiry({
+    kind: "contact",
+    title: data.subject ? `Enquiry: ${data.subject}` : `Website enquiry from ${data.name}`,
+    lines: [
+      ["From", data.name],
+      ["Email", data.email],
+      ["Phone", data.phone ?? ""],
+    ],
+    message: data.message,
+    replyTo: data.email,
+    replySubject: data.subject ? `Re: ${data.subject}` : "Your enquiry to Thrill Rwanda",
+  });
+
+  const received: EnquiryState = {
+    status: "success",
+    message: "Thank you — we have your enquiry and will reply within one working day.",
+  };
+
   const apiKey = process.env.RESEND_API_KEY;
   const from = process.env.EMAIL_FROM;
 
-  if (!apiKey || !from) {
+  if (!apiKey || !from || !site.contact.email) {
+    if (stored) return received;
     return {
       status: "unconfigured",
-      message: `Email delivery isn't configured yet, so we couldn't send that automatically. Please WhatsApp or call us on ${site.contact.phone} and we'll pick it up straight away.`,
+      message: `We couldn't pass that on automatically. Please WhatsApp or call us on ${site.contact.phone} and we'll pick it up straight away.`,
     };
   }
 
@@ -105,13 +115,11 @@ export async function submitEnquiry(
       { replyTo: data.email },
     );
 
-    return {
-      status: "success",
-      message:
-        "Thank you — we have your enquiry and will reply within one working day.",
-    };
+    return received;
   } catch (err) {
     console.error("[enquiry] send failed", err);
+    // The team already has it in their inbox; the email was only a copy.
+    if (stored) return received;
     return {
       status: "error",
       message: `We couldn't send that just now. Please call or WhatsApp ${site.contact.phone} and we'll sort it immediately.`,

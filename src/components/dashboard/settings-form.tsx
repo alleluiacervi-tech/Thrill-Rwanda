@@ -11,7 +11,7 @@ import { SITE_DEFAULTS, defaultHeroText } from "@/lib/site-config";
 import { cn, formatMoney } from "@/lib/utils";
 
 const initial: SettingsState = { status: "idle" };
-const EXAMPLE_TOTAL = 5_850_000; // Ksh 58,500, a typical three-day safari for one.
+const EXAMPLE_TOTAL = 189_000; // $1,890, a gorilla trek for one.
 
 /** What's saved; null text means "use the built-in value". */
 export type SettingsValues = {

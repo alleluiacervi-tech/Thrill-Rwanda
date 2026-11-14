@@ -32,8 +32,8 @@ describe("mapMethod", () => {
     expect(mapMethod("BANK TRANSFER")).toBe("BANK_TRANSFER");
   });
 
-  it("falls back to M-Pesa, which is the default for mobile payments", () => {
-    for (const m of ["MPESA", "Airtel Money", "", null, undefined]) {
+  it("files every mobile wallet under mobile money", () => {
+    for (const m of ["MTN MOMO", "MTN Mobile Money", "Airtel Money", "MPESA", "", null, undefined]) {
       expect(mapMethod(m)).toBe("MPESA");
     }
   });
@@ -41,11 +41,11 @@ describe("mapMethod", () => {
 
 describe("newMerchantReference", () => {
   it("keeps the booking reference readable inside it", () => {
-    expect(newMerchantReference("SW-GPBG5C")).toMatch(/^SW-GPBG5C-[0-9A-F]{6}$/);
+    expect(newMerchantReference("TR-GPBG5C")).toMatch(/^TR-GPBG5C-[0-9A-F]{6}$/);
   });
 
   it("differs every time, so a retry is a new Pesapal order", () => {
-    const refs = new Set(Array.from({ length: 50 }, () => newMerchantReference("SW-GPBG5C")));
+    const refs = new Set(Array.from({ length: 50 }, () => newMerchantReference("TR-GPBG5C")));
     expect(refs.size).toBe(50);
   });
 });

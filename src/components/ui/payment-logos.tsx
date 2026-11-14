@@ -9,13 +9,15 @@ import { cn } from "@/lib/utils";
 
 const FONT = "Arial, Helvetica, sans-serif";
 
-function MPesa() {
+function MtnMomo() {
   return (
-    <svg viewBox="0 0 74 24" role="img" aria-label="M-Pesa" className="h-5 w-auto">
-      <text x="0" y="18" fontFamily={FONT} fontSize="17" fontWeight="800" fill="#43B02A">
-        M
-        <tspan fill="#E2231A">-</tspan>
-        PESA
+    <svg viewBox="0 0 76 24" role="img" aria-label="MTN Mobile Money" className="h-5 w-auto">
+      <rect x="0" y="2" width="30" height="20" rx="10" fill="#FFCB05" />
+      <text x="15" y="16" textAnchor="middle" fontFamily={FONT} fontSize="10" fontWeight="800" fill="#000">
+        MTN
+      </text>
+      <text x="34" y="17" fontFamily={FONT} fontSize="13" fontWeight="800" fill="#004F71">
+        MoMo
       </text>
     </svg>
   );
@@ -68,7 +70,7 @@ function Pesapal() {
 
 const MARKS = {
   pesapal: Pesapal,
-  mpesa: MPesa,
+  momo: MtnMomo,
   airtel: Airtel,
   visa: Visa,
   mastercard: Mastercard,
@@ -78,7 +80,7 @@ export type PaymentMark = keyof typeof MARKS;
 
 /** A row of payment marks on white tiles. */
 export function PaymentLogos({
-  marks = ["mpesa", "airtel", "visa", "mastercard"],
+  marks = ["momo", "airtel", "visa", "mastercard"],
   size = "md",
   className,
 }: {

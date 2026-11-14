@@ -1,6 +1,7 @@
 "use server";
 
 import { z } from "zod";
+import { notifyAdminsOfEnquiry } from "@/lib/notifications";
 import { getSite } from "@/lib/settings";
 
 /**
@@ -37,7 +38,22 @@ export async function submitCorporateEnquiry(
   const data = parsed.data;
   if (data.website) return { status: "sent" };
 
-  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return { status: "not-emailed" };
+  // Into the admins' inbox first, so the request exists even with email off.
+  const stored = await notifyAdminsOfEnquiry({
+    kind: "corporate",
+    title: `Corporate rate card: ${data.companyName}`,
+    lines: [
+      ["Company", data.companyName],
+      ["Email", data.email],
+      ["WhatsApp", data.whatsapp],
+      ["Staff", data.staff ?? ""],
+    ],
+    message: `Frequent routes:\n${data.routes}`,
+    replyTo: data.email,
+    replySubject: "Your Thrill Rwanda corporate rate card",
+  });
+
+  if (!process.env.RESEND_API_KEY || !process.env.EMAIL_FROM) return { status: stored ? "sent" : "not-emailed" };
 
   try {
     const site = await getSite();
@@ -63,6 +79,6 @@ export async function submitCorporateEnquiry(
     return { status: "sent" };
   } catch (err) {
     console.error("[corporate-enquiry] send failed", err);
-    return { status: "not-emailed" };
+    return { status: stored ? "sent" : "not-emailed" };
   }
 }

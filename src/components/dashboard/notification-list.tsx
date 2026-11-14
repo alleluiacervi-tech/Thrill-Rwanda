@@ -52,7 +52,7 @@ export function NotificationList({ items }: { items: NotificationPreview[] }) {
                   {!n.read ? <span aria-hidden className="mt-2 size-2 shrink-0 rounded-full bg-sun-500" /> : null}
                 </span>
                 {n.body ? (
-                  <span className="mt-1 block text-sm leading-relaxed text-[var(--ink-muted)]">{n.body}</span>
+                  <span className="mt-1 block whitespace-pre-line text-sm leading-relaxed text-[var(--ink-muted)]">{n.body}</span>
                 ) : null}
                 <span
                   className="tnum mt-2 block text-2xs text-[var(--ink-faint)]"

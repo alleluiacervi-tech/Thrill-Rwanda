@@ -21,7 +21,8 @@ import type { BookingStatus, ServiceType } from "@/generated/prisma/enums";
 const nano = customAlphabet("ABCDEFGHJKLMNPQRSTUVWXYZ23456789", 6);
 
 export function newReference() {
-  return `SW-${nano()}`;
+  // TR = Thrill Rwanda. Older bookings keep the SW- prefix they were issued with.
+  return `TR-${nano()}`;
 }
 
 /* ---------------------------------------------------------------- errors */

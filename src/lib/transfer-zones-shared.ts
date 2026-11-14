@@ -125,7 +125,7 @@ export function quoteZoneTrip(input: {
   return { fareMinor, extras, totalMinor: fareMinor + extras.reduce((s, e) => s + e.minor, 0) };
 }
 
-/** Who is collected where. Between coast towns the "area" is the whole route ("Nyali ↔ Diani"); "to" runs it backwards. */
+/** Who is collected where. Between towns the "area" is the whole route ("Musanze ↔ Rubavu"); "to" runs it backwards. */
 export function tripEnds(point: PickupPoint, area: string, fromPoint: boolean): [string, string] {
   if (point.pointToPoint) {
     const [a = area, b = area] = area.split("↔").map((s) => s.trim());

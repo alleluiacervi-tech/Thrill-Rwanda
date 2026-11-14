@@ -649,3 +649,46 @@ export async function notifyListingPublished(
     console.error("[notify] listing published failed", err);
   }
 }
+
+/**
+ * A website enquiry (contact form, corporate rate card). Written to every
+ * admin's inbox before any email is tried, so an enquiry survives email being
+ * down or not configured. The link opens a reply to the customer.
+ *
+ * Returns whether at least one admin now has it, so the form can tell the
+ * customer the truth. Never throws.
+ */
+export async function notifyAdminsOfEnquiry(input: {
+  kind: "contact" | "corporate";
+  title: string;
+  lines: [string, string][];
+  message?: string;
+  replyTo: string;
+  replySubject: string;
+}): Promise<boolean> {
+  try {
+    const admins = await adminRecipients();
+    if (admins.length === 0) return false;
+    const body = [
+      ...input.lines.filter(([, v]) => v).map(([k, v]) => `${k}: ${v}`),
+      input.message ? `\n${input.message}` : "",
+    ]
+      .join("\n")
+      .trim()
+      .slice(0, 4000);
+    await db.notification.createMany({
+      data: admins.map((a) => ({
+        userId: a.userId,
+        type: `enquiry.${input.kind}`,
+        title: input.title.slice(0, 200),
+        body,
+        href: `mailto:${input.replyTo}?subject=${encodeURIComponent(input.replySubject)}`,
+        channel: "in_app",
+      })),
+    });
+    return true;
+  } catch (err) {
+    console.error("[notify] enquiry failed to store", err);
+    return false;
+  }
+}

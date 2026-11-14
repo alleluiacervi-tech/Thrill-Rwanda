@@ -39,19 +39,33 @@ export function damageLiabilityStatement(text: string, amount: string) {
 
 const SITE_TAG = "site-settings";
 
+async function readSiteUncached(): Promise<SiteInfo> {
+  try {
+    return buildSite(await db.siteSettings.findUnique({ where: { id: 1 } }));
+  } catch (err) {
+    console.error("[settings] business details read failed, using defaults", err);
+    return buildSite(null);
+  }
+}
+
 // Cached across requests: every page shows the name and phone, so this mustn't cost a query each time.
-const readSite = unstable_cache(
-  async (): Promise<SiteInfo> => {
-    try {
-      return buildSite(await db.siteSettings.findUnique({ where: { id: 1 } }));
-    } catch (err) {
-      console.error("[settings] business details read failed, using defaults", err);
-      return buildSite(null);
-    }
-  },
-  ["site-info"],
-  { tags: [SITE_TAG], revalidate: 300 },
-);
+const readSiteCached = unstable_cache(readSiteUncached, ["site-info"], {
+  tags: [SITE_TAG],
+  revalidate: 300,
+});
+
+/**
+ * The Next data cache exists only inside a request. Seeds, scripts and tests
+ * call the booking engine too, and there unstable_cache throws
+ * ("incrementalCache missing"); they get a direct read instead.
+ */
+async function readSite(): Promise<SiteInfo> {
+  try {
+    return await readSiteCached();
+  } catch {
+    return readSiteUncached();
+  }
+}
 
 /** The business name, contacts, rules and payment switches, as the admin set them. */
 export const getSite = cache(readSite);

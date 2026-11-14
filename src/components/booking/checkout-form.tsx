@@ -24,13 +24,13 @@ const METHOD_COPY: Record<
 > = {
   online: {
     title: "Pesapal — mobile money and cards",
-    logos: ["mpesa", "airtel", "visa", "mastercard"],
+    logos: ["momo", "airtel", "visa", "mastercard"],
     chips: [],
     note: "You'll complete payment securely on Pesapal's page next. We never see your card or PIN.",
   },
   phone: {
     title: "Pay by phone or WhatsApp",
-    logos: ["mpesa"],
+    logos: ["momo"],
     chips: ["Bank transfer"],
     note: `Online payment is being switched on. Once you confirm, we'll call or WhatsApp you from {phone} to take payment.`,
   },
@@ -52,7 +52,7 @@ export function CheckoutForm({
   documentAccept = "",
 }: {
   reference: string;
-  /** e.g. "Confirm booking · Ksh 144,000" */
+  /** e.g. "Confirm booking · $1,440" */
   buttonLabel: string;
   mode: CheckoutMode;
   /** Deposit wording, shown under the button when only part is charged now. */

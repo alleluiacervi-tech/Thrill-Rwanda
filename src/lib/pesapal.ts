@@ -174,7 +174,7 @@ export async function submitOrder(input: SubmitOrderInput) {
   const amount = Number((input.amountMinor / 100).toFixed(2));
 
   // A Rwandan mobile has to arrive as 2507…, no plus and no leading zero, or
-  // the hosted page drops it and the M-Pesa prompt never fires.
+  // the hosted page drops it and the MTN MoMo / Airtel Money prompt never fires.
   const phone = input.phone?.replace(/\D/g, "").replace(/^0/, "250") || undefined;
 
   return call<PesapalEnvelope & SubmitOrderResult>(
@@ -191,7 +191,9 @@ export async function submitOrder(input: SubmitOrderInput) {
         billing_address: {
           email_address: input.email,
           phone_number: phone,
-          country_code: "KE",
+          // Pesapal picks the payment options it offers from the billing
+          // country: RW shows MTN MoMo and Airtel Money, not Kenya's M-Pesa.
+          country_code: "RW",
           first_name: input.firstName || undefined,
           last_name: input.lastName || undefined,
         },
@@ -225,7 +227,7 @@ export async function getTransactionStatus(orderTrackingId: string) {
   );
 }
 
-/** Merchant reference for one payment attempt, e.g. SW-8F3K2Q-4E1A9C. */
+/** Merchant reference for one payment attempt, e.g. TR-8F3K2Q-4E1A9C. */
 export function newMerchantReference(bookingReference: string) {
   return `${bookingReference}-${randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
@@ -238,7 +240,11 @@ export function mapStatus(code: number | undefined) {
   return "PENDING" as const;
 }
 
-/** VISA and MASTERCARD land on CARD, everything mobile on MPESA. */
+/**
+ * VISA and MASTERCARD land on CARD, everything mobile (MTN MoMo, Airtel
+ * Money) on MPESA — the enum's historical name for "mobile money", which the
+ * admin labels as such. Renaming it is a migration with no visible gain.
+ */
 export function mapMethod(method: string | null | undefined) {
   const m = (method ?? "").toUpperCase();
   if (m.includes("VISA") || m.includes("MASTER") || m.includes("CARD")) return "CARD" as const;

@@ -321,7 +321,7 @@ model Availability {
 
 model Booking {
   id         String @id @default(uuid()) @db.Uuid
-  /// Human-facing reference, e.g. SW-8F3K2Q. Shown on confirmations.
+  /// Human-facing reference, e.g. TR-8F3K2Q. Shown on confirmations.
   reference  String @unique
   customerId String @map("customer_id") @db.Uuid
   providerId String @map("provider_id") @db.Uuid

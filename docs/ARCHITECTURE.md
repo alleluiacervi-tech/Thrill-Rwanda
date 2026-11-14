@@ -10,7 +10,7 @@ Decisions that are expensive to reverse later. Read before adding a module.
 | Styling | Tailwind v4 (CSS-first `@theme`), design tokens in `src/app/globals.css` |
 | Database | PostgreSQL via Prisma 7; embedded local PostgreSQL for development, Neon or self-hosted PostgreSQL for production |
 | Auth | Better Auth — sessions + role permissions |
-| Payments | Pesapal — settles M-Pesa and cards through one integration |
+| Payments | Pesapal — settles MTN MoMo, Airtel Money and cards through one integration (billing country RW) |
 | Email | Resend |
 | Media | Cloudflare R2 |
 
@@ -98,16 +98,15 @@ by the `postinstall` hook), imported as `@/generated/prisma/client`.
 
 ## Design system
 
-Direction: *editorial safari* — deep forest ground, warm bone paper, orange
-as a scalpel, with a topographic contour motif as the connective texture.
+The palette, type, contrast rules and Rwandan signature elements (Imigongo
+texture, flag ribbon, thousand-hills banner edge) are documented in
+[`docs/DESIGN_SYSTEM.md`](DESIGN_SYSTEM.md). Tokens live in `@theme` in
+`globals.css`.
 
-- Brand palette is in `@theme` in `globals.css`; semantic tokens (`--paper`,
-  `--ink`, `--line`, `--accent`) sit on `:root`.
-- Dark sections opt in with `.on-dark`, which reassigns those semantic
-  tokens. Components never hard-code light or dark colours — they read
-  tokens, so any component works on either ground.
-- Type: **Fraunces** (display, using its SOFT/WONK/opsz axes) + **Karla**
-  (body). The variable axes are the reason headings do not read as generic.
+- Dark sections opt in with `.on-dark`, which reassigns the semantic tokens
+  (`--paper`, `--ink`, `--line`, `--label`, `--focus`). Components never
+  hard-code light or dark colours — they read tokens, so any component works
+  on either ground.
 - `src/components/ui/media.tsx` renders a deterministic in-palette duotone
   for listings that have no photography yet. Pass `src` and it switches to
   `next/image` with no other call-site change.

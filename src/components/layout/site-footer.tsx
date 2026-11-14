@@ -138,7 +138,7 @@ export async function SiteFooter() {
           </p>
           <p className="flex flex-wrap items-center gap-2">
             <span>Secure payments by</span>
-            <PaymentLogos marks={["pesapal", "mpesa", "airtel", "visa", "mastercard"]} size="sm" />
+            <PaymentLogos marks={["pesapal", "momo", "airtel", "visa", "mastercard"]} size="sm" />
           </p>
         </div>
       </Container>
