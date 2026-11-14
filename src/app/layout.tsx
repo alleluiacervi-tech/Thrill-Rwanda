@@ -1,0 +1,92 @@
+import type { Metadata, Viewport } from "next";
+import { Fraunces, Karla } from "next/font/google";
+import { SiteProvider } from "@/components/layout/site-context";
+import { site } from "@/lib/site";
+import { getSite } from "@/lib/settings";
+import "./globals.css";
+
+/**
+ * Fraunces carries the brand voice — its SOFT and WONK axes give headings
+ * a hand-cut, editorial warmth that a neutral grotesque cannot.
+ */
+const fraunces = Fraunces({
+  subsets: ["latin"],
+  variable: "--font-fraunces",
+  display: "swap",
+  axes: ["SOFT", "WONK", "opsz"],
+});
+
+const karla = Karla({
+  subsets: ["latin"],
+  variable: "--font-karla",
+  display: "swap",
+});
+
+// The business name comes from Admin → Settings, so titles follow it.
+export async function generateMetadata(): Promise<Metadata> {
+  const { name, description } = await getSite();
+  return {
+  metadataBase: new URL(site.url),
+  title: {
+    default: `${name} — Gorilla Trekking, Safaris, Hotels, Car Hire & Transfers in Rwanda`,
+    template: `%s · ${name}`,
+  },
+  description,
+  keywords: [
+    "Rwanda safari booking",
+    "Kigali airport transfer",
+    "car hire Rwanda",
+    "gorilla trekking Rwanda",
+    "Volcanoes National Park lodges",
+    "Akagera safari",
+  ],
+  openGraph: {
+    type: "website",
+    locale: site.locale,
+    url: site.url,
+    siteName: name,
+    title: `${name} — Discover Rwanda`,
+    description,
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: `${name} — Discover Rwanda`,
+    description,
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: { index: true, follow: true, "max-image-preview": "large" },
+  },
+  };
+}
+
+export const viewport: Viewport = {
+  themeColor: "#1c5c45",
+  colorScheme: "light",
+};
+
+export default async function RootLayout({
+  children,
+}: Readonly<{ children: React.ReactNode }>) {
+  return (
+    <html
+      lang="en-RW"
+      // Tells Next the smooth scroll in globals.css is intentional, so it
+      // suppresses it during route transitions rather than warning.
+      data-scroll-behavior="smooth"
+      className={`${fraunces.variable} ${karla.variable}`}
+    >
+      {/* Browser extensions (ColorZilla, Grammarly) add attributes to body before React hydrates. */}
+      <body className="grain antialiased" suppressHydrationWarning>
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-full focus:bg-forest-800 focus:px-5 focus:py-3 focus:text-sm focus:font-medium focus:text-bone-50"
+        >
+          Skip to content
+        </a>
+        <SiteProvider value={await getSite()}>{children}</SiteProvider>
+      </body>
+    </html>
+  );
+}

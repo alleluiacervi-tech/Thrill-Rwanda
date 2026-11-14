@@ -1,0 +1,657 @@
+// Thrill Rwanda — data model
+// See docs/ARCHITECTURE.md for the three rules this schema encodes.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/**
+ * ================================================================ ENUMS ==
+ */
+
+enum Role {
+  CUSTOMER
+  PROVIDER
+  ADMIN
+}
+
+enum ProviderKind {
+  CAR
+  HOTEL
+  TOUR
+}
+
+enum ProviderStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  SUSPENDED
+}
+
+enum ServiceType {
+  TOUR
+  ROOM
+  VEHICLE
+  TRANSFER
+}
+
+enum BookingStatus {
+  PENDING
+  AWAITING_PAYMENT
+  PAID
+  CONFIRMED
+  REJECTED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentStatus {
+  INITIATED
+  PENDING
+  SUCCEEDED
+  FAILED
+  REFUNDED
+}
+
+enum PaymentMethod {
+  MPESA
+  CARD
+  BANK_TRANSFER
+  CASH
+}
+
+enum ReviewStatus {
+  PENDING
+  PUBLISHED
+  HIDDEN
+}
+
+/**
+ * ================================================================ USERS ==
+ */
+
+model User {
+  id            String   @id @default(uuid()) @db.Uuid
+  email         String   @unique
+  emailVerified Boolean  @default(false) @map("email_verified")
+  image         String?
+  fullName      String   @map("full_name")
+  phone         String?
+  role          Role     @default(CUSTOMER)
+  isActive      Boolean  @default(true) @map("is_active")
+  createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  provider      Provider?
+  sessions      Session[]
+  accounts      Account[]
+  bookings      Booking[]
+  reviews       Review[]
+  notifications Notification[]
+
+  @@index([role])
+  @@map("users")
+}
+
+/// Better Auth session store.
+model Session {
+  id        String   @id @default(uuid()) @db.Uuid
+  token     String   @unique
+  userId    String   @map("user_id") @db.Uuid
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  ipAddress String?  @map("ip_address")
+  userAgent String?  @map("user_agent")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("sessions")
+}
+
+model Account {
+  id                    String    @id @default(uuid()) @db.Uuid
+  issuer                String?
+  accountId             String    @map("account_id")
+  providerId            String    @map("provider_id")
+  userId                String    @map("user_id") @db.Uuid
+  accessToken           String?   @map("access_token")
+  refreshToken          String?   @map("refresh_token")
+  idToken               String?   @map("id_token")
+  accessTokenExpiresAt  DateTime? @map("access_token_expires_at") @db.Timestamptz
+  refreshTokenExpiresAt DateTime? @map("refresh_token_expires_at") @db.Timestamptz
+  scope                 String?
+  password              String?
+  createdAt             DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt             DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([providerId, accountId])
+  @@index([userId])
+  @@map("accounts")
+}
+
+/// Email verification and password-reset tokens.
+model Verification {
+  id         String   @id @default(uuid()) @db.Uuid
+  identifier String
+  value      String
+  expiresAt  DateTime @map("expires_at") @db.Timestamptz
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([identifier])
+  @@map("verifications")
+}
+
+/**
+ * ============================================================ PROVIDERS ==
+ */
+
+model Provider {
+  id            String         @id @default(uuid()) @db.Uuid
+  userId        String         @unique @map("user_id") @db.Uuid
+  businessName  String         @map("business_name")
+  slug          String         @unique
+
+  kind          ProviderKind   @default(TOUR)
+  /// Every category this provider may list in. Empty means [kind] — see providerKinds().
+  kinds         ProviderKind[] @default([])
+  about         String?
+  phone         String?
+  city          String?
+  address       String?
+  /// KRA PIN / tourism licence / insurance refs
+  kraPin        String?        @map("kra_pin")
+  licenceNumber String?        @map("licence_number")
+  documents     Json?
+  status        ProviderStatus @default(PENDING)
+  verifiedAt    DateTime?      @map("verified_at") @db.Timestamptz
+  createdAt     DateTime       @default(now()) @map("created_at") @db.Timestamptz
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tours    Tour[]
+  hotels   Hotel[]
+  vehicles Vehicle[]
+  bookings Booking[]
+
+  @@index([status])
+  @@map("providers")
+}
+
+/**
+ * ============================================================ INVENTORY ==
+ */
+
+model Tour {
+  id              String   @id @default(uuid()) @db.Uuid
+  providerId      String   @map("provider_id") @db.Uuid
+  name            String
+  slug            String   @unique
+  destination     String
+  description     String?
+  images          String[] @default([])
+  durationDays    Int      @map("duration_days") @db.SmallInt
+  activities      String[] @default([])
+  pickupInfo      String?  @map("pickup_info")
+  maxParticipants Int      @map("max_participants") @db.SmallInt
+  /// Minor units (USD cents). Never a float. This is the East African citizen rate.
+  priceMinor      Int      @map("price_minor")
+  /// Residents of East Africa who are not citizens. Null means the citizen rate applies.
+  priceResidentMinor    Int? @map("price_resident_minor")
+  // Non-residents of East Africa. Null means the citizen rate applies.
+  priceNonResidentMinor Int? @map("price_non_resident_minor")
+  currency        String   @default("USD")
+  isPublished     Boolean  @default(false) @map("is_published")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([destination])
+  @@index([providerId])
+  @@map("tours")
+  
+}
+
+model Hotel {
+  id          String   @id @default(uuid()) @db.Uuid
+  providerId  String   @map("provider_id") @db.Uuid
+  name        String
+  slug        String   @unique
+  location    String
+  description String?
+  images      String[] @default([])
+  amenities   String[] @default([])
+  stars       Int?     @db.SmallInt
+  latitude    Float?
+  longitude   Float?
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+  rooms    Room[]
+
+  @@index([location])
+  @@index([providerId])
+  @@map("hotels")
+}
+
+model Room {
+  id                 String   @id @default(uuid()) @db.Uuid
+  hotelId            String   @map("hotel_id") @db.Uuid
+  name               String
+  description        String?
+  images             String[] @default([])
+  capacity           Int      @db.SmallInt
+  /// How many physical rooms of this type exist — the availability cap.
+  quantity           Int      @default(1) @db.SmallInt
+  pricePerNightMinor Int      @map("price_per_night_minor")
+  currency           String   @default("USD")
+  isPublished        Boolean  @default(false) @map("is_published")
+
+  hotel Hotel @relation(fields: [hotelId], references: [id], onDelete: Cascade)
+
+  @@index([hotelId])
+  @@map("rooms")
+}
+
+model Vehicle {
+  id           String   @id @default(uuid()) @db.Uuid
+  providerId   String   @map("provider_id") @db.Uuid
+  make         String
+  model        String
+  year         Int      @db.SmallInt
+  slug         String   @unique
+  category     String
+  images       String[] @default([])
+  seats        Int      @db.SmallInt
+  transmission String
+  fuelType     String   @map("fuel_type")
+  features     String[] @default([])
+
+  quantity         Int     @default(1) @db.SmallInt
+  pricePerDayMinor Int     @map("price_per_day_minor")
+  /// Extra per day when the customer wants a driver. Null means this vehicle is self-drive only.
+  driverPerDayMinor Int?   @map("driver_per_day_minor")
+  /// What the customer is liable for if the vehicle is damaged. Set per vehicle by the provider.
+  insuranceChargeMinor Int? @map("insurance_charge_minor")
+  currency         String  @default("USD")
+  isPublished      Boolean @default(false) @map("is_published")
+
+  provider Provider @relation(fields: [providerId], references: [id], onDelete: Cascade)
+
+  @@index([providerId])
+  @@index([category])
+  @@map("vehicles")
+}
+
+/**
+ * ========================================================= AVAILABILITY ==
+ */
+
+/// One row per bookable resource per day.
+
+model Availability {
+  serviceType        ServiceType @map("service_type")
+  resourceId         String      @map("resource_id") @db.Uuid
+  day                DateTime    @db.Date
+  unitsTotal         Int         @map("units_total") @db.SmallInt
+  unitsBooked        Int         @default(0) @map("units_booked") @db.SmallInt
+  /// Optional per-day override; falls back to the listing price.
+  priceOverrideMinor Int?        @map("price_override_minor")
+  isBlocked          Boolean     @default(false) @map("is_blocked")
+
+  @@id([serviceType, resourceId, day])
+  @@index([serviceType, resourceId, day])
+  @@map("availability")
+}
+
+/**
+ * ============================================================= BOOKINGS ==
+ */
+
+/// ONE booking table for all four products.
+
+model Booking {
+  id         String @id @default(uuid()) @db.Uuid
+  /// Human-facing reference, e.g. SW-8F3K2Q. Shown on confirmations.
+  reference  String @unique
+  customerId String @map("customer_id") @db.Uuid
+  providerId String @map("provider_id") @db.Uuid
+
+  serviceType ServiceType @map("service_type")
+  resourceId  String      @map("resource_id") @db.Uuid
+
+  startDate DateTime @map("start_date") @db.Date
+  /// Exclusive end. For a single-day service, startDate + 1.
+  endDate   DateTime @map("end_date") @db.Date
+  guests    Int      @default(1) @db.SmallInt
+  units     Int      @default(1) @db.SmallInt
+
+  /// Priced at booking time — never recomputed from the live listing.
+  subtotalMinor Int    @map("subtotal_minor")
+  totalMinor    Int    @map("total_minor")
+  currency      String @default("USD")
+
+  status BookingStatus @default(PENDING)
+
+  /// Type-specific payload: flightNumber, pickupPoint, specialRequests…
+  details Json @default("{}")
+
+  customerNotes      String?   @map("customer_notes")
+  cancelledAt        DateTime? @map("cancelled_at") @db.Timestamptz
+  cancellationReason String?   @map("cancellation_reason")
+  createdAt          DateTime  @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt          DateTime  @updatedAt @map("updated_at") @db.Timestamptz
+
+  customer User      @relation(fields: [customerId], references: [id], onDelete: Restrict)
+  provider Provider  @relation(fields: [providerId], references: [id], onDelete: Restrict)
+  payments Payment[]
+  review   Review?
+  agreement BookingAgreement?
+  documents BookingDocument[]
+
+  @@index([customerId])
+  @@index([providerId])
+  @@index([status])
+  @@index([serviceType, resourceId])
+  @@map("bookings")
+}
+
+/**
+ * ============================================================= PAYMENTS ==
+ */
+
+model Payment {
+  id              String        @id @default(uuid()) @db.Uuid
+  bookingId       String        @map("booking_id") @db.Uuid
+  /// Gateway's id — M-Pesa receipt, Pesapal tracking id, etc.
+  transactionId   String?       @unique @map("transaction_id")
+  /// Our idempotency key, sent to the gateway and echoed back.
+  idempotencyKey  String        @unique @map("idempotency_key")
+  amountMinor     Int           @map("amount_minor")
+  currency        String        @default("USD")
+  method          PaymentMethod
+  status          PaymentStatus @default(INITIATED)
+  gatewayResponse Json?         @map("gateway_response")
+  paidAt          DateTime?     @map("paid_at") @db.Timestamptz
+  createdAt       DateTime      @default(now()) @map("created_at") @db.Timestamptz
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+
+  @@index([bookingId])
+  @@index([status])
+  @@map("payments")
+}
+
+/**
+ * ============================================================== REVIEWS ==
+ */
+
+model Review {
+  id          String       @id @default(uuid()) @db.Uuid
+  /// Reviews hang off a booking, so only real customers can leave one.
+  bookingId   String       @unique @map("booking_id") @db.Uuid
+  customerId  String       @map("customer_id") @db.Uuid
+  serviceType ServiceType  @map("service_type")
+  resourceId  String       @map("resource_id") @db.Uuid
+  rating      Int          @db.SmallInt
+  comment     String?
+  status      ReviewStatus @default(PENDING)
+  createdAt   DateTime     @default(now()) @map("created_at") @db.Timestamptz
+
+  booking  Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  customer User    @relation(fields: [customerId], references: [id], onDelete: Cascade)
+
+  @@index([serviceType, resourceId])
+  @@index([status])
+  @@map("reviews")
+}
+
+/**
+ * ======================================================== NOTIFICATIONS ==
+ */
+
+model Notification {
+  id     String  @id @default(uuid()) @db.Uuid
+  userId String  @map("user_id") @db.Uuid
+  /// e.g. booking.confirmed, payment.received, provider.approved
+  type   String
+  title  String
+  body   String?
+  /// Deep link into the relevant dashboard page.
+  href   String?
+
+  channel   String    @default("email")
+  readAt    DateTime? @map("read_at") @db.Timestamptz
+  sentAt    DateTime? @map("sent_at") @db.Timestamptz
+  createdAt DateTime  @default(now()) @map("created_at") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, readAt])
+  @@index([type])
+  @@map("notifications")
+}
+
+/**
+ * ===================================================== TRANSFER ROUTES ==
+ */
+
+/// How a transfer route starts. Drives the icon shown beside it.
+enum TransferMode {
+  AIRPORT
+  RAIL
+  ROAD
+}
+
+/// Which price table a zone belongs to. Nairobi zones are priced from JKIA and serve the Nairobi SGR too.
+enum TransferOrigin {
+  KIGALI
+  MUSANZE
+  RUBAVU
+  BETWEEN_TOWNS
+}
+
+/// A zone price: one or more areas, one fixed price per vehicle type, either direction.
+model TransferZone {
+  id           String         @id @default(uuid()) @db.Uuid
+  origin       TransferOrigin
+  /// "Zone 2 · Central Nairobi". Rows sharing a name are grouped together on the site.
+  name         String
+  /// Comma-separated estates or towns; each one is a choice in the area list.
+  areas        String
+  /// "15–18 km", shown beside the zone.
+  distance     String?
+  sedanMinor   Int            @map("sedan_minor")
+  vanMinor     Int            @map("van_minor")
+  premiumMinor Int            @map("premium_minor")
+  isActive     Boolean        @default(true) @map("is_active")
+  /// Lower numbers show first.
+  sortOrder    Int            @default(0) @map("sort_order") @db.SmallInt
+  createdAt    DateTime       @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt    DateTime       @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([origin, isActive, sortOrder])
+  @@map("transfer_zones")
+}
+
+model TransferRoute {
+  id         String       @id @default(uuid()) @db.Uuid
+  fromPlace  String       @map("from_place")
+  toPlace    String       @map("to_place")
+  mode       TransferMode @default(AIRPORT)
+  /// Typical door-to-door time in minutes.
+  minutes    Int          @db.SmallInt
+  /// Minor units (USD cents), per vehicle.
+  priceMinor Int          @map("price_minor")
+  currency   String       @default("USD")
+  isActive   Boolean      @default(true) @map("is_active")
+  /// Lower numbers show first.
+  sortOrder  Int          @default(0) @map("sort_order") @db.SmallInt
+  createdAt  DateTime     @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt  DateTime     @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([isActive, sortOrder])
+  @@map("transfer_routes")
+}
+
+/**
+ * ======================================================== SITE SETTINGS ==
+ */
+
+/// Platform-wide settings an admin can change. Always exactly one row, id 1.
+model SiteSettings {
+  id             Int      @id @default(1) @db.SmallInt
+  /// Share of the booking total charged at checkout to confirm it. 100 means pay in full.
+  depositPercent Int      @default(30) @map("deposit_percent") @db.SmallInt
+  /// Shown at car hire checkout. {amount} is replaced with that vehicle's insurance charge.
+  damageLiabilityText String @default("I agree that in the event of damage to the hired vehicle, I will be liable for the applicable amount of {amount}, as specified for this vehicle.") @map("damage_liability_text")
+
+  // Business identity and contacts. Empty means "use the built-in value".
+  brandName      String?  @map("brand_name")
+  legalName      String?  @map("legal_name")
+  tagline        String?
+  /// The homepage headline: the big first line and the smaller orange line under it.
+  heroTitle      String?  @map("hero_title")
+  heroSubtitle   String?  @map("hero_subtitle")
+  /// The paragraph under the homepage headline.
+  heroText       String?  @map("hero_text")
+  phone          String?
+  phoneAlt       String?  @map("phone_alt")
+  whatsapp       String?
+  email          String?
+  address        String?
+  openingHours   String?  @map("opening_hours")
+
+  // Social links; the footer shows only those set.
+  facebookUrl    String?  @map("facebook_url")
+  instagramUrl   String?  @map("instagram_url")
+  tiktokUrl      String?  @map("tiktok_url")
+  xUrl           String?  @map("x_url")
+  youtubeUrl     String?  @map("youtube_url")
+
+  // Booking rules.
+  holdMinutes           Int @default(60) @map("hold_minutes") @db.SmallInt
+  transferMaxPassengers Int @default(6) @map("transfer_max_passengers") @db.SmallInt
+  minNoticeDays         Int @default(0) @map("min_notice_days") @db.SmallInt
+
+  // Online payment per service; hotels are always paid at the property.
+  payOnlineTours     Boolean @default(true) @map("pay_online_tours")
+  payOnlineCars      Boolean @default(true) @map("pay_online_cars")
+  payOnlineTransfers Boolean @default(true) @map("pay_online_transfers")
+
+  // A message across the top of the site.
+  announcement   String?
+  announcementOn Boolean @default(false) @map("announcement_on")
+  updatedAt      DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("site_settings")
+}
+
+
+model LegalDocument {
+  /// terms | privacy | cancellation
+  slug      String   @id
+  title     String
+  /// Plain text. A blank line starts a new paragraph; a line ending in a colon reads as a heading.
+  body      String
+  /// Bumped on every save, and recorded against bookings that accepted it.
+  version   Int      @default(1)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  @@map("legal_documents")
+}
+
+/// Customer email wording, editable by an admin.
+/// A missing row means the built-in copy is used, so email never breaks.
+model EmailTemplate {
+  /// Matches a notification type: booking.created, payment.received, …
+  key       String   @id
+  subject   String
+  /// Plain text. Blank lines separate paragraphs; {placeholders} are filled per booking.
+  body      String
+  /// Label on the button, if the email has one. Blank uses the built-in label.
+  ctaLabel  String?  @map("cta_label")
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  updatedBy String?  @map("updated_by") @db.Uuid
+
+  @@map("email_templates")
+}
+
+/// Distance-based transfer pricing: a per-person rate for a distance band
+/// and a passenger count. The client sets the bands; nothing is hardcoded.
+model TransferRate {
+  id              String   @id @default(uuid()) @db.Uuid
+  /// Inclusive lower bound in kilometres.
+  fromKm          Int      @map("from_km") @db.SmallInt
+  /// Exclusive upper bound. The highest band should reach well past the city.
+  toKm            Int      @map("to_km") @db.SmallInt
+  /// How many passengers this rate applies to.
+  passengers      Int      @db.SmallInt
+  /// Per person, in minor units (USD cents).
+  perPersonMinor  Int      @map("per_person_minor")
+  currency        String   @default("USD")
+  isActive        Boolean  @default(true) @map("is_active")
+  createdAt       DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt       DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([fromKm, toKm, passengers])
+  @@index([isActive, fromKm])
+  @@map("transfer_rates")
+}
+
+
+model BookingAgreement {
+  id         String   @id @default(uuid()) @db.Uuid
+  bookingId  String   @unique @map("booking_id") @db.Uuid
+  /// Version of the agreement template that was signed.
+  version    Int
+  /// The agreement exactly as shown, with the customer's details filled in.
+  body       String
+  /// The drawn signature, as a PNG data URL.
+  signature  String
+  /// Typed in by the customer alongside the drawing.
+  signedName String   @map("signed_name")
+  signedAt   DateTime @default(now()) @map("signed_at") @db.Timestamptz
+  /// Kept for a dispute: who signed, from where.
+  ipAddress  String?  @map("ip_address")
+  userAgent  String?  @map("user_agent")
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@map("booking_agreements")
+}
+
+enum BookingDocumentKind {
+  DRIVING_LICENCE
+  ID_DOCUMENT
+}
+
+/// Car hire: the customer's licence and ID copies. Private — served only to the
+/// customer, the booking's provider and admins, never from a public URL.
+model BookingDocument {
+  id          String              @id @default(uuid()) @db.Uuid
+  bookingId   String              @map("booking_id") @db.Uuid
+  kind        BookingDocumentKind
+  /// image/jpeg, image/png, image/webp or application/pdf, checked from the bytes.
+  contentType String              @map("content_type")
+  fileName    String              @map("file_name")
+  size        Int
+  data        Bytes
+  uploadedAt  DateTime            @default(now()) @map("uploaded_at") @db.Timestamptz
+
+  booking Booking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  /// One of each kind per booking; a new upload replaces the old.
+  @@unique([bookingId, kind])
+  @@map("booking_documents")
+}
