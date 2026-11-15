@@ -1,3 +1,4 @@
+import { documentDeadline } from "@/lib/document-access";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { notFound, redirect } from "next/navigation";
@@ -59,7 +60,7 @@ export default async function CheckoutPage({
       payments: { where: { status: "SUCCEEDED" }, select: { amountMinor: true } },
       agreement: { select: { id: true } },
       // Never the file bytes here, only what the form needs to show.
-      documents: { select: { id: true, kind: true, fileName: true } },
+      documents: { select: { id: true, kind: true, fileName: true, uploadedAt: true, expiresAt: true } },
     },
   });
   if (!booking) notFound();
@@ -93,6 +94,7 @@ export default async function CheckoutPage({
     booking.serviceType === "ROOM" ? "property" : online ? "online" : "phone";
 
   // Car hire signs the agreement here, unless it was signed already.
+  const documentPolicy = await db.operationsPolicy.findUnique({ where: { id: 1 } });
   const agreement =
     booking.serviceType === "VEHICLE" && !booking.agreement
       ? await agreementForBooking(booking.id)
@@ -147,7 +149,7 @@ export default async function CheckoutPage({
             documents={
               booking.serviceType === "VEHICLE"
                 ? requiredDocuments(booking.details).map((kind) => {
-                    const have = booking.documents.find((d) => d.kind === kind);
+                    const have = documentPolicy?.documentsEnabled ? booking.documents.find((d) => d.kind === kind && documentDeadline(d.uploadedAt, d.expiresAt, documentPolicy.documentDays) > new Date()) : undefined;
                     return {
                       kind,
                       ...DOCUMENT_LABELS[kind],
@@ -156,6 +158,7 @@ export default async function CheckoutPage({
                   })
                 : []
             }
+            documentNotice={documentPolicy?.documentsEnabled ? `${documentPolicy.documentPurpose} Maximum retention: ${documentPolicy.documentDays} days from upload. Copies are restricted to you, the approved booking provider and administrators. Expired files cannot be downloaded; contact support about deletion.` : undefined}
             documentAccept={DOCUMENT_ACCEPT}
             buttonLabel={
               mode === "property"

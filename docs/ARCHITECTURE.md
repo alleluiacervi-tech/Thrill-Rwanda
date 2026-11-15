@@ -2,6 +2,8 @@
 
 Decisions that are expensive to reverse later. Read before adding a module.
 
+Current V2 delivery adds an enquiry/immutable-quote domain, a separate off-site financial ledger and supplier fulfilment, explicit service/offer publication controls, assigned support cases, scoped reports and audited private-document retention. These extend the inventory booking engine described below; they never create gateway payments or bookings automatically. See the [delivery plan](V2_DELIVERY_PLAN.md), [finance guide](FINANCE_AND_SUPPLIERS.md) and [launch/support/reporting guide](PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md). Third-party services listed here describe supported adapters, not activated or verified production accounts.
+
 ## Stack
 
 | Layer | Choice |

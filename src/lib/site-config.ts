@@ -1,3 +1,4 @@
+import { defaultPublications, type Publications } from "@/lib/launch-rules";
 /**
  * The business details the whole site shows, built from the admin's settings.
  *
@@ -9,6 +10,7 @@
 export type SocialKey = "facebook" | "instagram" | "tiktok" | "x" | "youtube";
 
 export type SiteInfo = {
+  publications: Publications;
   name: string;
   legalName: string;
   tagline: string;
@@ -49,8 +51,8 @@ export const SITE_DEFAULTS = {
   whatsapp: "+250 786 261 104",
   email: "info@thrillrwanda.com",
   address: "Kigali, Rwanda",
-  heroTitle: "Discover Rwanda",
-  heroSubtitle: "from volcanoes to savannah",
+  heroTitle: "Your journey starts",
+  heroSubtitle: "with a conversation.",
   holdMinutes: 60,
   maxPassengers: 6,
   minNoticeDays: 0,
@@ -93,7 +95,7 @@ export const defaultHeroText = (tagline: string) =>
 
 /** The client's description, with the registered name the admin set. */
 export const describe = (legalName: string) =>
-  `${legalName} is a Rwanda-focused travel platform demo. Business, provider, pricing, contact, and payment details are still being configured.`;
+  `Request a checked flight quotation or plan your Rwanda trip with ${legalName}. Stays, transport and group travel start with your brief.`;
 
 /** Digits only, with Rwanda's 250 in front of a local 0… number. */
 export function phoneDigits(phone: string) {
@@ -120,6 +122,7 @@ export function buildSite(row: SiteSettingsRow | null | undefined): SiteInfo {
   const whatsapp = text(r.whatsapp) ?? text(r.phone) ?? SITE_DEFAULTS.whatsapp;
 
   return {
+    publications: defaultPublications(),
     name: text(r.brandName) ?? SITE_DEFAULTS.name,
     legalName: text(r.legalName) ?? SITE_DEFAULTS.legalName,
     tagline: text(r.tagline) ?? SITE_DEFAULTS.tagline,

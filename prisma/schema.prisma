@@ -194,6 +194,11 @@ model Provider {
  */
 
 model Tour {
+  itinerary String @default("")
+  suitability String @default("")
+  inclusions String[] @default([])
+  exclusions String[] @default([])
+  offerApproval String? @map("offer_approval")
   id              String   @id @default(uuid()) @db.Uuid
   providerId      String   @map("provider_id") @db.Uuid
   name            String
@@ -323,6 +328,7 @@ model Availability {
 /// ONE booking table for all four products.
 
 model Booking {
+  supportCases SupportCase[]
   id         String @id @default(uuid()) @db.Uuid
   /// Human-facing reference, e.g. SW-8F3K2Q. Shown on confirmations.
   reference  String @unique
@@ -643,6 +649,8 @@ enum BookingDocumentKind {
 /// Car hire: the customer's licence and ID copies. Private — served only to the
 /// customer, the booking's provider and admins, never from a public URL.
 model BookingDocument {
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+  retentionPurpose String? @map("retention_purpose")
   id          String              @id @default(uuid()) @db.Uuid
   bookingId   String              @map("booking_id") @db.Uuid
   kind        BookingDocumentKind
@@ -663,6 +671,7 @@ model BookingDocument {
 /// Guest enquiries are separate from inventory-backed bookings.
 /// No customer account, provider, payment or inventory reservation is created.
 model Enquiry {
+  supportCases SupportCase[]
   id             String   @id @default(uuid()) @db.Uuid
   reference      String   @unique
   submissionKey  String   @unique @map("submission_key") @db.Uuid
@@ -1053,4 +1062,86 @@ model RegistryAudit {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   @@index([entityId, createdAt])
   @@map("registry_audits")
+}
+
+/// A service is request-only until an administrator records publication evidence.
+model ServicePublication {
+  service String @id
+  mode String @default("ENQUIRY")
+  evidence String
+  approvedById String @map("approved_by_id") @db.Uuid
+  version Int @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("service_publications")
+}
+
+model OperationsPolicy {
+  id Int @id @default(1)
+  version Int @default(0)
+  supportHours String @map("support_hours")
+  escalation String
+  emergencyNotice String @map("emergency_notice")
+  documentPurpose String @map("document_purpose")
+  documentDays Int @map("document_days")
+  documentsEnabled Boolean @default(false) @map("documents_enabled")
+  evidence String
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("operations_policy")
+}
+
+model SupportCase {
+  id String @id @default(uuid()) @db.Uuid
+  reference String @unique
+  enquiryId String? @map("enquiry_id") @db.Uuid
+  bookingId String? @map("booking_id") @db.Uuid
+  enquiry Enquiry? @relation(fields: [enquiryId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+  ownerId String @map("owner_id") @db.Uuid
+  category String
+  priority String @default("NORMAL")
+  status String @default("OPEN")
+  summary String
+  nextActionAt DateTime @map("next_action_at") @db.Timestamptz
+  outcome String?
+  version Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  activities SupportActivity[]
+  @@index([ownerId, status, nextActionAt])
+  @@map("support_cases")
+}
+
+model SupportActivity {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  supportCase SupportCase @relation(fields: [caseId], references: [id])
+  actorId String @map("actor_id") @db.Uuid
+  intentKey String @unique @map("intent_key") @db.Uuid
+  inputHash String @map("input_hash")
+  changes Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("support_activities")
+}
+
+/// Non-identifying daily interaction counts. No contacts, URLs, IPs or user IDs.
+model InteractionDaily {
+  day DateTime @db.Date
+  service String
+  placement String
+  clicks Int @default(0)
+  @@id([day, service, placement])
+  @@map("interaction_daily")
+}
+
+/// Access and lifecycle evidence; never stores document bytes, names or reset tokens.
+model OperationsAudit {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  entityId String @map("entity_id")
+  action String
+  evidence String
+  changes Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([entityId, createdAt])
+  @@map("operations_audit")
 }

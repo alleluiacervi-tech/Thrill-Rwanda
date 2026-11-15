@@ -104,19 +104,23 @@ Gate: accepted quote → verified receipt → reconciled money → supplier proc
 
 ## Phase 5 — public launch alignment, support and reporting
 
-- [ ] Complete flights-first home/service cards/how-it-works and FAQ/policy coverage.
-- [ ] Replace unsupported prices, audited-partner/driver claims, compliance wording, credit terms and response promises on every public page.
-- [ ] Resolve home vs `/transfers` service-availability contradictions; enforce approved publication modes.
-- [ ] Curate only approved packages; make itinerary, suitability and inclusions/exclusions editable per offer.
-- [ ] Establish after-booking support ownership, hours, escalation, cases and outcomes.
-- [ ] Source/CTA analytics without contact or sensitive travel data; weekly response, conversion, follow-up, lost/unresolved case and supplier metrics.
-- [ ] Permission-scoped search/exports and financial reports with spreadsheet-injection protections.
-- [ ] Remove autoplay-first video; test mobile performance, keyboard/focus, contrast, labels/errors, touch targets and overflow.
-- [ ] Add approved metadata/share images for all enabled pages and verify contact links.
-- [ ] Fix production reset-token logging and test suspension/role revocation on sensitive actions.
-- [ ] Validate retained-document necessity, access, audit and deletion rules.
+- [x] Flights-first homepage, service cards, how-it-works, FAQ and quote-led policy drafts.
+- [x] Remove unsupported fixed rates, partner/driver credentials, Kenyan compliance/credit and response/refund promises from rewritten public flows; admin-authored content remains subject to business review.
+- [x] Versioned service publication controls, request-only defaults, shared transport availability and server enforcement for new direct bookings/public capture.
+- [x] Per-offer itinerary, suitability, inclusions/exclusions and exact-content approval; edits clear public approval.
+- [x] Assigned support cases, next actions, escalation/resolution history and configurable public staffed-hours/escalation guidance.
+- [x] Anonymous daily CTA counters and scoped cohort reports for source, elapsed response, acceptance, follow-up, unresolved/lost cases and supplier follow-through.
+- [x] Scoped operations/finance CSV with formula protection, export audit and currency separation.
+- [x] Static homepage rather than autoplay-first video; local navigation imagery and implementation checks for responsive layout, focus and form handling.
+- [x] Local brand share-image generation, service metadata/hidden sitemap filtering and contact-link structure.
+- [x] Production reset-token logging removed; fresh account access for sensitive actions and document/image endpoints.
+- [x] Approved collection policy, retained-copy expiry, access audit and administrator deletion controls; operational retention/backup approval remains a release prerequisite.
+- [ ] Business approval of all public copy, offers, media, metadata, contact ownership, support arrangements and legal/privacy/retention requirements.
+- [ ] Staging audit acceptance, assistive-technology testing, target-device performance budgets and founder sign-off.
 
-Gate: the [audit acceptance matrix](V2_IMPLEMENTATION_AUDIT.md#12-v2-acceptance-checklist-coverage) passes in staging against the approved launch service scope.
+Procedure and remaining release checks: [PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md](PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md).
+
+Gate: the [audit acceptance matrix](V2_IMPLEMENTATION_AUDIT.md#12-v2-acceptance-checklist-coverage) passes in staging against the approved launch service scope. Code completion does not satisfy the remaining business/staging gates.
 
 ## Phase 6 — operational release and handover
 
@@ -182,3 +186,13 @@ The flight form is dynamically rendered so each page load has a fresh submission
 - Production build, TypeScript checking and ESLint passed. Chromium passed admin finance, supplier and accepted-case screens at 390/768/1024/1440 widths without overflow or page errors, plus a pending-receipt form submission and finance/operations field redaction.
 - Staff procedure, accounting definitions, corrections and limitations are documented in [FINANCE_AND_SUPPLIERS.md](FINANCE_AND_SUPPLIERS.md).
 - Approved bank/mobile-money accounts, supplier contracts, actual statement checking and production business approval remain operational prerequisites. Pesapal activation remains deferred. No external money movement or environment publication was performed.
+
+## Validation evidence — Phase 5
+
+- Two additive migrations applied to project-local PostgreSQL: service/operations policy, support, aggregate interactions/audit, per-offer content, and private-document deadlines. Existing booking/payment/quote history retained.
+- 219 unit tests passed, including hidden public capture, publication restrictions, CSV formula handling, report date boundaries, immutable retention deadlines, production reset-log redaction and the interaction endpoint's host/privacy limits.
+- TypeScript, ESLint and production build passed. The guarded launch integration passed publication approval/stale versions, support ownership/concurrency/idempotency/resolution/revocation, stale offer approval, document scope/expiry/read audit/deletion and fresh permission-scoped exports.
+- Earlier flight, enquiry workflow, quotation and finance integrations also passed. All quotation transports were mocked; no messages, ticket issuance or money movement occurred.
+- Chromium against the production build passed public and admin launch/support/report pages at 390/768/1024/1440 widths without overflow; no unsolicited homepage video downloads; anonymous click recording; local PNG share image; hidden-service route/navigation invalidation and restoration; keyboard menu Escape/focus return; support submission with retained validation-error input; scoped CSV and immediate session revocation. No browser page errors.
+- Axe WCAG 2 A/AA and 2.1 AA scans found no serious/critical violations on the sampled home, transfer, corporate, how-it-works, support and cancellation pages. This is a limited automated check, not complete assistive-technology, content or performance certification. Browser/accessibility tools and screenshots are local test artifacts, not new application dependencies.
+- Disposable records were removed and prior publication/policy records restored. Actual business approvals, staging sign-off, production migrations, retention review scheduling, operational accounts and publication remain pending. The Phase 6 handover/release gate is separate.

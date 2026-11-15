@@ -50,6 +50,7 @@ export function CheckoutForm({
   agreement,
   documents = [],
   documentAccept = "",
+  documentNotice,
 }: {
   reference: string;
   /** e.g. "Confirm booking · Ksh 144,000" */
@@ -62,6 +63,7 @@ export function CheckoutForm({
   /** Car hire: the licence and ID copies still to upload, or already uploaded. */
   documents?: { kind: string; label: string; hint: string; uploaded?: UploadedDocument }[];
   documentAccept?: string;
+  documentNotice?: string;
 }) {
   const site = useSite();
   const [state, action, pending] = useActionState(confirmBooking, initial);
@@ -142,8 +144,7 @@ export function CheckoutForm({
             <div>
               <h3 className="text-lg">Your documents</h3>
               <p className="mt-1 text-2xs leading-relaxed text-[var(--ink-muted)]">
-                Required for car hire. Kept privately with this booking and shown only to the vehicle&rsquo;s
-                owner and our team. Bring the originals when you collect the vehicle.
+                {documentNotice ?? "Contact the desk to confirm the approved collection purpose and retention before uploading. Collection may be unavailable pending approval."}
               </p>
             </div>
             {documents.map((d) => (

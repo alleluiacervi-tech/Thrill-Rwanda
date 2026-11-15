@@ -1,3 +1,5 @@
+import { getPublications } from "@/lib/publication";
+import { visiblePath } from "@/lib/launch-rules";
 import type { MetadataRoute } from "next";
 import { listHotels, listTours, listVehicles } from "@/lib/catalogue";
 import { site } from "@/lib/site";
@@ -6,11 +8,14 @@ import { site } from "@/lib/site";
 export const revalidate = 3600;
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  const publications = await getPublications();
   const now = new Date();
   const url = (path: string) => `${site.url}${path}`;
 
   const staticRoutes: MetadataRoute.Sitemap = [
     { path: "/", priority: 1, changeFrequency: "daily" as const },
+    { path: "/how-it-works", priority: 0.7, changeFrequency: "monthly" as const },
+    { path: "/support", priority: 0.7, changeFrequency: "monthly" as const },
     { path: "/enquire", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/flights", priority: 0.9, changeFrequency: "weekly" as const },
     { path: "/tours", priority: 0.9, changeFrequency: "daily" as const },
@@ -20,7 +25,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/corporate", priority: 0.7, changeFrequency: "monthly" as const },
     { path: "/about", priority: 0.6, changeFrequency: "monthly" as const },
     { path: "/contact", priority: 0.6, changeFrequency: "monthly" as const },
-  ].map((r) => ({
+  ].filter(r => visiblePath(r.path, publications)).map((r) => ({
     url: url(r.path),
     lastModified: now,
     changeFrequency: r.changeFrequency,

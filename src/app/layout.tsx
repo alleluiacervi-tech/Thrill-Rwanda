@@ -1,3 +1,4 @@
+import { InteractionCounter } from "@/components/layout/interaction-counter";
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla } from "next/font/google";
 import { SiteProvider } from "@/components/layout/site-context";
@@ -29,7 +30,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
   metadataBase: new URL(site.url),
   title: {
-    default: `${name} — Gorilla Trekking, Safaris, Hotels, Car Hire & Transfers in Rwanda`,
+    default: `${name} — Flight quotes & Rwanda travel planning`,
     template: `%s · ${name}`,
   },
   description,
@@ -46,12 +47,12 @@ export async function generateMetadata(): Promise<Metadata> {
     locale: site.locale,
     url: site.url,
     siteName: name,
-    title: `${name} — Discover Rwanda`,
+    title: `${name} — Flights & Rwanda travel`,
     description,
   },
   twitter: {
     card: "summary_large_image",
-    title: `${name} — Discover Rwanda`,
+    title: `${name} — Flights & Rwanda travel`,
     description,
   },
   robots: {
@@ -86,7 +87,7 @@ export default async function RootLayout({
         >
           Skip to content
         </a>
-        <SiteProvider value={await getSite()}>{children}</SiteProvider>
+        <SiteProvider value={await getSite()}><InteractionCounter />{children}</SiteProvider>
       </body>
     </html>
   );

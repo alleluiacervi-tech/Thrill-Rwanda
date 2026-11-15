@@ -20,8 +20,8 @@ import {
   hasTieredPricing,
 } from "@/lib/residency";
 import { getSiteSettings } from "@/lib/settings";
-import { DEFAULT_CURRENCY, formatMoney } from "@/lib/utils";
-import { tourExcludes, tourIncludes, tourItineraries } from "@/lib/content";
+import { formatMoney } from "@/lib/utils";
+
 import { getSite } from "@/lib/settings";
 
 // Prebuild the pages that exist now; any listing added later renders on its first visit.
@@ -68,7 +68,7 @@ export default async function TourDetailPage({
   const tour = await getTour(slug);
   if (!tour) notFound();
 
-  const itinerary = tourItineraries[tour.slug];
+  const itinerary = tour.itinerary.split(/\n+/).filter(Boolean).map((body,i)=>({day:i+1,title:`Day ${i+1}`,body}));
   const { depositPercent } = await getSiteSettings();
   const related = (await listTours()).filter((t) => t.slug !== tour.slug).slice(0, 3);
 
@@ -88,12 +88,6 @@ export default async function TourDetailPage({
       name: site.legalName,
       telephone: site.contact.phone,
       address: site.contact.address,
-    },
-    offers: {
-      "@type": "Offer",
-      price: (tour.priceFrom / 100).toFixed(0),
-      priceCurrency: DEFAULT_CURRENCY,
-      availability: "https://schema.org/InStock",
     },
     // Only real reviews: Google penalises structured ratings a page cannot back up.
     ...(tour.rating !== null
@@ -181,7 +175,7 @@ export default async function TourDetailPage({
             ))}
           </ul>
 
-          {hasTieredPricing(tour) ? (
+          {site.publications.TRIP === "DIRECT" && hasTieredPricing(tour) ? (
             <section className="mt-16">
               <Eyebrow>Rates</Eyebrow>
               <h2 className="mt-5 text-3xl">What it costs, per person</h2>
@@ -210,7 +204,8 @@ export default async function TourDetailPage({
             </section>
           ) : null}
 
-          {itinerary ? (
+          <section className="mt-10"><h2 className="text-2xl">Who this trip suits</h2><p className="mt-3 whitespace-pre-wrap">{tour.suitability}</p></section>
+          {itinerary.length ? (
             <section className="mt-16">
               <Eyebrow>Itinerary</Eyebrow>
               <h2 className="mt-5 text-3xl">Day by day</h2>
@@ -246,7 +241,7 @@ export default async function TourDetailPage({
             <div>
               <h3 className="text-xl">What&rsquo;s included</h3>
               <ul className="mt-5 space-y-3">
-                {tourIncludes.map((item) => (
+                {tour.inclusions.map((item) => (
                   <li key={item} className="flex gap-3 text-sm">
                     <Check className="mt-0.5 size-4 shrink-0 text-forest-600" />
                     <span className="text-[var(--ink-muted)]">{item}</span>
@@ -257,7 +252,7 @@ export default async function TourDetailPage({
             <div>
               <h3 className="text-xl">Not included</h3>
               <ul className="mt-5 space-y-3">
-                {tourExcludes.map((item) => (
+                {tour.exclusions.map((item) => (
                   <li key={item} className="flex gap-3 text-sm">
                     <X className="mt-0.5 size-4 shrink-0 text-[var(--ink-faint)]" />
                     <span className="text-[var(--ink-muted)]">{item}</span>
@@ -273,9 +268,7 @@ export default async function TourDetailPage({
               Operated by {tour.provider}
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">
-              Licence and insurance verified by {site.name}. Your payment
-              is held until the service is delivered, and the booking is
-              confirmed against live availability before any money moves.
+              Your written quote identifies the operator, applicable conditions and payment schedule. Availability and confirmation follow the checks for your arrangement.
             </p>
           </section>
         </div>

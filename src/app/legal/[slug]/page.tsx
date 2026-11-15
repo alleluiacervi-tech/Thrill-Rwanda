@@ -26,83 +26,60 @@ type Doc = {
 const draftDocs = (site: SiteInfo): Record<string, Doc> => ({
   terms: {
     title: "Terms of Service",
-    summary:
-      `The agreement between you and ${site.legalName} when you book through this platform.`,
+    summary: "How requests, quotations and confirmations are handled.",
     sections: [
       {
-        heading: "1. Who we are",
+        heading: "Requests and confirmation",
         body: [
-          `${site.legalName} is a company registered in Rwanda, operating from ${site.contact.address}. We act as a booking agent between travellers and independent providers — safari operators, hotels, and licensed transport partners.`,
-          "Where a service is delivered by a third-party provider, your contract for that service is with the provider. Our responsibility is to take the booking accurately, hold your payment securely, and hold providers to the standards we publish.",
+          "An enquiry does not reserve availability or create a confirmed service. Review the written quotation, its validity, supplier conditions and payment deadlines before accepting. Confirmation follows payment verification and supplier checks.",
         ],
       },
       {
-        heading: "2. Bookings and confirmation",
+        heading: "Prices, fees and payment",
         body: [
-          "A booking is confirmed only when we send you a written confirmation carrying a booking reference. A request submitted through the website, or a payment made without confirmation, does not by itself create a confirmed booking.",
-          "We check availability with the provider before confirming. If the service becomes unavailable between your request and our confirmation, we will offer an alternative or refund you in full.",
+          "The written quotation states currency, supplier charges, service fee, tax treatment and exclusions. Use the approved payment instructions for your case. No general credit facility or payment method is promised by this draft.",
         ],
       },
       {
-        heading: "3. Prices and payment",
+        heading: "Travel responsibilities",
         body: [
-          "Prices are shown in US dollars and include applicable taxes unless stated otherwise. The price you are quoted at booking is the price you pay — we do not adjust a confirmed booking's price.",
-          "A deposit is usually required to confirm. The balance is due before the service date, on the schedule stated in your confirmation. Payments are accepted by mobile money, Visa and Mastercard.",
+          "Check names, dates, visas, entry requirements and travel documents before acceptance. Tell the desk about accessibility, age, health or other suitability requirements so these can be checked with suppliers.",
         ],
       },
       {
-        heading: "4. Your responsibilities",
+        heading: "Approval status",
         body: [
-          "You are responsible for the accuracy of the details you give us, for holding valid travel documents and any required visas, and for arriving at the stated time and place.",
-          "For car hire, you must hold a valid driving licence held for at least two years and present it at collection along with photographic identification.",
-        ],
-      },
-      {
-        heading: "5. Liability",
-        body: [
-          "We are not liable for loss or damage caused by events outside our reasonable control, including weather, road closures, civil disruption, flight delays or wildlife behaviour.",
-          "Nothing in these terms limits liability for death or personal injury caused by negligence, or for fraud, where such limitation is not permitted by Rwandan law.",
-        ],
-      },
-      {
-        heading: "6. Governing law",
-        body: [
-          "These terms are governed by the laws of Rwanda, and the courts of Rwanda have exclusive jurisdiction over any dispute arising from them.",
+          `Final company details, contractual responsibilities and governing terms require business and legal approval. Ask ${site.contact.email} for the approved terms for your proposed arrangement.`,
         ],
       },
     ],
   },
   privacy: {
     title: "Privacy Policy",
-    summary:
-      "What personal data we collect, why we collect it, and what you can ask us to do with it.",
+    summary: "Information used to handle travel requests and support.",
     sections: [
       {
-        heading: "1. What we collect",
+        heading: "Enquiries and operations",
         body: [
-          "Account and booking details: your name, email address, phone number, and the details of the services you book.",
-          "Payment records: the amount, method, transaction reference and status. We do not store full card numbers — those are handled by our payment gateway.",
-          "Technical data: IP address, device and browser type, and pages visited, used to keep the service secure and to understand what people look for.",
+          "Enquiry forms collect the contact and travel information you provide, consent wording/version and a saved reference. Staff use scoped access to prepare quotations, record acceptance, reconcile payments and handle support. Existing account and booking records remain separate.",
         ],
       },
       {
-        heading: "2. Why we use it",
+        heading: "Interaction counts",
         body: [
-          "To take and fulfil your booking, to pass the details a provider needs in order to deliver your service, to take payment, to contact you about your booking, and to meet our legal and tax obligations.",
-          "We do not sell your data, and we do not share it with anyone other than the provider delivering your booking and the processors we rely on to operate — payment gateway, email delivery and hosting.",
+          "Selected public enquiry links increment aggregate daily service and placement counters. This counter does not collect contact details, itinerary, IP address, visitor identifier or cookies. It measures clicks, including repeat clicks, rather than individual visitors.",
         ],
       },
       {
-        heading: "3. How long we keep it",
+        heading: "Private documents",
         body: [
-          "Booking and payment records are kept for seven years to meet Rwandan tax and accounting requirements. Marketing preferences are kept until you withdraw them.",
+          "Document collection is enabled only after approval of a necessary purpose and retention period. Authorized customers, assigned providers and administrators have restricted access. Reads, uploads and deletions leave audit evidence. Expired documents cannot be downloaded; stored copies and backups require the retention procedure to be followed.",
         ],
       },
       {
-        heading: "4. Your rights",
+        heading: "Your questions",
         body: [
-          "Under Rwanda's data protection law (Law No. 058/2021) you may ask for a copy of the personal data we hold about you, ask us to correct it, ask us to delete it where we are not required to keep it, and object to processing.",
-          `To exercise any of these, email ${site.contact.email}. We respond within the statutory period.`,
+          `Contact ${site.contact.email} about access, correction, deletion or the handling of your information. Final retention schedules, processors, transfers and statutory rights require business and legal review.`,
         ],
       },
     ],
@@ -110,38 +87,24 @@ const draftDocs = (site: SiteInfo): Record<string, Doc> => ({
   cancellation: {
     title: "Cancellation Policy",
     summary:
-      "When you can cancel, what it costs, and how refunds are processed.",
+      "Changes and refunds depend on the terms of your accepted quotation.",
     sections: [
       {
-        heading: "1. Standard terms",
+        heading: "Changes and cancellation",
         body: [
-          "Free cancellation up to 72 hours before the service start date, with a full refund of anything you have paid.",
-          "Between 72 and 24 hours before the start date, the deposit is retained and the balance refunded.",
-          "Within 24 hours of the start date, or in the case of a no-show, the booking is charged in full.",
+          "Contact the desk promptly with your reference. Availability, supplier fare rules, cancellation charges, non-refundable items and service-fee treatment must be stated in the accepted quotation. This draft does not promise free cancellation or a standard refund period.",
         ],
       },
       {
-        heading: "2. Provider-specific terms",
+        heading: "Refund review and payout",
         body: [
-          "Some lodges and camps operate stricter terms, particularly over peak season and the migration months. Where that applies, the terms are shown on the listing and repeated in your booking confirmation, and they take precedence over the standard terms above.",
+          "A cancellation request does not mean a refund is approved or paid. The team checks the agreed terms and supplier position, records any approved obligation and tracks actual payouts separately. Ask the desk for the status of your case.",
         ],
       },
       {
-        heading: "3. If we or the provider cancel",
+        heading: "Contact and evidence",
         body: [
-          "If a confirmed booking cannot be delivered, we will offer a comparable alternative or refund you in full, at your choice. Where the cancellation is our fault or the provider's, you are not charged any fee.",
-        ],
-      },
-      {
-        heading: "4. Refunds",
-        body: [
-          "Refunds are returned by the method you paid with. Mobile money refunds typically settle within three working days; card refunds can take up to ten working days depending on your bank.",
-        ],
-      },
-      {
-        heading: "5. How to cancel",
-        body: [
-          `Cancel from your bookings dashboard, or contact us on ${site.contact.phone} or ${site.contact.email} quoting your booking reference. The cancellation takes effect when we acknowledge it in writing.`,
+          `Use ${site.contact.email} or ${site.contact.phone} with your enquiry or booking reference. Keep your quotation, acceptance and confirmation records. Payment and supplier rules need to be checked for each arrangement.`,
         ],
       },
     ],
@@ -167,7 +130,9 @@ export async function generateMetadata({
     description: doc.summary,
     alternates: { canonical: `/legal/${slug}` },
     // The shipped drafts stay out of search; the client's own copy belongs in it.
-    robots: saved ? { index: true, follow: true } : { index: false, follow: true },
+    robots: saved
+      ? { index: true, follow: true }
+      : { index: false, follow: true },
   };
 }
 
@@ -198,18 +163,22 @@ export default async function LegalPage({
           <p className="mb-12 text-2xs text-[var(--ink-faint)]">
             Version {saved.version} ·{" "}
             {saved.updatedAt
-              ? new Intl.DateTimeFormat("en-GB", { dateStyle: "long", timeZone: "UTC" }).format(
-                  saved.updatedAt,
-                )
+              ? new Intl.DateTimeFormat("en-GB", {
+                  dateStyle: "long",
+                  timeZone: "UTC",
+                }).format(saved.updatedAt)
               : null}
           </p>
         ) : (
           <p className="mb-12 flex items-start gap-3 rounded-[var(--radius-card)] border border-clay-300 bg-clay-100 p-5 text-sm leading-relaxed text-clay-900">
             <AlertTriangle className="mt-0.5 size-5 shrink-0" />
             <span>
-              <strong className="font-semibold">Draft — not yet reviewed.</strong> This document is
-              a working draft written to get the structure in place. It is not legal advice and must
-              be reviewed by a Rwandan advocate before launch.
+              <strong className="font-semibold">
+                Draft — not yet reviewed.
+              </strong>{" "}
+              This document is a working draft written to get the structure in
+              place. It is not legal advice and must be reviewed by a Rwandan
+              advocate before launch.
             </span>
           </p>
         )}
@@ -222,7 +191,10 @@ export default async function LegalPage({
                   {block.text}
                 </h2>
               ) : (
-                <p key={i} className="whitespace-pre-line text-base leading-relaxed text-[var(--ink-muted)]">
+                <p
+                  key={i}
+                  className="whitespace-pre-line text-base leading-relaxed text-[var(--ink-muted)]"
+                >
                   {block.text}
                 </p>
               ),
@@ -235,7 +207,10 @@ export default async function LegalPage({
                 <h2 className="text-2xl">{section.heading}</h2>
                 <div className="mt-4 space-y-4">
                   {section.body.map((p, i) => (
-                    <p key={i} className="text-base leading-relaxed text-[var(--ink-muted)]">
+                    <p
+                      key={i}
+                      className="text-base leading-relaxed text-[var(--ink-muted)]"
+                    >
                       {p}
                     </p>
                   ))}
@@ -246,7 +221,11 @@ export default async function LegalPage({
         )}
 
         <p className="mt-16 border-t border-[var(--line)] pt-6 text-2xs text-[var(--ink-faint)]">
-          Questions about this document? Email {site.contact.email}.
+          Questions about this document? Email{" "}
+          <a className="underline" href={`mailto:${site.contact.email}`}>
+            {site.contact.email}
+          </a>
+          .
         </p>
       </Container>
     </PageShell>

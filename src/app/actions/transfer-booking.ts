@@ -1,5 +1,6 @@
 "use server";
 
+import { directBookingEnabled } from "@/lib/publication";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { BookingError } from "@/lib/booking";
@@ -37,6 +38,7 @@ export async function bookTransfer(
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Check those details." };
   }
 
+  if (!(await directBookingEnabled("TRANSFER"))) return { status: "error", message: "Transfers are available by checked quotation. Please send a transport enquiry." };
   const { maxPassengers } = (await getSite()).rules;
   if (parsed.data.passengers > maxPassengers) {
     return {

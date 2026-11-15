@@ -1,5 +1,6 @@
 "use server";
 
+import { directBookingEnabled } from "@/lib/publication";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import {
@@ -59,7 +60,7 @@ async function resolveResource(
 ): Promise<string | null> {
   if (serviceType === "TOUR") {
     const t = await db.tour.findFirst({
-      where: { slug, isPublished: true },
+      where: { slug, isPublished: true, offerApproval: { not: null }, provider: { status: "VERIFIED", user: { isActive: true } } },
       select: { id: true },
     });
     return t?.id ?? null;
@@ -109,6 +110,7 @@ export async function submitBooking(
   }
 
   const input = parsed.data;
+  if (!(await directBookingEnabled(input.serviceType))) return { status: "error", message: "This service is available by checked quotation. Please send an enquiry instead." };
 
   // Booking requires an account, so the customer has somewhere to see it.
   const user = await getCurrentUser();

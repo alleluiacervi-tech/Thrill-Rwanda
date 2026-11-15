@@ -1,3 +1,4 @@
+import { requirePublicService } from "@/lib/publication";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Pagination } from "@/components/ui/pagination";
@@ -97,6 +98,7 @@ export default async function CarsPage({
 }: {
   searchParams: SearchParams;
 }) {
+  await requirePublicService("TRANSPORT");
   const raw = await searchParams;
   const sp = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0]! : v ?? ""]),
@@ -110,7 +112,7 @@ export default async function CarsPage({
       <PageHero
         eyebrow="Car Hire"
         title="A vehicle that suits the road"
-        lede="Self-drive or chauffeured, from compact city SUVs to safari-rigged 4x4s with pop-up roofs. Comprehensive insurance on every hire."
+        lede="Ask about self-drive or chauffeured transport. Vehicle availability, insurance conditions and handover terms are checked for your arrangement."
         crumbs={[{ label: "Car Hire" }]}
         image={vehicleImages["toyota-rav4-2022"]}
         imagePosition="center 70%"

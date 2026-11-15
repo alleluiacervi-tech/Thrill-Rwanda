@@ -1,5 +1,6 @@
 "use client";
 
+import { serviceFor } from "@/lib/launch-rules";
 import * as React from "react";
 import Link from "next/link";
 import { useActionState } from "react";
@@ -50,7 +51,12 @@ const initial: BookingState = { status: "idle" };
  * price — this component never sends a price, only dates and guests. If the
  * two ever disagree, the server wins.
  */
-export function BookingPanel({
+export function BookingPanel(props: Parameters<typeof DirectBookingPanel>[0]) {
+  const site = useSite(); const service = serviceFor(props.mode)!;
+  if (site.publications[service] !== "DIRECT") return <section className="rounded-2xl border border-[var(--line)] bg-[var(--paper-raised)] p-6"><h2 className="text-2xl">Request a checked quote</h2><p className="my-4">Share your dates and preferences. The written quote confirms availability, inclusions, fees and applicable terms before you decide.</p><Button data-service={service} data-placement="SERVICE_REQUEST" href={`/enquire?service=${service}&subject=${encodeURIComponent(props.title)}`}>Enquire about this service</Button></section>;
+  return <DirectBookingPanel {...props}/>;
+}
+function DirectBookingPanel({
   title,
   slug,
   priceMinor,

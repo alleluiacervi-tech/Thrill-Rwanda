@@ -23,6 +23,7 @@ import { cn } from "@/lib/utils";
 const initial: ListingState = { status: "idle" };
 
 export type TourInitial = {
+  itinerary: string; suitability: string; inclusions: string[]; exclusions: string[];
   id: string;
   name: string;
   destination: string;
@@ -62,7 +63,7 @@ export function TourForm({
         title={existing ? "Tour updated" : "Tour saved as a draft"}
         body={
           existing
-            ? "Your changes are live. Travellers already booked keep the price and group size they booked at."
+            ? "Your changes are saved for review. Existing bookings retain their recorded details."
             : "Its calendar is open for the next 365 days, with one seat per participant. Check the details, then publish it from your listings."
         }
         previewHref={`/tours/${state.slug}`}
@@ -81,6 +82,8 @@ export function TourForm({
         <ProviderSelect providers={providers} error={errors.providerId} />
       ) : null}
 
+      <p>Offer changes require administrator review before appearing publicly.</p>
+      {([['itinerary','Day-by-day itinerary (one day per line)'],['suitability','Suitability, fitness, age and accessibility requirements'],['inclusions','Inclusions (one per line)'],['exclusions','Exclusions (one per line)']] as const).map(([name,label])=><Labelled key={name} label={label}><textarea name={name} required maxLength={6000} defaultValue={Array.isArray(existing?.[name])?(existing[name] as string[]).join("\n"):(existing?.[name] as string??"")} className={fieldCls}/></Labelled>)}
       <Labelled label="Tour name" error={errors.name}>
         <input
           name="name"

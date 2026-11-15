@@ -25,7 +25,9 @@ export const getSession = cache(async () => {
 
 export async function getCurrentUser() {
   const session = await getSession();
-  return session?.user ?? null;
+  if (!session?.user) return null;
+  const fresh = await db.user.findUnique({ where: { id: session.user.id }, select: { role: true, staffRole: true, isActive: true } });
+  return fresh?.isActive ? { ...session.user, ...fresh } : null;
 }
 
 function signInRedirect(next: string): never {

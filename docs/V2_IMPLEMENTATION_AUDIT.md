@@ -5,6 +5,8 @@ Repository: `alleluiacervi-tech/Thrill-Rwanda`
 Reviewed commit: `b5974250a0047b9624ae888caf73210819899e32`  
 Requirements source: **Thrill_Rwanda_Website_Brief_V2_Developer_Ready.docx**, Version 2.0, dated 15 November 2026.
 
+Subsequent implementation is tracked in [the delivery plan](V2_DELIVERY_PLAN.md). This audit is a historical baseline; current Phase 5 behavior and remaining release gates are documented in [the launch runbook](PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md).
+
 ## 1. Executive assessment
 
 The application contains substantial implementation of an earlier **catalogue, inventory and direct-booking marketplace**. Version 2 instead prioritizes a **flights-first enquiry, written quotation and staff-assisted fulfilment business**. The biggest remaining task is the operational lead-to-fulfilment workflow, not adding more checkout features.

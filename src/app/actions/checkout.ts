@@ -1,4 +1,5 @@
 "use server";
+import { documentDeadline } from "@/lib/document-access";
 
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -50,7 +51,7 @@ export async function confirmBooking(
       serviceType: true,
       details: true,
       agreement: { select: { id: true } },
-      documents: { select: { kind: true } },
+      documents: { select: { kind: true, uploadedAt: true, expiresAt: true } },
     },
   });
   if (!booking || !(CHECKOUT_STATUSES as readonly string[]).includes(booking.status)) {
@@ -59,7 +60,9 @@ export async function confirmBooking(
 
   // Car hire: licence and ID copies are required before confirming.
   if (booking.serviceType === "VEHICLE") {
-    const have = new Set(booking.documents.map((d) => d.kind));
+    const documentPolicy = await db.operationsPolicy.findUnique({ where: { id: 1 } });
+    if (!documentPolicy?.documentsEnabled) return { status: "error", message: "Contact the desk to confirm approved document requirements before confirming car hire.", retryable: false };
+    const have = new Set(booking.documents.filter(d => documentDeadline(d.uploadedAt, d.expiresAt, documentPolicy.documentDays) > new Date()).map((d) => d.kind));
     const missing = requiredDocuments(booking.details).filter((k) => !have.has(k));
     if (missing.length) {
       return {

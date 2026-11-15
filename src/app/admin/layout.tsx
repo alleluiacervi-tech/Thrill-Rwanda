@@ -66,6 +66,9 @@ export default async function AdminLayout({
     {
       label: "Operations",
       items: [
+        { label: "Launch controls", href: "/admin/launch", icon: "settings" },
+        { label: "Support", href: "/admin/support", icon: "bookings" },
+        { label: "Reports & exports", href: "/admin/reports", icon: "overview" },
         { label: "Off-site finance", href: "/admin/finance", icon: "payments" },
         { label: "Supplier register", href: "/admin/suppliers", icon: "providers" },
         { label: "Gateway payments", href: "/admin/payments", icon: "payments" },

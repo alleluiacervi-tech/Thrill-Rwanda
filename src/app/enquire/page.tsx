@@ -1,3 +1,6 @@
+import { getPublications } from "@/lib/publication";
+import { serviceFor } from "@/lib/launch-rules";
+import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/layout/page-shell";
@@ -20,6 +23,8 @@ export default async function Page({
     ["TRIP", "STAY", "TRANSPORT", "GROUP", "EVENT"].find(
       (s) => s === params.service,
     ) ?? "GENERAL";
+  const selected = serviceFor(service);
+  if (selected && (await getPublications())[selected] === "HIDDEN") notFound();
   return (
     <PageShell>
       <PageHero

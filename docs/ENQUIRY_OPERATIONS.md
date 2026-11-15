@@ -65,7 +65,7 @@ Guest captures have durable submission keys and payload fingerprints. Retrying t
 
 Consent records include wording/version, privacy version and creation time. Privacy version `0` means a draft notice, not an approved policy. Staff capture records the staff-provided permission evidence under `staff-recorded-v1`; it must not be represented as the customer checking an online checkbox.
 
-Contact/corporate forms no longer claim that opening WhatsApp saved or sent a request. Their legacy action names forward to durable validation and require the current form fields/consent; stale old-form submissions fail safely. Catalogue handoff context is retained as bounded text, with no trusted prices or booking side effects. Existing direct booking remains available pending the launch service-mode decision.
+Contact/corporate forms no longer claim that opening WhatsApp saved or sent a request. Their legacy action names forward to durable validation and require the current form fields/consent; stale old-form submissions fail safely. Catalogue handoff context is retained as bounded text, with no trusted prices or booking side effects. Existing bookings remain accessible. New direct booking is governed by the explicit service modes in [Launch controls](PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md); unconfigured services default to enquiries.
 
 ## Development and checks
 

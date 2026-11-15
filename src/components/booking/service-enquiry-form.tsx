@@ -1,4 +1,6 @@
 "use client";
+import { useSite } from "@/components/layout/site-context";
+import { serviceFor } from "@/lib/launch-rules";
 import Link from "next/link";
 import { useActionState, useState } from "react";
 import {
@@ -24,6 +26,7 @@ export function ServiceEnquiryForm({
   manual?: boolean;
   className?: string;
 }) {
+  const site = useSite();
   const [state, action, pending] = useActionState(
     manual ? captureManualEnquiry : submitServiceEnquiry,
     { status: "idle" } as FlightEnquiryState,
@@ -86,7 +89,7 @@ export function ServiceEnquiryForm({
     );
   const services = manual
     ? ["GENERAL", "FLIGHT", "TRIP", "STAY", "TRANSPORT", "GROUP", "EVENT"]
-    : ["GENERAL", "TRIP", "STAY", "TRANSPORT", "GROUP", "EVENT"];
+    : ["GENERAL", "TRIP", "STAY", "TRANSPORT", "GROUP", "EVENT"].filter(s => manual || !serviceFor(s) || site.publications[serviceFor(s)!] !== "HIDDEN");
   return (
     <form
       action={action}
@@ -137,11 +140,11 @@ export function ServiceEnquiryForm({
         </label>
         {!manual && (
           <p className="text-sm">
-            For flights, use our{" "}
+            {site.publications.FLIGHT !== "HIDDEN" && <>For flights, use our{" "}
             <Link className="underline" href="/flights">
               flight quote form
             </Link>
-            . Requested services are subject to staff and supplier checks;
+            .</>} Requested services are subject to staff and supplier checks;
             fulfilment is not guaranteed.
           </p>
         )}

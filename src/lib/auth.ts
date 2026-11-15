@@ -1,3 +1,4 @@
+import { resetDeliveryNotice } from "@/lib/auth-notice";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
@@ -48,12 +49,7 @@ export const auth = betterAuth({
       const from = process.env.EMAIL_FROM;
 
       if (!apiKey || !from) {
-        // Loud in dev, and never a silent no-op: a reset link that vanishes
-        // is indistinguishable from a broken account.
-        console.warn(
-          `[auth] Password reset requested for ${user.email} but email is not configured.\n` +
-            `[auth] Reset link (dev only): ${url}`,
-        );
+        console.warn(resetDeliveryNotice(process.env.NODE_ENV, url));
         return;
       }
 
