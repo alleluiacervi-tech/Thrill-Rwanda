@@ -1,3 +1,4 @@
+import { QuoteWorkspace } from "@/components/dashboard/quote-workspace";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
@@ -322,6 +323,7 @@ export async function EnquiryDetail({
           </section>
         </>
       )}
+      {!finance && <QuoteWorkspace enquiry={row} actor={actor} base={base} />}
       <EnquiryTriageForm
         key={row.version}
         reference={row.reference}
@@ -339,7 +341,9 @@ export async function EnquiryDetail({
             : ""
         }
         owners={owners}
-        transitions={allowedEnquiryTransitions(actor, row.status)}
+        transitions={allowedEnquiryTransitions(actor, row.status).filter(
+          (status) => !["QUOTE_SENT", "AWAITING_PAYMENT"].includes(status),
+        )}
       />
       <section className="mt-8">
         <h2 className="text-xl">Activity timeline</h2>

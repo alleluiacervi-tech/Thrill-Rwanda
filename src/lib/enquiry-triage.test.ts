@@ -1,3 +1,7 @@
+vi.mock("@/lib/enquiry-outbox", () => ({
+  enqueueEnquiryNotifications: vi.fn(),
+  enqueueOwnerNotification: vi.fn(),
+}));
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { tx } = vi.hoisted(() => ({
   tx: {
@@ -98,7 +102,7 @@ describe("audited, conflict-safe triage", () => {
     });
     await expect(
       updateEnquiry(input().ownerId!, { ...input(), status: "QUOTE_SENT" }),
-    ).rejects.toThrow("supporting evidence");
+    ).rejects.toThrow("quotation workspace");
   });
   it("prevents finance from editing customer notes or assignment", async () => {
     tx.user.findUnique.mockResolvedValue({ ...actor, staffRole: "FINANCE" });

@@ -1,3 +1,4 @@
+import { enqueueEnquiryNotifications } from "@/lib/enquiry-outbox";
 import { createHash, randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import {
@@ -26,7 +27,10 @@ export type CapturedEnquiry = {
 export async function saveEnquiry(input: CapturedEnquiry, actorId?: string) {
   const { submissionKey } = input;
   // Preserve fingerprints of Phase 1 flight forms that are still open during deployment.
-  const payload = input.service === "FLIGHT" && input.source === "WEBSITE" ? input.details : input;
+  const payload =
+    input.service === "FLIGHT" && input.source === "WEBSITE"
+      ? input.details
+      : input;
   const fingerprint = hash(JSON.stringify(payload));
   const contactKey = hash(
     input.phone ? input.phone.replace(/\D/g, "") : input.email.toLowerCase(),
@@ -92,6 +96,7 @@ export async function saveEnquiry(input: CapturedEnquiry, actorId?: string) {
         details: input.details,
       },
     });
+    await enqueueEnquiryNotifications(tx, row);
     if (actorId)
       await tx.enquiryActivity.create({
         data: {

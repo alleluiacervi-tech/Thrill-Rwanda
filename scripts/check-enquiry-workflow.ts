@@ -1,3 +1,6 @@
+import { removeEnquiryFixtures } from "./enquiry-test-cleanup";
+import { issueQuote, recordQuoteAcceptance } from "../src/lib/quotes";
+import { quoteInputSchema, acceptanceSchema } from "../src/lib/quote-rules";
 /** Local-only Phase 2 database integration tests; removes only its own fixtures. */
 import "dotenv/config";
 import assert from "node:assert/strict";
@@ -139,16 +142,64 @@ async function main() {
       status: "NEEDS_INFORMATION",
       followUp: "2028-01-01T10:30",
     });
-    await update(sales.id, {
-      ownerId: sales.id,
-      status: "QUOTE_SENT",
-      evidence: "External written quote Q-01 v1 valid through 2028-01-02",
+    const quotationRow = await db.enquiry.findUniqueOrThrow({
+      where: { id: lead.id },
     });
-    await update(sales.id, {
-      ownerId: sales.id,
-      status: "AWAITING_PAYMENT",
-      evidence: "Customer acceptance of Q-01 v1 recorded by staff",
+    const quoteId = await issueQuote(
+      sales.id,
+      quoteInputSchema.parse({
+        reference: saved.reference,
+        enquiryVersion: quotationRow.version,
+        intentKey: randomUUID(),
+        currency: "USD",
+        serviceDescription: "External checked service quotation",
+        travelSummary: "Travel plan in January 2028",
+        supplierConditions: "Supplier conditions and baggage checked",
+        taxTreatment: "Taxes included as stated",
+        terms:
+          "Customer must approve the checked supplier change and refund terms.",
+        expiresAt: "2090-01-02T12:00",
+        paymentDeadline: "2090-01-02T12:00",
+        lines: [
+          {
+            kind: "SUPPLIER",
+            description: "Supplier service",
+            quantity: 1,
+            unitPrice: "100",
+          },
+          {
+            kind: "SERVICE_FEE",
+            description: "Service fee",
+            quantity: 1,
+            unitPrice: "10",
+          },
+        ],
+        internalNotes: "",
+        checked: true,
+        sendEmail: false,
+      }),
+      {
+        name: "Test company",
+        email: "test@example.invalid",
+        phone: "",
+        address: "Local test",
+      },
+    );
+    const acceptRow = await db.enquiry.findUniqueOrThrow({
+      where: { id: lead.id },
     });
+    await recordQuoteAcceptance(
+      sales.id,
+      acceptanceSchema.parse({
+        reference: saved.reference,
+        quoteId,
+        enquiryVersion: acceptRow.version,
+        customerName: "Workflow guest",
+        channel: "EMAIL",
+        evidence: "Customer accepted exact written quotation version one",
+        verified: true,
+      }),
+    );
     await assert.rejects(
       () =>
         update(sales.id, {
@@ -200,10 +251,7 @@ async function main() {
       "PASS: offline capture audit, permission scopes, claim/ownership, atomic concurrent edits, follow-up, milestone evidence, finance restrictions, access revocation, immutable prior activity and no booking/payment effects.",
     );
   } finally {
-    await db.enquiryActivity.deleteMany({
-      where: { enquiryId: { in: leadIds } },
-    });
-    await db.enquiry.deleteMany({ where: { id: { in: leadIds } } });
+    await removeEnquiryFixtures(leadIds);
     await db.user.deleteMany({ where: { id: { in: userIds } } });
   }
 }

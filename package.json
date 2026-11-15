@@ -19,7 +19,8 @@
     "pesapal:ipn": "tsx scripts/pesapal-ipn.ts",
     "db:copy": "tsx scripts/copy-database.ts",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "notifications:work": "tsx scripts/process-enquiry-notifications.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",
