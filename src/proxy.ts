@@ -14,7 +14,7 @@ import { getSessionCookie } from "better-auth/cookies";
  *    `requireProvider` and `requireAdmin` in src/lib/session.ts, which hit
  *    the database on every protected render.
  */
-const PROTECTED = ["/account", "/provider", "/admin"];
+const PROTECTED = ["/account", "/provider", "/admin", "/staff"];
 
 export default function proxy(request: NextRequest) {
   const { pathname, search } = request.nextUrl;

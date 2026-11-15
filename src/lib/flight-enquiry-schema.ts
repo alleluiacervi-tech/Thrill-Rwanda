@@ -4,7 +4,7 @@ export const ENQUIRY_CONSENT_VERSION = "flight-enquiry-v1";
 export const ENQUIRY_CONSENT_TEXT =
   "I have read the privacy notice and agree to be contacted about this request.";
 
-const date = z
+export const enquiryDateSchema = z
   .string()
   .regex(/^\d{4}-\d{2}-\d{2}$/, "Choose a valid date")
   .refine((v) => {
@@ -44,8 +44,8 @@ export const flightEnquirySchema = z
       .min(2, "Enter your destination city or airport")
       .max(120),
     tripType: z.enum(["RETURN", "ONE_WAY"]),
-    departureDate: date,
-    returnDate: date.or(z.literal("")),
+    departureDate: enquiryDateSchema,
+    returnDate: enquiryDateSchema.or(z.literal("")),
     flexible: z.boolean(),
     adults: z.coerce.number().int().min(1).max(20),
     children: z.coerce.number().int().min(0).max(20),

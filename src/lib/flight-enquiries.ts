@@ -9,19 +9,45 @@ import {
 export class EnquirySubmissionError extends Error {}
 const hash = (v: string) => createHash("sha256").update(v).digest("hex");
 
-/** Separate from Booking: guest leads never reserve stock or initiate payment. */
-export async function saveFlightEnquiry(input: FlightEnquiryInput) {
-  const {
-    submissionKey,
-    website: _website,
-    consent: _consent,
-    ...payload
-  } = input;
-  void _website;
-  void _consent;
+export type CapturedEnquiry = {
+  submissionKey: string;
+  name: string;
+  phone: string;
+  email: string;
+  replyChannel: string;
+  details: Record<string, string | number | boolean>;
+  service: string;
+  source: string;
+  consentVersion?: string;
+  consentText?: string;
+};
+
+/** Guest leads never reserve stock or initiate payment. */
+export async function saveEnquiry(input: CapturedEnquiry, actorId?: string) {
+  const { submissionKey } = input;
+  // Preserve fingerprints of Phase 1 flight forms that are still open during deployment.
+  const payload = input.service === "FLIGHT" && input.source === "WEBSITE" ? input.details : input;
   const fingerprint = hash(JSON.stringify(payload));
-  const contactKey = hash(input.phone.replace(/\D/g, ""));
+  const contactKey = hash(
+    input.phone ? input.phone.replace(/\D/g, "") : input.email.toLowerCase(),
+  );
   return db.$transaction(async (tx) => {
+    if (actorId) {
+      const actor = await tx.user.findUnique({
+        where: { id: actorId },
+        select: { isActive: true, role: true, staffRole: true },
+      });
+      if (
+        !actor?.isActive ||
+        !(
+          actor.role === "ADMIN" ||
+          ["SALES", "OPERATIONS"].includes(actor.staffRole ?? "")
+        )
+      )
+        throw new EnquirySubmissionError(
+          "You no longer have permission to capture enquiries.",
+        );
+    }
     // Serialize retries of the same token, then submissions for the same contact.
     // Locks live in PostgreSQL, so they also work across application instances.
     await tx.$queryRaw`SELECT 1 AS locked FROM pg_advisory_xact_lock(hashtextextended(${submissionKey}, 0))`;
@@ -40,9 +66,9 @@ export async function saveFlightEnquiry(input: FlightEnquiryInput) {
         createdAt: { gte: new Date(Date.now() - 60 * 60 * 1000) },
       },
     });
-    if (recent >= 5)
+    if (recent >= 5 && !actorId)
       throw new EnquirySubmissionError(
-        "Several requests have been received for this number. Please contact us or try again later.",
+        "Several requests have been received for this contact. Please contact us or try again later.",
       );
     const privacy = await tx.legalDocument.findUnique({
       where: { slug: "privacy" },
@@ -54,16 +80,45 @@ export async function saveFlightEnquiry(input: FlightEnquiryInput) {
         fingerprint,
         contactKey,
         reference: `TRQ-${randomUUID()}`,
+        service: input.service,
+        source: input.source,
         name: input.name,
         phone: input.phone,
         email: input.email || null,
         replyChannel: input.replyChannel,
-        consentVersion: ENQUIRY_CONSENT_VERSION,
-        consentText: ENQUIRY_CONSENT_TEXT,
+        consentVersion: input.consentVersion ?? ENQUIRY_CONSENT_VERSION,
+        consentText: input.consentText ?? ENQUIRY_CONSENT_TEXT,
         privacyVersion: privacy?.version ?? 0,
-        details: payload,
+        details: input.details,
       },
     });
+    if (actorId)
+      await tx.enquiryActivity.create({
+        data: {
+          enquiryId: row.id,
+          actorId,
+          kind: "MANUAL_CAPTURE",
+          changes: { source: input.source },
+          body: input.consentText,
+        },
+      });
     return { reference: row.reference };
+  });
+}
+
+/** Backwards-compatible flight wrapper over shared durable capture. */
+export async function saveFlightEnquiry(input: FlightEnquiryInput) {
+  const { submissionKey, website, consent, ...payload } = input;
+  void website;
+  void consent;
+  return saveEnquiry({
+    submissionKey,
+    name: input.name,
+    phone: input.phone,
+    email: input.email,
+    replyChannel: input.replyChannel,
+    details: payload,
+    service: "FLIGHT",
+    source: "WEBSITE",
   });
 }

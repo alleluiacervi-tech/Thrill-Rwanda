@@ -1,3 +1,4 @@
+import { createHash } from "node:crypto";
 import { beforeEach, describe, expect, it, vi } from "vitest";
 const { tx } = vi.hoisted(() => ({
   tx: {
@@ -76,4 +77,12 @@ describe("durable flight capture", () => {
       "database unavailable",
     );
   });
+});
+
+it("preserves idempotent retries of forms saved before the shared capture refactor", async () => {
+  const { submissionKey, consent, website, ...legacyPayload } = input;
+  void submissionKey; void consent; void website;
+  tx.enquiry.findUnique.mockResolvedValue({ reference: "TRQ-legacy", fingerprint: createHash("sha256").update(JSON.stringify(legacyPayload)).digest("hex") });
+  expect(await saveFlightEnquiry(input)).toEqual({ reference: "TRQ-legacy" });
+  expect(tx.enquiry.create).not.toHaveBeenCalled();
 });

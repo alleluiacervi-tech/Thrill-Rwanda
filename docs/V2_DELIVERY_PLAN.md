@@ -51,19 +51,21 @@ Gate: phone-only guest request persists once, concurrent retries do not duplicat
 
 ## Phase 2 — staff triage and multi-service requests
 
-- [ ] Add enquiry status model: New, Contacted, Needs more information, Quote sent, Awaiting payment, Partner processing, Booked/confirmed, Completed and separate terminal/outcome handling.
-- [ ] Add owner, next follow-up, first response, notes/activity timeline and reason fields.
-- [ ] Add conflict-safe edits, validated transitions and immutable sensitive-change audit events.
-- [ ] Extend staff permissions for sales, operations and finance; do not give all staff ADMIN access.
-- [ ] Add lead board, owner/status/service/source filters and overdue queue using existing dashboard/table components.
-- [ ] Add manual lead capture for phone, WhatsApp, referrals, social and organization outreach.
-- [ ] Add service-aware trip, stay, transport, group and optional event forms using the shared enquiry core.
-- [ ] Move contact/corporate requests from email-only capture into durable enquiries, preserving selected catalogue context.
-- [ ] Link guest/customer contacts carefully; provide staff enquiry history without requiring public signup.
+- [x] Add enquiry status model: New, Contacted, Needs more information, Quote sent, Awaiting payment, Partner processing, Booked/confirmed, Completed and separate terminal/outcome handling.
+- [x] Add owner, next follow-up, first response, notes/activity timeline and reason fields.
+- [x] Add conflict-safe edits, validated transitions and activity events that are append-only through application actions.
+- [x] Extend staff permissions for sales, operations and finance; do not give all staff ADMIN access.
+- [x] Add lead board, owner/status/service/source filters and overdue queue using existing dashboard/table components.
+- [x] Add manual lead capture for phone, WhatsApp, referrals, social and organization outreach.
+- [x] Add service-aware trip, stay, transport, group and optional event forms using the shared enquiry core.
+- [x] Move contact/corporate requests from email-only capture into durable enquiries, preserving selected catalogue context.
+- [x] Provide permission-scoped history matching supplied contact details; keep guest/customer accounts separate without automatic identity merges.
 
 Integration with prior work: use current session guards and admin shell, extend permissions centrally, keep provider scoping, and adapt catalogue CTAs only after the approved service-mode policy is enforced. Guest data must never become publicly searchable by reference alone.
 
 Gate: staff can assign, contact, record notes, schedule follow-ups and handle an approved service lead without personal email/WhatsApp being the only record. Authorization and concurrent-edit tests pass.
+
+Phase 2 implementation: `/staff/enquiries` provides scoped triage; administrators retain `/admin/enquiries`. New service requests and offline capture reuse the same persistence layer as flight enquiries. Milestones record staff-checked external evidence; they do not generate quotes, reconcile payments or create bookings. See [Enquiry operations](ENQUIRY_OPERATIONS.md) for permissions, state rules and limitations. Founder approval of actual staff responsibilities remains a launch gate.
 
 ## Phase 3 — written quotes and reliable communication
 
@@ -138,7 +140,7 @@ Remain out of launch scope: live airline/GDS fares, automatic ticket issuance/fa
 
 From the repository root, use `npm run db:generate`, keep `npm run db:local` running, and apply committed migrations with `npm run db:deploy` against the intended local database. Run `npm test`, `npm run lint`, `npm run typecheck`, `npx tsx scripts/check-flight-enquiries.ts` and `npm run build`. The integration script refuses non-project-local/production URLs and deletes only its randomly keyed test records.
 
-The flight form is dynamically rendered so each page load has a fresh submission token; retries of the same form retain its key. PostgreSQL persists submissions before success is shown. This slice does not send email/WhatsApp, implement staff workflow transitions, or globally disable existing direct-booking services. Until later gates are met, do not represent the entire site as a launch-ready Version 2 platform.
+The flight form is dynamically rendered so each page load has a fresh submission token; retries of the same form retain its key. PostgreSQL persists submissions before success is shown. Phase 1 did not send email/WhatsApp or implement workflow transitions. Phase 2 adds staff triage and externally checked milestone records; it still does not send messages or globally disable existing direct-booking services. Until later gates are met, do not represent the entire site as a launch-ready Version 2 platform.
 
 ## Validation evidence — first implementation slice
 
@@ -148,3 +150,14 @@ The flight form is dynamically rendered so each page load has a fresh submission
 - `npx tsx scripts/check-flight-enquiries.ts`: passed real PostgreSQL concurrent duplicate submission, payload mismatch, concurrent contact-rate limit, consent persistence and no-booking/no-payment checks. Test records removed.
 - Local Chromium/Playwright smoke test against the production build: passed phone-only guest submission; invalid-route error with retained values/consent and no saved row; corrected retry with saved reference; anonymous redirect; signed-in CUSTOMER denial; ADMIN inbox/detail and consent evidence; widths 390/768/1024/1440 without page overflow; no browser page errors. Disposable test account and request removed. Browser tooling was installed outside the checkout for this smoke test and is not a new project dependency or a committed browser test suite.
 - No production database changes, environment configuration updates, publishing, external customer messages, or live payment tests were performed. These checks validate the first slice, not all V2 acceptance criteria or full accessibility/security compliance.
+
+
+## Validation evidence — Phase 2
+
+- Additive workflow migration applied to project-local PostgreSQL; existing bookings/payments retained.
+- Production build, TypeScript check and ESLint passed for Phase 2.
+- 172 unit tests across 19 files passed, including legacy flight fingerprint compatibility, source-spoofing rejection, consent/save failures, staff scopes, transitions, follow-up and stale-write checks.
+- Local PostgreSQL integration passed claim/ownership, one-winner concurrent updates, manual-capture audit, evidence, finance restrictions and access revocation. Booking/payment counts were unchanged; disposable fixtures were removed.
+- Chromium against the production build passed durable contact/transport capture with catalogue context, admin staff grant/revocation, sales claim/note/follow-up, cross-owner 404, finance contact/travel redaction and milestone recording, offline WhatsApp group capture, and 390/768/1024/1440 layouts without page overflow or browser page errors. Production authentication throttling was respected when creating test accounts. Browser tooling and fixtures are local test artifacts, not application dependencies.
+- Existing Unsplash placeholder images encountered network/DNS failures during testing; the workflow checks passed, but this is not evidence that remote imagery loads reliably in the environment.
+- No production migrations, environment publication, external customer messages or live payment operations were performed. The earlier audit and Phase 1 evidence remain historical baselines.

@@ -83,10 +83,13 @@ model User {
   fullName      String   @map("full_name")
   phone         String?
   role          Role     @default(CUSTOMER)
+  staffRole     StaffRole? @map("staff_role")
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
 
+  assignedEnquiries Enquiry[] @relation("EnquiryOwner")
+  enquiryActivities EnquiryActivity[]
   provider      Provider?
   sessions      Session[]
   accounts      Account[]
@@ -664,6 +667,14 @@ model Enquiry {
   submissionKey  String   @unique @map("submission_key") @db.Uuid
   fingerprint    String
   contactKey     String   @map("contact_key")
+  status         EnquiryStatus @default(NEW)
+  version        Int @default(0)
+  ownerId        String? @map("owner_id") @db.Uuid
+  owner          User? @relation("EnquiryOwner", fields: [ownerId], references: [id], onDelete: SetNull)
+  nextFollowUp   DateTime? @map("next_follow_up") @db.Timestamptz
+  firstResponseAt DateTime? @map("first_response_at") @db.Timestamptz
+  outcomeReason  String? @map("outcome_reason")
+  activities     EnquiryActivity[]
   service        String   @default("FLIGHT")
   source         String   @default("WEBSITE")
   name           String
@@ -678,5 +689,54 @@ model Enquiry {
 
   @@index([createdAt])
   @@index([contactKey, createdAt])
+  @@index([ownerId, status, nextFollowUp])
   @@map("enquiries")
+}
+
+
+enum StaffRole {
+  SALES
+  OPERATIONS
+  FINANCE
+}
+
+enum EnquiryStatus {
+  NEW
+  CONTACTED
+  NEEDS_INFORMATION
+  QUOTE_SENT
+  AWAITING_PAYMENT
+  PARTNER_PROCESSING
+  CONFIRMED
+  COMPLETED
+  CANCELLED
+  REFUNDED
+  LOST
+}
+
+/// Append-only through application actions; never contains financial transactions.
+model EnquiryActivity {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  actorId String @map("actor_id") @db.Uuid
+  actor User @relation(fields: [actorId], references: [id], onDelete: Restrict)
+  kind String
+  body String?
+  changes Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([enquiryId, createdAt])
+  @@map("enquiry_activities")
+}
+
+
+model StaffAccessChange {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  targetId String @map("target_id") @db.Uuid
+  previousRole String? @map("previous_role")
+  nextRole String? @map("next_role")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("staff_access_changes")
 }

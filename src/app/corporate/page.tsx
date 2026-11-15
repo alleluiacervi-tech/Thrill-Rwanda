@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { Container, Eyebrow, SectionHead } from "@/components/ui/primitives";
 import { getSite } from "@/lib/settings";
 
+export const dynamic = "force-dynamic";
+
 export const metadata: Metadata = {
   title: "Corporate & Events",
   description:

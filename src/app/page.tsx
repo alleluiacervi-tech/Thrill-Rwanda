@@ -152,7 +152,7 @@ async function Hero({
 
               <div className="mt-6 flex flex-wrap gap-3">
                 <Button href="/flights" variant="accent">Request a flight quote</Button>
-                <Button href="/contact" variant="outline">Plan a trip</Button>
+                <Button href="/enquire" variant="outline">Plan a trip</Button>
               </div>
               <HeroSequenceControls className="mt-5 lg:hidden" />
             </div>

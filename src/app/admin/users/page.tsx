@@ -1,3 +1,4 @@
+import { StaffAccessForm } from "@/components/dashboard/staff-access-form";
 import { DashboardHead, EmptyPanel } from "@/components/dashboard/dashboard-shell";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
 import { Badge } from "@/components/ui/primitives";
@@ -65,7 +66,7 @@ export default async function AdminUsersPage({
     skip: page.skip,
     take: page.take,
     select: {
-      id: true, email: true, fullName: true, phone: true, role: true,
+      id: true, email: true, fullName: true, phone: true, role: true, staffRole: true,
       isActive: true, createdAt: true,
       _count: { select: { bookings: true } },
       provider: { select: { id: true } },
@@ -134,6 +135,7 @@ export default async function AdminUsersPage({
                     <Badge tone={u.role === "ADMIN" ? "sun" : u.role === "PROVIDER" ? "forest" : "neutral"}>
                       {u.role}
                     </Badge>
+                    <StaffAccessForm userId={u.id} current={u.staffRole} />
                   </Td>
                   <Td className="tnum text-right">{u._count.bookings}</Td>
                   <Td className="tnum whitespace-nowrap text-2xs text-[var(--ink-muted)]">

@@ -68,7 +68,7 @@ const nextConfig: NextConfig = {
         // Dashboards and auth screens must never be cached by a shared proxy
         // — one customer's bookings served to another is the worst possible
         // caching bug.
-        source: "/:path(account|provider|admin|sign-in|sign-up)/:rest*",
+        source: "/:path(account|provider|admin|staff|sign-in|sign-up)/:rest*",
         headers: [
           {
             key: "Cache-Control",
