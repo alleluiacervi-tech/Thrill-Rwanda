@@ -1,3 +1,4 @@
+import { ClientAccessWorkspace } from "@/components/dashboard/client-access-workspace";
 import { FinancialWorkspace } from "@/components/dashboard/financial-workspace";
 import { QuoteWorkspace } from "@/components/dashboard/quote-workspace";
 import Link from "next/link";
@@ -327,6 +328,7 @@ export async function EnquiryDetail({
         </>
       )}
       {!finance && <QuoteWorkspace enquiry={row} actor={actor} base={base} />}
+      {!finance && <ClientAccessWorkspace reference={row.reference} />}
       <FinancialWorkspace enquiry={row} actor={actor} />
       <EnquiryTriageForm
         key={row.version}

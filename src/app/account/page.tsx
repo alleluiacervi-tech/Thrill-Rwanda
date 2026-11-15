@@ -19,7 +19,8 @@ export default async function AccountOverviewPage({
     db.booking.count({
       where: { customerId: user.id, status: { in: ["CONFIRMED", "PAID"] } },
     }),
-    db.payment.aggregate({
+    db.payment.groupBy({
+      by: ["currency"],
       where: { status: "SUCCEEDED", booking: { customerId: user.id } },
       _sum: { amountMinor: true },
     }),
@@ -43,7 +44,7 @@ export default async function AccountOverviewPage({
     {
       icon: CreditCard,
       label: "Total paid",
-      value: formatMoney(totalSpentAgg._sum.amountMinor ?? 0),
+      value: totalSpentAgg.map(group => formatMoney(group._sum.amountMinor ?? 0, group.currency)).join(" · ") || "No payments yet",
     },
     { icon: Star, label: "Reviews left", value: String(reviewCount) },
   ];

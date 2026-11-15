@@ -1,3 +1,5 @@
+import { quoteContentHash } from "@/lib/quote-render";
+import type { QuoteSnapshot } from "@/lib/quote-rules";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { db } from "@/lib/db";
@@ -34,6 +36,8 @@ export async function QuoteWorkspace({
         id: true,
         number: true,
         totalMinor: true,
+        snapshot: true,
+        contentHash: true,
         currency: true,
         issuedAt: true,
         expiresAt: true,
@@ -113,6 +117,13 @@ export async function QuoteWorkspace({
             reference={enquiry.reference}
             enquiryVersion={enquiry.version}
             intentKey={randomUUID()}
+            seed={
+              latest &&
+              quoteContentHash(latest.snapshot as QuoteSnapshot) ===
+                latest.contentHash
+                ? (latest.snapshot as QuoteSnapshot)
+                : undefined
+            }
             emailAllowed={!!enquiry.email && enquiry.replyChannel === "EMAIL"}
           />
         )}
@@ -180,9 +191,12 @@ export async function QuoteWorkspace({
             {(actor.role === "ADMIN" ||
               (["SALES", "OPERATIONS"].includes(actor.staffRole ?? "") &&
                 enquiry.ownerId === actor.id)) &&
-              ["FAILED", "BLOCKED"].includes(job.status) && job.attempts < 5 && job.lastError !== "DELIVERY_REVIEW_REQUIRED" && (!job.firstAttemptAt || now.getTime() - job.firstAttemptAt.getTime() < 23 * 3600000) && (
-                <NotificationRetryButton jobId={job.id} />
-              )}
+              ["FAILED", "BLOCKED"].includes(job.status) &&
+              job.attempts < 5 &&
+              job.lastError !== "DELIVERY_REVIEW_REQUIRED" &&
+              (!job.firstAttemptAt ||
+                now.getTime() - job.firstAttemptAt.getTime() <
+                  23 * 3600000) && <NotificationRetryButton jobId={job.id} />}
           </li>
         ))}
       </ul>

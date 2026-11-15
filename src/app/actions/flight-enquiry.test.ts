@@ -1,3 +1,5 @@
+import {publicPreviewAllowed} from "@/lib/soft-launch";
+vi.mock("@/lib/soft-launch",()=>({publicPreviewAllowed:vi.fn(async()=>true)}));
 import { beforeEach, expect, it, vi } from "vitest";
 const { save } = vi.hoisted(() => ({ save: vi.fn() }));
 vi.mock("@/lib/flight-enquiries", () => ({
@@ -31,7 +33,7 @@ const form = () => {
   return data;
 };
 beforeEach(() => {
-  vi.resetAllMocks();
+  vi.resetAllMocks(); vi.mocked(publicPreviewAllowed).mockResolvedValue(true);
   save.mockResolvedValue({ reference: "TRQ-test" });
 });
 it("reports success only after saving a valid guest request", async () => {
@@ -63,3 +65,5 @@ it("does not expose database details or claim success when saving fails", async 
   expect(result.reference).toBeUndefined();
   expect(JSON.stringify(result)).not.toContain("private database");
 });
+
+it("rejects uninvited private-preview requests before saving",async()=>{vi.mocked(publicPreviewAllowed).mockResolvedValue(false);const result=await submitFlightEnquiry({status:"idle"},form());expect(result.status).toBe("error");expect(result.message).toContain("invited");expect(save).not.toHaveBeenCalled();});

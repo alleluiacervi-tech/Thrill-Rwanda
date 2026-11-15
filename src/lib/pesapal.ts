@@ -9,14 +9,14 @@ const SANDBOX = "https://cybqa.pesapal.com/pesapalv3";
 const CONSUMER_KEY = process.env.PESAPAL_CONSUMER_KEY;
 const CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
 
-/** Live unless PESAPAL_ENV says sandbox. Getting this backwards charges real cards. */
+/** Sandbox by default; live processing requires explicit environment approval. */
 export function pesapalBase() {
-  return process.env.PESAPAL_ENV === "sandbox" ? SANDBOX : LIVE;
+  return process.env.PESAPAL_ENV === "live" ? LIVE : SANDBOX;
 }
 
 /** True once both halves of the merchant credential are present. */
 export function pesapalConfigured() {
-  return Boolean(CONSUMER_KEY && CONSUMER_SECRET);
+  return Boolean(CONSUMER_KEY && CONSUMER_SECRET) && (process.env.PESAPAL_ENV !== "live" || process.env.PESAPAL_LIVE_APPROVED === "true");
 }
 
 /** The registered IPN id. Without it Pesapal takes orders but never calls us back. */
@@ -63,6 +63,7 @@ let cached: { token: string; expiresAt: number } | null = null;
 // Pesapal issues five-minute tokens. We keep one for four to leave room for
 // clock skew, and refetch on 401 rather than retrying the same token.
 export async function pesapalToken(): Promise<string> {
+  if(process.env.PESAPAL_ENV === "live" && process.env.PESAPAL_LIVE_APPROVED !== "true") throw new PesapalError("Live payment processing requires explicit approval");
   if (!CONSUMER_KEY || !CONSUMER_SECRET) {
     throw new PesapalError(
       "Pesapal is not configured. Set PESAPAL_CONSUMER_KEY and PESAPAL_CONSUMER_SECRET.",

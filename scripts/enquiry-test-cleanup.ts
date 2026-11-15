@@ -2,6 +2,10 @@ import "dotenv/config";
 import { db } from "../src/lib/db";
 /** Call only after the integration runner's local-database guard, with generated fixture IDs. */
 export async function removeEnquiryFixtures(ids: string[]) {
+  await db.clientCaseAccess.deleteMany({where:{enquiryId:{in:ids}}});
+  await db.corporateCaseAccess.deleteMany({where:{enquiryId:{in:ids}}});
+  await db.supplierReview.deleteMany({where:{enquiryId:{in:ids}}});
+  await db.whatsAppConsent.deleteMany({where:{enquiryId:{in:ids}}});
   const support = await db.supportCase.findMany({ where: { enquiryId: { in: ids } }, select: { id: true } });
   await db.supportActivity.deleteMany({ where: { caseId: { in: support.map(row => row.id) } } });
   await db.supportCase.deleteMany({ where: { id: { in: support.map(row => row.id) } } });

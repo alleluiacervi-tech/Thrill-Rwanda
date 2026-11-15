@@ -1,3 +1,6 @@
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { publicPreviewAllowed, previewExemptPath } from "@/lib/soft-launch";
 import { InteractionCounter } from "@/components/layout/interaction-counter";
 import type { Metadata, Viewport } from "next";
 import { Fraunces, Karla } from "next/font/google";
@@ -28,40 +31,47 @@ const body = Karla({
 export async function generateMetadata(): Promise<Metadata> {
   const { name, description } = await getSite();
   return {
-  metadataBase: new URL(site.url),
-  title: {
-    default: `${name} — Flight quotes & Rwanda travel planning`,
-    template: `%s · ${name}`,
-  },
-  description,
-  keywords: [
-    "Rwanda safari booking",
-    "Kigali airport transfer",
-    "car hire Rwanda",
-    "gorilla trekking Rwanda",
-    "Volcanoes National Park lodges",
-    "Akagera safari",
-  ],
-  openGraph: {
-    type: "website",
-    locale: site.locale,
-    url: site.url,
-    siteName: name,
-    title: `${name} — Flights & Rwanda travel`,
+    metadataBase: new URL(site.url),
+    title: {
+      default: `${name} — Flight quotes & Rwanda travel planning`,
+      template: `%s · ${name}`,
+    },
     description,
-  },
-  twitter: {
-    card: "summary_large_image",
-    title: `${name} — Flights & Rwanda travel`,
-    description,
-  },
-  robots: {
-    index: true,
-    follow: true,
-    googleBot: { index: true, follow: true, "max-image-preview": "large" },
-  },
+    keywords: [
+      "Rwanda safari booking",
+      "Kigali airport transfer",
+      "car hire Rwanda",
+      "gorilla trekking Rwanda",
+      "Volcanoes National Park lodges",
+      "Akagera safari",
+    ],
+    openGraph: {
+      type: "website",
+      locale: site.locale,
+      url: site.url,
+      siteName: name,
+      title: `${name} — Flights & Rwanda travel`,
+      description,
+    },
+    twitter: {
+      card: "summary_large_image",
+      title: `${name} — Flights & Rwanda travel`,
+      description,
+    },
+    robots: {
+      index: process.env.SOFT_LAUNCH_PRIVATE !== "true",
+      follow: true,
+      googleBot: {
+        index: process.env.SOFT_LAUNCH_PRIVATE !== "true",
+        follow: true,
+        "max-image-preview": "large",
+      },
+    },
   };
 }
+
+// Access policy is evaluated on each request, including private soft-launch changes.
+export const dynamic = "force-dynamic";
 
 export const viewport: Viewport = {
   themeColor: "#1c5c45",
@@ -71,6 +81,11 @@ export const viewport: Viewport = {
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
+  if (process.env.SOFT_LAUNCH_PRIVATE === "true") {
+    const path = (await headers()).get("x-pathname") ?? "/";
+    if (!previewExemptPath(path) && !(await publicPreviewAllowed()))
+      redirect("/soft-launch");
+  }
   return (
     <html
       lang="en-RW"
@@ -87,7 +102,10 @@ export default async function RootLayout({
         >
           Skip to content
         </a>
-        <SiteProvider value={await getSite()}><InteractionCounter />{children}</SiteProvider>
+        <SiteProvider value={await getSite()}>
+          <InteractionCounter />
+          {children}
+        </SiteProvider>
       </body>
     </html>
   );

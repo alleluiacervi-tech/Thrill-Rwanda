@@ -1,3 +1,4 @@
+import { runObservedWorker } from "@/lib/worker-health";
 import { processNotificationBatch } from "@/lib/notification-worker";
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -11,6 +12,6 @@ export async function GET(request: Request) {
     );
   if (request.headers.get("authorization") !== `Bearer ${secret}`)
     return Response.json({ error: "Unauthorized" }, { status: 401 });
-  const outcomes = await processNotificationBatch();
+  const outcomes = await runObservedWorker("enquiry-notifications", () => processNotificationBatch(), value => value.length);
   return Response.json({ processed: outcomes.length });
 }

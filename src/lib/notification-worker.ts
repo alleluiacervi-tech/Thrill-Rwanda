@@ -1,8 +1,17 @@
+import {
+  whatsappApproved,
+  sendWhatsAppTemplate,
+  type WhatsAppTransport,
+} from "@/lib/whatsapp";
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { renderEmail, type RenderedEmail } from "@/lib/email/template";
 import { buildSite } from "@/lib/site-config";
-import { quoteContentHash, renderQuoteHtml, renderQuoteText } from "@/lib/quote-render";
+import {
+  quoteContentHash,
+  renderQuoteHtml,
+  renderQuoteText,
+} from "@/lib/quote-render";
 import type { QuoteSnapshot } from "@/lib/quote-rules";
 import { canUseEnquiries } from "@/lib/enquiry-workflow";
 import type { Prisma, NotificationJobStatus } from "@/generated/prisma/client";
@@ -58,6 +67,8 @@ export const sendOutboxEmail: EmailTransport = async (
 export async function processNotificationBatch(
   options: {
     send?: EmailTransport;
+    sendWhatsApp?: WhatsAppTransport;
+    whatsappConfigured?: boolean;
     limit?: number;
     now?: Date;
     ids?: string[];
@@ -99,7 +110,15 @@ export async function processNotificationBatch(
         });
         return null;
       }
-      if (candidate.status === "SENDING") await tx.notificationAttempt.updateMany({ where: { jobId: candidate.id, status: "STARTED" }, data: { status: "LEASE_EXPIRED", errorCode: "LEASE_EXPIRED", completedAt: now } });
+      if (candidate.status === "SENDING")
+        await tx.notificationAttempt.updateMany({
+          where: { jobId: candidate.id, status: "STARTED" },
+          data: {
+            status: "LEASE_EXPIRED",
+            errorCode: "LEASE_EXPIRED",
+            completedAt: now,
+          },
+        });
       const leaseToken = randomUUID();
       const changed = await tx.notificationJob.updateMany({
         where: { id: candidate.id, ...eligible },
@@ -161,6 +180,58 @@ export async function processNotificationBatch(
       });
       if (!enquiry) {
         await finish("CANCELLED", "ENQUIRY_UNAVAILABLE");
+        continue;
+      }
+      if (job.channel === "WHATSAPP") {
+        const message = job.message as {
+          phone?: string;
+          reference?: string;
+          status?: string;
+          consentId?: string;
+          consentVersion?: number;
+        } | null;
+        const consent = await db.whatsAppConsent.findUnique({
+          where: { enquiryId: enquiry.id },
+        });
+        if (
+          !consent?.active ||
+          consent.id !== message?.consentId ||
+          consent.version !== message.consentVersion ||
+          consent.phone !== message.phone
+        ) {
+          await finish("CANCELLED", "CONSENT_REVOKED");
+          continue;
+        }
+        if (job.firstAttemptAt) {
+          await finish("BLOCKED", "DELIVERY_REVIEW_REQUIRED");
+          continue;
+        }
+        if (!(options.whatsappConfigured ?? (await whatsappApproved()))) {
+          await finish("BLOCKED", "WHATSAPP_NOT_APPROVED");
+          continue;
+        }
+        if (
+          message.reference !== enquiry.reference ||
+          message.status !== enquiry.status
+        ) {
+          await finish("CANCELLED", "STATUS_SUPERSEDED");
+          continue;
+        }
+        const recorded = await db.notificationJob.updateMany({
+          where: { id: job.id, leaseToken, status: "SENDING" },
+          data: { firstAttemptAt: now },
+        });
+        if (!recorded.count) continue;
+        try {
+          const sent = await (options.sendWhatsApp ?? sendWhatsAppTemplate)({
+            phone: consent.phone,
+            reference: enquiry.reference,
+            status: enquiry.status,
+          });
+          await finish("SENT", null, sent.providerId);
+        } catch {
+          await finish("BLOCKED", "DELIVERY_REVIEW_REQUIRED");
+        }
         continue;
       }
       if (job.channel === "IN_APP") {
@@ -256,14 +327,24 @@ export async function processNotificationBatch(
         continue;
       }
       // Freeze exact email bytes before contacting the provider: retries keep the same payload.
-      if (job.message && typeof job.message === "object" && !Array.isArray(job.message)) {
+      if (
+        job.message &&
+        typeof job.message === "object" &&
+        !Array.isArray(job.message)
+      ) {
         email = job.message as OutboxEmail;
       } else {
-        await db.notificationJob.updateMany({ where: { id: job.id, leaseToken }, data: { message: email } });
+        await db.notificationJob.updateMany({
+          where: { id: job.id, leaseToken },
+          data: { message: email },
+        });
       }
       if (!email.from && process.env.EMAIL_FROM) {
         email = { ...email, from: process.env.EMAIL_FROM };
-        await db.notificationJob.updateMany({ where: { id: job.id, leaseToken }, data: { message: email } });
+        await db.notificationJob.updateMany({
+          where: { id: job.id, leaseToken },
+          data: { message: email },
+        });
       }
       if (!(
         options.emailConfigured ??

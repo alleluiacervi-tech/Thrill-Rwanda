@@ -66,6 +66,8 @@ export default async function AdminLayout({
     {
       label: "Operations",
       items: [
+        { label: "Corporate clients", href: "/admin/clients", icon: "users" },
+        { label: "Release readiness", href: "/admin/readiness", icon: "settings" },
         { label: "Launch controls", href: "/admin/launch", icon: "settings" },
         { label: "Support", href: "/admin/support", icon: "bookings" },
         { label: "Reports & exports", href: "/admin/reports", icon: "overview" },

@@ -22,6 +22,8 @@ export default async function AccountLayout({
 
   const nav = [
     { label: "Overview", href: "/account" },
+    { label: "My travel requests", href: "/account/enquiries" },
+    { label: "Company travel", href: "/account/corporate" },
     { label: "My bookings", href: "/account/bookings" },
     { label: "Notifications", href: "/account/notifications", badge: unread },
     { label: "Profile", href: "/account/profile" },

@@ -1,0 +1,53 @@
+name: Validate application and database workflows
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: thrill-rwanda-local
+          POSTGRES_DB: thrill_rwanda
+        ports:
+          - 54329:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d thrill_rwanda"
+          --health-interval 5s --health-timeout 5s --health-retries 15
+    env:
+      APP_ENV: test
+      DATABASE_URL: postgresql://postgres:thrill-rwanda-local@127.0.0.1:54329/thrill_rwanda
+      DIRECT_URL: postgresql://postgres:thrill-rwanda-local@127.0.0.1:54329/thrill_rwanda
+      BETTER_AUTH_SECRET: ci-test-only-not-a-production-secret-123456789
+      BETTER_AUTH_URL: http://localhost:3000
+      NEXT_PUBLIC_SITE_URL: http://localhost:3000
+      CRON_SECRET: ci-test-only-worker-secret-not-for-production
+      PESAPAL_ENV: sandbox
+      WHATSAPP_ENABLED: "false"
+      MAINTENANCE_DELETE_APPROVED: "false"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run db:deploy
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run lint
+      # These share a database and must run sequentially.
+      - run: |
+          npx tsx scripts/check-flight-enquiries.ts
+          npx tsx scripts/check-enquiry-workflow.ts
+          npx tsx scripts/check-quotations.ts
+          npx tsx scripts/check-finance.ts
+          npx tsx scripts/check-launch-operations.ts
+          npx tsx scripts/check-client-release.ts
+      - run: npm run build

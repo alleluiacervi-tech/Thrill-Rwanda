@@ -1,226 +1,86 @@
-# Thrill Rwanda v1.0.3
+# Thrill Rwanda — V2 travel operations
 
-Current Version 2 delivery work is tracked in [the phased plan and checklist](docs/V2_DELIVERY_PLAN.md), based on [the implementation audit](docs/V2_IMPLEMENTATION_AUDIT.md). The first additive slice provides guest flight enquiries at `/flights` and a protected admin inbox at `/admin/enquiries`. Enquiries are separate from the existing booking engine and do not reserve inventory or initiate payment. Phase 2 adds service-aware requests, offline capture and a scoped staff workspace at `/staff/enquiries`; administrators manage staff permissions under Users. See [Enquiry operations](docs/ENQUIRY_OPERATIONS.md). Phase 3 adds immutable quotation versions, verified acceptance and a durable delivery outbox; see [Quotations and delivery](docs/QUOTATIONS_AND_DELIVERY.md). Email automation requires an approved sender and running worker. Phase 4 adds approved off-site receipts and reconciliation, supplier commitments and fulfilment, refund obligations and per-currency finance reports; see [Finance and suppliers](docs/FINANCE_AND_SUPPLIERS.md). Gateway payments remain separate. Phase 5 adds the flights-first public journey, explicit service/offer launch controls, support cases, scoped reports/exports and document retention safeguards; see [Public launch, support and reporting](docs/PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md). Business approval, staging sign-off and operational release remain pending.
+A Next.js application for flights-first enquiries and checked Rwanda travel arrangements. The existing inventory booking engine is retained alongside explicit service modes; quotations, off-site finance and supplier fulfilment do not automatically create bookings or gateway payments.
 
-Rwanda-focused travel booking demo for **Thrill Rwanda**, featuring Volcanoes
-National Park, Nyungwe and Akagera as destination examples. Customer, provider
-and admin roles share one booking engine.
+Implemented software includes guest/service enquiries, scoped staff triage, immutable quotations and exact acceptance, durable delivery, receipt reconciliation and split allocations, supplier payables/fulfilment, refunds, public launch controls, support, scoped reports/CSV, document retention/holds, customer/company portals, supplier reviews, revision assistance and an approval-gated WhatsApp status adapter.
 
-> Note: The seeded catalogue is sample material; replace it before launch.
-> Legal terms, provider listings, prices and payment configuration are not
-> ready for production.
+Operational release, accounts, approved business content, real provider delivery and founder sign-off remain evidence gates. Nothing in the source code establishes company ownership, regulatory approval or production readiness by itself.
 
-Architecture decisions: [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
+## Run locally
 
-## Stack
+Use Node.js 24 and npm. Copy `.env.example` to a local `.env`, set a development authentication secret, then:
 
-Next.js 16 (App Router) · React 19 · TypeScript · Tailwind v4 ·
-PostgreSQL · Prisma 7 · Better Auth · Pesapal (mobile money + cards) · Resend
-
-## Getting started
-
-```powershell
-if (-not (Test-Path .env)) { Copy-Item .env.example .env }
-npm.cmd install
-npm.cmd run db:local       # keep running in this terminal
+```sh
+npm ci
+npm run db:local
 ```
 
-In a second terminal:
+Keep PostgreSQL running and open another terminal:
 
-```powershell
-npm.cmd run db:migrate
-npm.cmd run dev
+```sh
+npm run db:generate
+npm run db:deploy
+npm run dev
 ```
 
-Open http://localhost:3000.
+Open `http://localhost:3000`. Local PostgreSQL listens on port 54329 and persists in ignored `.local-postgres/`. Do not delete/reset a database to apply additive migrations. Sample seeding is optional development content and never production data or supplier approval.
 
-`db:local` stores database files in the ignored `.local-postgres/` directory
-and listens only on localhost. Keep that command running in its own terminal
-while using the app; press Ctrl+C there to stop it. `.env.example` contains
-the local database settings. Payment, email, and cloud storage credentials
-can stay empty during local development.
+## Workspaces
 
-`npm run db:seed` loads a **sample** Rwanda catalogue (gorilla trekking,
-Akagera, Nyungwe, Lake Kivu, Kigali) priced in USD. It is placeholder content,
-not Thrill Rwanda's offer: replace it with real operators, rates and
-photography before launch. If you ran the seed before the rebrand, reset the
-database first (`npx prisma migrate reset`) so the old Kenya sample listings
-are removed.
-
-## Scripts
-
-| Command | Does |
+| Area | Route |
 |---|---|
-| `npm run dev` | Dev server (Turbopack) |
-| `npm run build` | Production build |
-| `npm run typecheck` | `tsc --noEmit` |
-| `npm run lint` | ESLint |
-| `npm run db:local` | Start the project-local PostgreSQL server |
-| `npm run db:migrate` | Create + apply a migration (dev) |
-| `npm run db:deploy` | Apply migrations (CI/production) |
-| `npm run db:seed` | Load the demo catalogue + 365 days of availability |
-| `npm run db:studio` | Prisma Studio |
+| Public flight request | `/flights` |
+| Other service requests | `/enquire` |
+| Staff enquiries/support/reports/suppliers | `/staff` links |
+| Admin launch/release evidence | `/admin/launch`, `/admin/readiness` |
+| Corporate access management | `/admin/clients` |
+| Customer request/quote history | `/account/enquiries` |
+| Company case sharing | `/account/corporate` |
+| Existing inventory booking history | `/account/bookings` |
 
-## Layout
+New services default to enquiries. Only verified, explicitly granted cases appear in customer/company portals. Access, acceptance authority, financial records and supplier/publication approvals remain separate controls.
 
-```
-prisma/
-  seed.ts                demo catalogue -> Postgres + availability
-  schema.prisma          data model — domain + Better Auth tables
-  migrations/            init, account issuer, booking constraints
-  sql/01_constraints.sql source of the constraints migration (reference copy)
-src/
-  app/
-    actions/             server actions — booking, enquiry
-    account/ provider/ admin/   role-guarded dashboards
-    globals.css          design tokens, textures, motion
-    tours|hotels|cars/   listing + [slug] detail routes
-    legal/[slug]/        draft terms, privacy, cancellation
-    sitemap.ts robots.ts
-  components/
-    brand/               logo
-    layout/              header, footer, page shell + interior hero
-    cards/               tour / hotel / vehicle / destination cards
-    search/              multi-tab search panel, URL-driven filter bar
-    booking/             booking panel, cancel form, transfer + enquiry forms
-    ui/                  button, primitives, media
-  lib/
-    booking.ts           THE booking engine — create, cancel, transition, availability
-    booking-display.ts   resolves polymorphic resourceId to a display subject
-    auth.ts session.ts   Better Auth config + server-side role guards
-    db.ts                Prisma client (local PostgreSQL or Neon adapter)
-    site.ts              brand + contact details, navigation
-    content.ts           demo catalogue — replace with DB queries
-    utils.ts             cn(), money and date formatting
+## Validate
+
+```sh
+npm test
+npm run lint
+npm run typecheck
+npx tsx scripts/check-flight-enquiries.ts
+npx tsx scripts/check-enquiry-workflow.ts
+npx tsx scripts/check-quotations.ts
+npx tsx scripts/check-finance.ts
+npx tsx scripts/check-launch-operations.ts
+npx tsx scripts/check-client-release.ts
+npm run build
 ```
 
-## Status
+Database integration scripts refuse non-project-local/production targets. Run them sequentially because they share fixture counts and policies. They remove their generated fixtures; message transports are mocked in tests. The GitHub validation workflow uses an isolated PostgreSQL 17 service, not deployment credentials. Rebuild/refresh local caches after disposable browser fixtures so preview content cannot linger.
 
-**Delivered** — Steps 1, 2, 4, 5, plus the public half of 6–9, 17 and 19:
+## Operational commands
 
-- Project setup, Prisma/Neon schema, design system, homepage.
-- Public catalogue: tours, hotels, car hire and transfers — listing pages
-  with URL-driven filters and sort, plus detail pages with a live quote
-  panel.
-- About, Corporate, Contact, Become a Provider, Reviews, draft legal pages,
-  a designed 404, `sitemap.xml`, `robots.txt` and JSON-LD on detail pages.
-- Contact form: a real server action with Zod validation and a honeypot. It
-  sends via Resend when `RESEND_API_KEY` and `EMAIL_FROM` are set; when they
-  are not, it says so and points the customer to WhatsApp rather than
-  faking a success.
+| Command | Purpose |
+|---|---|
+| `npm run ops:preflight` | Configuration shape checks without revealing values; add `-- --strict` for a gate |
+| `npm run ops:backup -- --out PRIVATE_PATH.trb` | Consistent, encrypted PostgreSQL custom archive and authenticated manifest |
+| `npm run ops:restore-check -- --file PRIVATE_PATH.trb --target LOCAL_RESTORE_URL` | Restore into a fresh guarded local database, verify and remove it |
+| `npm run ops:retention` | Dry-run bounded expiry review; actual purge needs documented approval and `--apply` |
+| `npm run notifications:work -- --dry-run` | Inspect pending jobs without sending or changing records |
+| `npm run db:deploy` | Apply committed migrations to the intentionally selected database |
 
-**Step 3 — Authentication and roles.** Better Auth 1.7 on the Prisma/Neon
-adapter: sign-up, sign-in, sign-out, password reset (request + set), three
-roles, and dashboard shells for each. Guards live in `src/lib/session.ts`;
-`src/proxy.ts` bounces signed-out traffic early but is an optimisation, not
-the boundary.
+PostgreSQL client tools and a dedicated backup encryption key are required for backup/restore. Never put credentials in tickets/Git, enable live payments casually, or run production seed/reset commands. Encrypted archives and restore artifacts are ignored by Git. Schedulers, monitoring and publishing are not activated automatically.
 
-Two security properties are enforced and were verified against the live
-database:
+## Guides and plan
 
-- **Role escalation is impossible from the sign-up form.** `role` is declared
-  `input: false` in `src/lib/auth.ts`. A sign-up POST carrying
-  `"role":"ADMIN"` is accepted but persists as `CUSTOMER`. Role changes go
-  through an admin or a direct DB write, nothing else.
-- **Cross-role access is refused.** A signed-in customer hitting `/provider`
-  or `/admin` is redirected to `/account?denied=1`. Provider-scoped queries
-  take their `providerId` from `requireProvider()` — derived from the
-  session, never from a request parameter.
+- [Phased delivery and validation evidence](docs/V2_DELIVERY_PLAN.md)
+- [Historical V2 audit](docs/V2_IMPLEMENTATION_AUDIT.md)
+- [Enquiry operations](docs/ENQUIRY_OPERATIONS.md)
+- [Quotations and delivery](docs/QUOTATIONS_AND_DELIVERY.md)
+- [Off-site finance and suppliers](docs/FINANCE_AND_SUPPLIERS.md)
+- [Public launch, support and reporting](docs/PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md)
+- [Customer/company portals and channels](docs/CLIENT_PORTALS_AND_CHANNELS.md)
+- [Release, restore, rollback and handover](docs/RELEASE_AND_HANDOVER.md)
+- [Environment reference](docs/ENVIRONMENT_REFERENCE.md)
+- [Architecture](docs/ARCHITECTURE.md)
 
-**Step 10 — Booking engine.** One pipeline for tours, rooms and vehicles.
-`npm run db:seed` loads the demo catalogue into Postgres and opens 365 days
-of availability; the quote panels then create real bookings that hold real
-inventory.
-
-Verified end to end through the browser: sign up → book → three days held at
-2/6 → cancel → released to 0/6, booking `CANCELLED`. And under concurrency:
-10 simultaneous requests against 6 seats produced exactly 6 bookings, 4
-rejections, and zero overbooked days.
-
-The booking form posts a slug, dates and guests — never a price or a
-database id. Both are resolved server-side inside the transaction.
-
-**Steps 12–13 — Provider and admin dashboards.**
-
-*Provider* — bookings (confirm / decline / mark complete), listings with
-publish toggles, availability windows, and an editable business profile.
-Scoped throughout: verified that a provider handed another provider's
-booking reference gets `NOT_FOUND` and the target row is unchanged.
-
-*Admin* — overview with the Step 13 reports (bookings by status, popular
-services by volume and value, revenue, recent activity), provider
-approve/reject/suspend, all bookings with status filters, all listings, and
-user role/activation management.
-
-Suspending or rejecting a provider unpublishes every listing they have in
-the same transaction — verified: provider went `SUSPENDED` and all three of
-their vehicles went unpublished together.
-
-**Steps 11, 15, 16, 18 — Customer dashboard, notifications, reviews,
-security headers.**
-
-*Notifications* — in-app rows are the source of truth and are written first;
-email via Resend is best-effort on top. Nothing in the notification path can
-throw into a caller, so a bounced email can never fail a booking that already
-holds inventory. Verified: welcome → booking created → confirmed → completed
-all landed for the customer, and the provider got only the events they
-didn't cause themselves.
-
-*Reviews* — only against a `COMPLETED` booking you own, one per booking
-(unique at the database). New reviews are `PENDING`; every public read
-filters `PUBLISHED`. Verified: a pending review contributes nothing to a
-listing's rating until an admin publishes it. Admin moderation at
-`/admin/reviews` publishes, hides or deletes.
-
-*Customer dashboard* — notifications with an unread badge, editable profile,
-and the review form on completed bookings.
-
-*Security headers* — `nosniff`, `X-Frame-Options: DENY`, referrer policy,
-`Permissions-Policy`, HSTS, no `X-Powered-By`; dashboards and auth screens
-served `private, no-store`. Verified against a running server.
-
-**Not yet built** — payments (14), a full manual test pass (20), and
-deployment (21). See the launch checklist below.
-
-### Launch checklist
-
-- [ ] **Payments (Step 14).** Needs Pesapal sandbox credentials and a public
-      HTTPS callback URL. Bookings currently rest in `AWAITING_PAYMENT`.
-- [ ] **Content-Security-Policy.** Deliberately not set — it needs
-      per-request nonces threaded through `src/proxy.ts`. Do it as one task.
-- [ ] **Legal review.** `/legal/*` are drafts and say so; a Rwandan advocate
-      must review before launch.
-- [ ] **Real catalogue and photography.** Replace `src/lib/content.ts` and
-      pass `src` to `<Media>`.
-- [ ] **Email sender domain** verified with Resend, then set `RESEND_API_KEY`
-      and `EMAIL_FROM` — until both are set, email silently no-ops and the
-      contact form says so.
-- [ ] **Step 20 test pass** across the customer / provider / admin journeys.
-
-Bookings open in `AWAITING_PAYMENT` and stay there: online payment is Step 14,
-so the booking page tells the customer to call to settle. Transfers are still
-enquiry-only — they're quoted per route rather than held as inventory.
-
-Every internal link resolves; there are no 404s in the site chrome.
-
-### Windows dev note
-
-`next dev` and `next build` share `.next`. On Windows the second to start
-hits `EPERM … rename`, which shows up as unexplained 500s. Stop the dev
-server and delete `.next` before building, and again before going back to
-dev.
-
-### What is real vs. placeholder
-
-- **Real:** layout, styling, filtering, sorting, routing, auth, the booking
-  engine, availability, cancellation, SEO metadata, and the enquiry action.
-  Bookings and inventory live in Postgres.
-- **Seeded, not authored:** the catalogue itself. `src/lib/content.ts` is the
-  source `npm run db:seed` loads into the database. Public pages still read
-  that file for display; only booking goes through the database. Replace both
-  when real listings arrive.
-- **Placeholder:** listing imagery. `<Media>` renders a deterministic
-  in-palette duotone; pass a `src` and it switches to `next/image` with no
-  other change.
-- **Not wired:** payment (Step 14). Bookings sit in `AWAITING_PAYMENT` and the
-  booking page asks the customer to call to settle.
+Stack: Next.js 16.3 / React 19 / TypeScript / Tailwind 4 / Prisma 7 / PostgreSQL / Better Auth. Resend, Pesapal, Cloudinary/R2 and Meta are supported adapters whose company approval and deployment configuration are separate from implementation. There is no live GDS, automatic ticket issuance, wallet, automatic supplier payout, native app or AI planner.

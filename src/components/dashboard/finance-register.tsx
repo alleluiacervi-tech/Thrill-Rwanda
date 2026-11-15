@@ -1,3 +1,4 @@
+import { SupplierReviews } from "@/components/dashboard/supplier-reviews";
 import { randomUUID } from "node:crypto";
 import Link from "next/link";
 import { redirect } from "next/navigation";
@@ -226,6 +227,7 @@ export async function SupplierRegister() {
         ))}
       </div>
       {!suppliers.length && <p>No accessible supplier records.</p>}
+      <SupplierReviews />
     </>
   );
 }

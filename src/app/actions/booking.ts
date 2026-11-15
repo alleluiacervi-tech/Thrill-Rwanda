@@ -1,5 +1,6 @@
 "use server";
 
+import {publicPreviewAllowed} from "@/lib/soft-launch";
 import { directBookingEnabled } from "@/lib/publication";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -109,6 +110,7 @@ export async function submitBooking(
     };
   }
 
+  if (!(await publicPreviewAllowed())) return {status:"error",message:"This private preview accepts new arrangements from invited accounts only."};
   const input = parsed.data;
   if (!(await directBookingEnabled(input.serviceType))) return { status: "error", message: "This service is available by checked quotation. Please send an enquiry instead." };
 

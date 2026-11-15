@@ -1,3 +1,4 @@
+import { enqueueWhatsAppStatus } from "@/lib/whatsapp";
 import type { Prisma } from "@/generated/prisma/client";
 import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
@@ -23,9 +24,26 @@ export function canWriteQuotes(actor: EnquiryActor, ownerId: string | null) {
       (actor.staffRole === "SALES" && ownerId === actor.id))
   );
 }
-async function requireActiveOwner(tx: Prisma.TransactionClient, ownerId: string | null) {
-  const owner = ownerId ? await tx.user.findUnique({ where: { id: ownerId }, select: { isActive: true, role: true, staffRole: true } }) : null;
-  if (!owner?.isActive || !(owner.role === "ADMIN" || ["SALES", "OPERATIONS"].includes(owner.staffRole ?? ""))) throw new QuoteError("Assign an active administrator, sales or operations owner before issuing or accepting a quote.");
+async function requireActiveOwner(
+  tx: Prisma.TransactionClient,
+  ownerId: string | null,
+) {
+  const owner = ownerId
+    ? await tx.user.findUnique({
+        where: { id: ownerId },
+        select: { isActive: true, role: true, staffRole: true },
+      })
+    : null;
+  if (
+    !owner?.isActive ||
+    !(
+      owner.role === "ADMIN" ||
+      ["SALES", "OPERATIONS"].includes(owner.staffRole ?? "")
+    )
+  )
+    throw new QuoteError(
+      "Assign an active administrator, sales or operations owner before issuing or accepting a quote.",
+    );
 }
 export async function issueQuote(
   actorId: string,
@@ -157,6 +175,7 @@ export async function issueQuote(
         },
       },
     });
+    await enqueueWhatsAppStatus(tx, row.id);
     return quote.id;
   });
 }
@@ -247,6 +266,7 @@ export async function recordQuoteAcceptance(
         body: input.evidence,
       },
     });
+    await enqueueWhatsAppStatus(tx, row.id);
     return acceptance.id;
   });
 }
