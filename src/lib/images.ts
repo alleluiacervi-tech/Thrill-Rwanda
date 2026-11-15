@@ -60,10 +60,10 @@ export const vehicleImages: Record<string, string> = {
 };
 
 export const destinationImages: Record<string, string> = {
-  "volcanoes-national-park": photo("photo-1589442690840-1c2c880254ac"),
+  "volcanoes-national-park": "/media/photos/volcanoes-summit-mist.jpeg",
   "nyungwe-national-park": "/media/photos/nyungwe-canopy-walk-2.jpeg",
-  "akagera-national-park": photo("photo-1519659528534-7fd733a832a0"),
-  "lake-kivu": photo("photo-1514548383638-cef9251a73ec"),
+  "akagera-national-park": "/thrill-rwanda-mark.svg",
+  "lake-kivu": "/media/hero/kivu.webp",
   kigali: "/media/photos/kigali-convention-centre-night.jpeg",
 };
 

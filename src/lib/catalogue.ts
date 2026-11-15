@@ -1,3 +1,4 @@
+import { getPublications } from "@/lib/publication";
 import { cache } from "react";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
@@ -10,6 +11,10 @@ import type { ServiceType } from "@/generated/prisma/enums";
 // verified providers ever leave this module, so pages never filter themselves.
 
 export type CatalogueTour = {
+  itinerary: string;
+  suitability: string;
+  inclusions: string[];
+  exclusions: string[];
   id: string;
   slug: string;
   name: string;
@@ -131,6 +136,7 @@ type TourRow = Awaited<ReturnType<typeof db.tour.findMany<{ include: typeof tour
 
 function mapTour(t: TourRow, tallies: Map<string, Tally>): CatalogueTour {
   return {
+    itinerary: t.itinerary, suitability: t.suitability, inclusions: t.inclusions, exclusions: t.exclusions,
     id: t.id,
     slug: t.slug,
     name: t.name,
@@ -153,8 +159,9 @@ function mapTour(t: TourRow, tallies: Map<string, Tally>): CatalogueTour {
 }
 
 export const listTours = shared("tours", async (): Promise<CatalogueTour[]> => {
+  if ((await getPublications()).TRIP === "HIDDEN") return [];
   const rows = await db.tour.findMany({
-    where: { isPublished: true, provider: LIVE_PROVIDER },
+    where: { isPublished: true, offerApproval: { not: null }, provider: LIVE_PROVIDER },
     include: tourInclude,
     orderBy: { createdAt: "asc" },
   });
@@ -163,8 +170,9 @@ export const listTours = shared("tours", async (): Promise<CatalogueTour[]> => {
 });
 
 export const getTour = cache(async (slug: string) => {
+  if ((await getPublications()).TRIP === "HIDDEN") return null;
   const row = await db.tour.findFirst({
-    where: { slug, isPublished: true, provider: LIVE_PROVIDER },
+    where: { slug, isPublished: true, offerApproval: { not: null }, provider: LIVE_PROVIDER },
     include: tourInclude,
   });
   if (!row) return null;
@@ -221,12 +229,14 @@ const liveHotel = {
 } as const;
 
 export const listHotels = shared("hotels", async (): Promise<CatalogueHotel[]> => {
+  if ((await getPublications()).STAY === "HIDDEN") return [];
   const rows = await db.hotel.findMany({ where: liveHotel, include: hotelInclude, orderBy: { createdAt: "asc" } });
   const tallies = await reviewTallies("ROOM", rows.flatMap((h) => h.rooms.map((r) => r.id)));
   return rows.map((r) => mapHotel(r, tallies));
 });
 
 export const getHotel = cache(async (slug: string) => {
+  if ((await getPublications()).STAY === "HIDDEN") return null;
   const row = await db.hotel.findFirst({ where: { ...liveHotel, slug }, include: hotelInclude });
   if (!row) return null;
   return mapHotel(row, await reviewTallies("ROOM", row.rooms.map((r) => r.id)));
@@ -260,6 +270,7 @@ function mapVehicle(v: VehicleRow, tallies: Map<string, Tally>): CatalogueVehicl
 }
 
 export const listVehicles = shared("vehicles", async (): Promise<CatalogueVehicle[]> => {
+  if ((await getPublications()).TRANSPORT === "HIDDEN") return [];
   const rows = await db.vehicle.findMany({
     where: { isPublished: true, provider: LIVE_PROVIDER },
     include: vehicleInclude,
@@ -271,6 +282,7 @@ export const listVehicles = shared("vehicles", async (): Promise<CatalogueVehicl
 });
 
 export const getVehicle = cache(async (slug: string) => {
+  if ((await getPublications()).TRANSPORT === "HIDDEN") return null;
   const row = await db.vehicle.findFirst({
     where: { slug, isPublished: true, provider: LIVE_PROVIDER },
     include: vehicleInclude,

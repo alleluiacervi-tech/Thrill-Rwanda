@@ -48,5 +48,5 @@ export function canViewDocuments(
   user: { id: string; role?: string | null },
   booking: { customerId: string; providerUserId: string },
 ) {
-  return user.role === "ADMIN" || user.id === booking.customerId || user.id === booking.providerUserId;
+  return user.role === "ADMIN" || user.id === booking.customerId || (user.role === "PROVIDER" && user.id === booking.providerUserId);
 }

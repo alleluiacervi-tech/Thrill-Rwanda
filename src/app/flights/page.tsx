@@ -1,3 +1,4 @@
+import { requirePublicService } from "@/lib/publication";
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { PageShell, PageHero } from "@/components/layout/page-shell";
@@ -13,7 +14,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/flights" },
 };
 
-export default function FlightsPage() {
+export default async function FlightsPage() {
+  await requirePublicService("FLIGHT");
   return (
     <PageShell>
       <PageHero

@@ -3,8 +3,9 @@ import { ArrowRight, Clock3, Mail, MapPin, MessageCircle, Phone } from "lucide-r
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
-import { PaymentLogos } from "@/components/ui/payment-logos";
-import { footerNav } from "@/lib/site";
+
+import { visiblePath } from "@/lib/launch-rules";
+import { footerNav as allFooterNav } from "@/lib/site";
 import { getSite } from "@/lib/settings";
 
 /**
@@ -15,6 +16,7 @@ import { getSite } from "@/lib/settings";
  */
 export async function SiteFooter() {
   const site = await getSite();
+  const footerNav = Object.fromEntries(Object.entries(allFooterNav).map(([k,v]) => [k,v.filter(n=>visiblePath(n.href,site.publications))]));
   const contacts = [
     site.contact.phone && site.contact.phoneHref
       ? { icon: Phone, label: site.contact.phone, href: site.contact.phoneHref }
@@ -43,7 +45,7 @@ export async function SiteFooter() {
             </p>
           </div>
           <div className="flex flex-col gap-3 sm:flex-row lg:justify-end">
-            <Button href="/tours" variant="accent" size="lg">
+            <Button href="/enquire" variant="accent" size="lg">
               Plan a trip
               <ArrowRight className="size-4" />
             </Button>
@@ -137,8 +139,7 @@ export async function SiteFooter() {
             © {new Date().getFullYear()} {site.legalName}. Made in Kigali.
           </p>
           <p className="flex flex-wrap items-center gap-2">
-            <span>Secure payments by</span>
-            <PaymentLogos marks={["pesapal", "mpesa", "airtel", "visa", "mastercard"]} size="sm" />
+            <Link href="/how-it-works" className="underline">Payment instructions follow your checked quote</Link>
           </p>
         </div>
       </Container>

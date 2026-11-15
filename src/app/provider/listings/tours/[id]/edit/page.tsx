@@ -23,7 +23,7 @@ export default async function EditTourPage({
     select: {
       id: true, name: true, destination: true, durationDays: true,
       maxParticipants: true, priceMinor: true, priceResidentMinor: true, priceNonResidentMinor: true, description: true,
-      pickupInfo: true, activities: true, images: true,
+      pickupInfo: true, activities: true, images: true, itinerary: true, suitability: true, inclusions: true, exclusions: true,
     },
   });
   if (!tour) notFound();

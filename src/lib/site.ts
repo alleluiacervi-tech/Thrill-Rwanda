@@ -60,6 +60,8 @@ export const footerNav = {
     { label: "Corporate & Events", href: "/corporate" },
   ],
   Company: [
+    { label: "How it works", href: "/how-it-works" },
+    { label: "Travel support", href: "/support" },
     { label: "About Us", href: "/about" },
     { label: "Contact", href: "/contact" },
     { label: "Become a Provider", href: "/partner" },

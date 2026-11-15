@@ -13,13 +13,25 @@ export default async function StaffLayout({
   const actor = await requireEnquiryStaff();
   return (
     <DashboardShell
-      role={actor.staffRole ?? actor.role}
+      role={actor.role === "ADMIN" ? "ADMIN" : (actor.staffRole ?? actor.role)}
       userName={actor.fullName}
       groups={[
         {
           label: "Staff workspace",
           items: [
             { label: "Enquiries", href: "/staff/enquiries", icon: "bookings" },
+            { label: "Reports", href: "/staff/reports", icon: "overview" },
+            ...(actor.staffRole !== "FINANCE" || actor.role === "ADMIN" ? [{ label: "Support", href: "/staff/support", icon: "bookings" as const }] : []),
+            { label: "Suppliers", href: "/staff/suppliers", icon: "providers" },
+            ...(actor.role === "ADMIN" || actor.staffRole === "FINANCE"
+              ? [
+                  {
+                    label: "Off-site finance",
+                    href: "/staff/finance",
+                    icon: "payments",
+                  },
+                ]
+              : []),
             { label: "My account", href: "/account", icon: "users" },
           ],
         },

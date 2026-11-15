@@ -5,26 +5,12 @@ import { Badge, Rating } from "@/components/ui/primitives";
 import type { CatalogueHotel, CatalogueTour, CatalogueVehicle } from "@/lib/catalogue";
 import type { Destination } from "@/lib/content";
 import { destinationImages } from "@/lib/images";
-import { cn, formatMoney } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 
 /* --------------------------------------------------------------- Price tag */
 
-function PriceFrom({
-  amount,
-  unit,
-}: {
-  amount: number;
-  unit: string;
-}) {
-  return (
-    <p className="flex items-baseline gap-1.5">
-      <span className="text-xs text-[var(--ink-faint)]">From</span>
-      <span className="tnum font-display text-[1.375rem] font-medium leading-none tracking-[-0.02em] text-[var(--ink)]">
-        {formatMoney(amount)}
-      </span>
-      <span className="text-xs text-[var(--ink-faint)]">{unit}</span>
-    </p>
-  );
+function PriceFrom(_props: { amount:number;unit:string }) {
+  return <p className="text-sm font-semibold text-forest-700">Price by checked quotation</p>;
 }
 
 // Real review averages only. A listing nobody has reviewed says so instead of showing a number.

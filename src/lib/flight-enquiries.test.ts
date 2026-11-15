@@ -9,6 +9,7 @@ const { tx } = vi.hoisted(() => ({
     $queryRaw: vi.fn(),
     enquiry: { findUnique: vi.fn(), count: vi.fn(), create: vi.fn() },
     legalDocument: { findUnique: vi.fn() },
+    servicePublication: { findUnique: vi.fn() },
   },
 }));
 vi.mock("@/lib/db", () => ({
@@ -41,6 +42,7 @@ beforeEach(() => {
   vi.resetAllMocks();
   tx.enquiry.findUnique.mockResolvedValue(null);
   tx.enquiry.count.mockResolvedValue(0);
+  tx.servicePublication.findUnique.mockResolvedValue(null);
   tx.legalDocument.findUnique.mockResolvedValue({ version: 3 });
   tx.enquiry.create.mockImplementation(async ({ data }) => data);
 });
@@ -96,4 +98,10 @@ it("preserves idempotent retries of forms saved before the shared capture refact
   });
   expect(await saveFlightEnquiry(input)).toEqual({ reference: "TRQ-legacy" });
   expect(tx.enquiry.create).not.toHaveBeenCalled();
+});
+
+it("blocks new public capture when a service is hidden", async () => {
+ tx.servicePublication.findUnique.mockResolvedValue({mode:"HIDDEN"});
+ await expect(saveFlightEnquiry(input)).rejects.toThrow("not accepting");
+ expect(tx.enquiry.create).not.toHaveBeenCalled();
 });

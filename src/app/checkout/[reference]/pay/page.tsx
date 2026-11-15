@@ -93,7 +93,7 @@ export default async function PayPage({ params }: { params: Promise<{ reference:
         <div className="mt-5 flex flex-wrap items-center justify-between gap-4 text-2xs text-[var(--ink-muted)]">
           <p className="flex items-center gap-2">
             <Lock className="size-3.5 text-forest-700" />
-            Payments are handled by Pesapal, a licensed payment provider. We never see your card or PIN.
+            This payment is processed by Pesapal. Do not share your card details or PIN with the travel desk.
           </p>
           <span className="flex flex-wrap gap-5">
             {/* For a browser that blocks embedded payment pages. */}

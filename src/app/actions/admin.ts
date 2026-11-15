@@ -234,7 +234,10 @@ export async function adminSetListingPublished(
   const isPublished = parsed.data.publish === "true";
   const data = { isPublished };
 
-  if (kind === "TOUR") await db.tour.update({ where: { id }, data });
+  if (kind === "TOUR") {
+    if (isPublished && !(await db.tour.findFirst({ where: { id, offerApproval: { not: null } } }))) return fail("Review and approve this offer under Launch controls first.");
+    await db.tour.update({ where: { id }, data });
+  }
   else if (kind === "HOTEL") await db.hotel.update({ where: { id }, data });
   else if (kind === "VEHICLE") await db.vehicle.update({ where: { id }, data });
   else await db.room.update({ where: { id }, data });

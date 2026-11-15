@@ -317,7 +317,7 @@ export function TransferForm({
                 {tooMany
                   ? `Groups over ${largest} need a bigger vehicle than we book online.`
                   : "That trip isn't on our price list yet."}{" "}
-                Send it over and we&rsquo;ll come back with a fixed price, usually within the hour.
+                Send your requirements so the desk can check options and provide a written quotation.
               </p>
               <Button type="button" variant="accent" size="lg" className="mt-6" onClick={sendAsRequest} disabled={requesting}>
                 {requesting ? "Preparing…" : "Send as a request"}
@@ -428,7 +428,7 @@ export function TransferForm({
                         <dd className="tnum text-base">{formatMoney(quote.totalMinor)}</dd>
                       </div>
                       <p className="pt-1 text-2xs leading-relaxed text-[var(--ink-faint)]">
-                        Fixed price, no surge. Parking, tolls and 60 minutes&rsquo; waiting included. Extra luggage and child seats free.
+                        Review the quoted inclusions, waiting allowance, parking, tolls and any luggage or child-seat conditions before accepting.
                       </p>
                     </dl>
 

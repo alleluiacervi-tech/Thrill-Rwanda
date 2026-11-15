@@ -87,7 +87,7 @@ export async function setListingPublished(
   let count = 0;
   if (kind === "TOUR") {
     ({ count } = await db.tour.updateMany({
-      where: { id, providerId },
+      where: { id, providerId, ...(isPublished ? { offerApproval: { not: null } } : {}) },
       data: { isPublished },
     }));
   } else if (kind === "HOTEL") {

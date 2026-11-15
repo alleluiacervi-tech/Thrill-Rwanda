@@ -79,7 +79,14 @@ export function enquiryScope(actor: EnquiryActor): Prisma.EnquiryWhereInput {
   if (isFinance(actor))
     return {
       status: {
-        in: ["AWAITING_PAYMENT", "PARTNER_PROCESSING", "CANCELLED", "REFUNDED"],
+        in: [
+          "AWAITING_PAYMENT",
+          "PARTNER_PROCESSING",
+          "CONFIRMED",
+          "COMPLETED",
+          "CANCELLED",
+          "REFUNDED",
+        ],
       },
     };
   return { OR: [{ ownerId: actor.id }, { ownerId: null }] };

@@ -13,7 +13,8 @@ import { homeForRole } from "@/lib/session-routes";
 import { useSite } from "@/components/layout/site-context";
 import { destinations } from "@/lib/content";
 import { destinationImages } from "@/lib/images";
-import { primaryNav } from "@/lib/site";
+import { visiblePath } from "@/lib/launch-rules";
+import { primaryNav as allPrimaryNav } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
 /**
@@ -71,6 +72,7 @@ const toursFor = (name: string) => `/tours?destination=${encodeURIComponent(name
 
 export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
   const site = useSite();
+  const primaryNav = allPrimaryNav.filter(n => visiblePath(n.href, site.publications));
   const { scrolled, hidden } = useScrollState();
   const [open, setOpen] = React.useState(false);
   const [mega, setMega] = React.useState(false);
@@ -122,7 +124,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
 
   const tucked = hidden && !open && !mega;
   // Stable, so the menu's focus handling doesn't re-run on every header render.
-  const closeMenu = React.useCallback(() => setOpen(false), []);
+  const closeMenu = React.useCallback(() => setOpen(false), [setOpen]);
 
   return (
     <>
@@ -251,8 +253,8 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   </span>
                   {session ? (firstName ?? "Account") : "Sign in"}
                 </Link>
-                <Button href="/flights" variant="accent" size="sm" className="group font-semibold">
-                  Flight quote
+                <Button href={site.publications.FLIGHT !== "HIDDEN" ? "/flights" : "/enquire"} variant="accent" size="sm" className="group font-semibold">
+                  {site.publications.FLIGHT !== "HIDDEN" ? "Flight quote" : "Enquire"}
                   <ArrowRight
                     aria-hidden
                     className="hidden size-3.5 transition-transform duration-300 group-hover:translate-x-0.5 sm:block"
@@ -405,6 +407,8 @@ function PhoneMenu({
   whatsapp?: string | null;
   phone?: string | null;
 }) {
+  const site = useSite();
+  const primaryNav = allPrimaryNav.filter(n => visiblePath(n.href, site.publications));
   const sheetRef = React.useRef<HTMLDivElement>(null);
 
   // A real dialog: focus moves in, Escape closes, focus returns to the menu button.
@@ -506,7 +510,7 @@ function PhoneMenu({
             </ul>
           </nav>
 
-          <div
+          {site.publications.TRIP !== "HIDDEN" && (          <div
             style={{ animationDelay: "340ms" }}
             className={cn("mt-8", open && "anim-rise")}
           >
@@ -528,7 +532,7 @@ function PhoneMenu({
                 </Link>
               ))}
             </div>
-          </div>
+          </div>)}
 
           <div
             style={{ animationDelay: "400ms" }}
@@ -537,8 +541,8 @@ function PhoneMenu({
             <Button href={accountHref} variant="outline" size="lg" onClick={onClose} className="border-white/25 px-4 text-bone-50 hover:bg-bone-50 hover:text-forest-900">
               {accountLabel}
             </Button>
-            <Button href="/flights" variant="accent" size="lg" onClick={onClose} className="px-4">
-              Flight quote
+            <Button href={site.publications.FLIGHT !== "HIDDEN" ? "/flights" : "/enquire"} variant="accent" size="lg" onClick={onClose} className="px-4">
+              {site.publications.FLIGHT !== "HIDDEN" ? "Flight quote" : "Enquire"}
             </Button>
             {whatsapp ? (
               <a

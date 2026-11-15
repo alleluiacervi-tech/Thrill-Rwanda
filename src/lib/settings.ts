@@ -1,3 +1,4 @@
+import { publicationMap } from "@/lib/launch-rules";
 import { cache } from "react";
 import { revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
@@ -43,7 +44,8 @@ const SITE_TAG = "site-settings";
 const readSite = unstable_cache(
   async (): Promise<SiteInfo> => {
     try {
-      return buildSite(await db.siteSettings.findUnique({ where: { id: 1 } }));
+      const [row, publications] = await Promise.all([db.siteSettings.findUnique({ where: { id: 1 } }), db.servicePublication.findMany()]);
+      return { ...buildSite(row), publications: publicationMap(publications) };
     } catch (err) {
       console.error("[settings] business details read failed, using defaults", err);
       return buildSite(null);

@@ -23,7 +23,7 @@ export default async function AdminOverviewPage() {
     db.booking.count(),
     db.booking.count({ where: { status: "COMPLETED" } }),
     db.booking.count({ where: { status: { in: ["CANCELLED", "REJECTED"] } } }),
-    db.payment.aggregate({ where: { status: "SUCCEEDED" }, _sum: { amountMinor: true } }),
+    db.payment.groupBy({ by: ["currency"], where: { status: "SUCCEEDED" }, _sum: { amountMinor: true } }),
     db.booking.groupBy({ by: ["status"], _count: { _all: true } }),
     db.booking.findMany({
       orderBy: { createdAt: "desc" }, take: 8,
@@ -33,7 +33,7 @@ export default async function AdminOverviewPage() {
 
   // "Popular services" from Step 13 — which service type sells most.
   const popular = await db.booking.groupBy({
-    by: ["serviceType"],
+    by: ["serviceType", "currency"],
     _count: { _all: true },
     _sum: { totalMinor: true },
     orderBy: { _count: { serviceType: "desc" } },
@@ -45,7 +45,7 @@ export default async function AdminOverviewPage() {
     { icon: Users, label: "Customers", value: String(customers) },
     { icon: BadgeCheck, label: "Providers awaiting approval", value: String(providersPending), href: "/admin/providers" },
     { icon: CalendarDays, label: "Total bookings", value: String(totalBookings), href: "/admin/bookings" },
-    { icon: Wallet, label: "Revenue collected", value: formatMoney(revenue._sum.amountMinor ?? 0) },
+    { icon: Wallet, label: "Gateway collections", value: revenue.map(r => formatMoney(r._sum.amountMinor ?? 0, r.currency)).join(" · ") || "No collections" },
   ];
 
   const serviceLabel: Record<string, string> = {
@@ -111,10 +111,10 @@ export default async function AdminOverviewPage() {
                 <Tr><Td className="text-[var(--ink-faint)]">No bookings yet</Td><Td /><Td /></Tr>
               ) : (
                 popular.map((p) => (
-                  <Tr key={p.serviceType}>
+                  <Tr key={`${p.serviceType}-${p.currency}`}>
                     <Td>{serviceLabel[p.serviceType] ?? p.serviceType}</Td>
                     <Td className="tnum text-right">{p._count._all}</Td>
-                    <Td className="tnum text-right">{formatMoney(p._sum.totalMinor ?? 0)}</Td>
+                    <Td className="tnum text-right">{formatMoney(p._sum.totalMinor ?? 0, p.currency)}</Td>
                   </Tr>
                 ))
               )}

@@ -1,3 +1,4 @@
+import { requirePublicService } from "@/lib/publication";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Pagination } from "@/components/ui/pagination";
@@ -13,7 +14,7 @@ import { destinationImages } from "@/lib/images";
 export const metadata: Metadata = {
   title: "Hotels, Lodges & Camps in Rwanda",
   description:
-    "Volcano lodges, lakeside stays, safari tented camps and city apartments across Rwanda — verified properties with live room availability and concierge support.",
+    "Explore Rwanda stays and ask the desk to check room options, inclusions and prices for your dates.",
   alternates: { canonical: "/hotels" },
 };
 
@@ -95,6 +96,7 @@ export default async function HotelsPage({
 }: {
   searchParams: SearchParams;
 }) {
+  await requirePublicService("STAY");
   const raw = await searchParams;
   const sp = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0]! : v ?? ""]),

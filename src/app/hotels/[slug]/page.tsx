@@ -176,7 +176,7 @@ export default async function HotelDetailPage({
                     </div>
                     <div className="shrink-0 text-right">
                       <p className="tnum font-display text-2xl font-semibold">
-                        {formatMoney(room.pricePerNight)}
+                        {site.publications.STAY === "DIRECT" ? formatMoney(room.pricePerNight) : "Price on request"}
                       </p>
                       <p className="text-2xs text-[var(--ink-faint)]">
                         per night
@@ -195,9 +195,7 @@ export default async function HotelDetailPage({
               Managed by {hotel.provider}
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">
-              Licence and insurance verified by {site.name}. Rooms are
-              held against live availability, and your payment is released to
-              the property only after check-in.
+              Room availability, inclusions, payment schedule and property conditions are confirmed in your checked quotation.
             </p>
           </section>
         </div>

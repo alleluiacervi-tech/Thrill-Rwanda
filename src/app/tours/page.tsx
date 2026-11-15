@@ -1,3 +1,4 @@
+import { requirePublicService } from "@/lib/publication";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Pagination } from "@/components/ui/pagination";
@@ -14,7 +15,7 @@ import { destinationImages } from "@/lib/images";
 export const metadata: Metadata = {
   title: "Tours & Safaris in Rwanda",
   description:
-    "Gorilla trekking, chimpanzee tracking, Akagera safaris and city tours across Rwanda — operated by verified local partners with live availability.",
+    "Explore Rwanda itineraries and request a checked quote for your dates, group size and interests.",
   alternates: { canonical: "/tours" },
 };
 
@@ -109,6 +110,7 @@ export default async function ToursPage({
 }: {
   searchParams: SearchParams;
 }) {
+  await requirePublicService("TRIP");
   const raw = await searchParams;
   const sp = Object.fromEntries(
     Object.entries(raw).map(([k, v]) => [k, Array.isArray(v) ? v[0]! : v ?? ""]),
@@ -122,7 +124,7 @@ export default async function ToursPage({
       <PageHero
         eyebrow="Tours & Safaris"
         title="Guided by people who live there"
-        lede="Small groups, resident guides and fixed departures. Every itinerary is run by a partner we have audited in person."
+        lede="Explore approved itineraries and request a checked quotation for your dates, group and travel preferences."
         crumbs={[{ label: "Tours & Safaris" }]}
         image={destinationImages["volcanoes-national-park"]}
         imagePosition="center 60%"

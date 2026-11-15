@@ -200,36 +200,15 @@ async function main() {
         verified: true,
       }),
     );
-    await assert.rejects(
-      () =>
-        update(sales.id, {
-          ownerId: sales.id,
+    for (const actor of [sales, finance, admin]) {
+      await assert.rejects(
+        () => update(actor.id, {
           status: "PARTNER_PROCESSING",
-          evidence: "Invalid sales payment approval",
+          evidence: "Manual milestone bypass must be rejected",
         }),
-      /not permitted/,
-    );
-    await assert.rejects(
-      () =>
-        update(finance.id, {
-          status: "PARTNER_PROCESSING",
-          ownerId: sales.id,
-          evidence: "Receipt reconciled externally",
-        }),
-      /Finance/,
-    );
-    await update(finance.id, {
-      status: "PARTNER_PROCESSING",
-      evidence: "Approved external reconciliation R-01 checked by finance",
-    });
-    await update(admin.id, {
-      status: "CONFIRMED",
-      evidence: "Supplier confirmation S-01 checked by operations",
-    });
-    await update(admin.id, {
-      status: "COMPLETED",
-      evidence: "Service delivered and completion checked with customer",
-    });
+        /finance and supplier fulfilment workspace/,
+      );
+    }
     const countBefore = await db.enquiryActivity.count({
       where: { enquiryId: lead.id },
     });

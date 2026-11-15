@@ -20,7 +20,7 @@ const bad = (status: number, error: string) =>
 
 export async function POST(request: Request) {
   const session = await getSession();
-  const user = session?.user;
+  const user = session?.user ? await db.user.findUnique({ where: { id: session.user.id }, select: { id: true, role: true, isActive: true } }) : null;
 
   if (!user) return bad(401, "Sign in to upload images.");
   if (user.isActive === false) return bad(403, "This account is suspended.");

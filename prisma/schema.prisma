@@ -194,6 +194,11 @@ model Provider {
  */
 
 model Tour {
+  itinerary String @default("")
+  suitability String @default("")
+  inclusions String[] @default([])
+  exclusions String[] @default([])
+  offerApproval String? @map("offer_approval")
   id              String   @id @default(uuid()) @db.Uuid
   providerId      String   @map("provider_id") @db.Uuid
   name            String
@@ -323,6 +328,7 @@ model Availability {
 /// ONE booking table for all four products.
 
 model Booking {
+  supportCases SupportCase[]
   id         String @id @default(uuid()) @db.Uuid
   /// Human-facing reference, e.g. SW-8F3K2Q. Shown on confirmations.
   reference  String @unique
@@ -360,6 +366,7 @@ model Booking {
   review   Review?
   agreement BookingAgreement?
   documents BookingDocument[]
+  enquiryFulfilment EnquiryFulfilment?
 
   @@index([customerId])
   @@index([providerId])
@@ -642,6 +649,8 @@ enum BookingDocumentKind {
 /// Car hire: the customer's licence and ID copies. Private — served only to the
 /// customer, the booking's provider and admins, never from a public URL.
 model BookingDocument {
+  expiresAt DateTime? @map("expires_at") @db.Timestamptz
+  retentionPurpose String? @map("retention_purpose")
   id          String              @id @default(uuid()) @db.Uuid
   bookingId   String              @map("booking_id") @db.Uuid
   kind        BookingDocumentKind
@@ -662,6 +671,7 @@ model BookingDocument {
 /// Guest enquiries are separate from inventory-backed bookings.
 /// No customer account, provider, payment or inventory reservation is created.
 model Enquiry {
+  supportCases SupportCase[]
   id             String   @id @default(uuid()) @db.Uuid
   reference      String   @unique
   submissionKey  String   @unique @map("submission_key") @db.Uuid
@@ -675,6 +685,7 @@ model Enquiry {
   firstResponseAt DateTime? @map("first_response_at") @db.Timestamptz
   outcomeReason  String? @map("outcome_reason")
   quoteVersions  QuoteVersion[]
+  financialCase FinancialCase?
   quoteAcceptance QuoteAcceptance?
   notificationJobs NotificationJob[]
   activities     EnquiryActivity[]
@@ -762,6 +773,7 @@ model QuoteVersion {
   expiresAt DateTime @map("expires_at") @db.Timestamptz
   paymentDeadline DateTime @map("payment_deadline") @db.Timestamptz
   createdById String @map("created_by_id") @db.Uuid
+  financialCase FinancialCase?
   acceptance QuoteAcceptance?
   notificationJobs NotificationJob[]
   @@unique([enquiryId, number])
@@ -830,4 +842,306 @@ model NotificationAttempt {
   completedAt DateTime? @map("completed_at") @db.Timestamptz
   @@index([jobId, startedAt])
   @@map("notification_attempts")
+}
+
+
+model FinancialCase {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @unique @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  quoteId String @unique @map("quote_id") @db.Uuid
+  quote QuoteVersion @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  currency String
+  customerChargeMinor Int @map("customer_charge_minor")
+  serviceFeeMinor Int @map("service_fee_minor")
+  taxReserveMinor Int @map("tax_reserve_minor")
+  requiredFundingMinor Int @map("required_funding_minor")
+  reviewed Boolean @default(false)
+  reviewEvidence String? @map("review_evidence")
+  instructions String @default("")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  operations FinancialOperation[]
+  entries FinancialEntry[]
+  commitments SupplierCommitment[]
+  refunds CustomerRefund[]
+  receipts OffsiteReceipt[]
+  allocations ReceiptAllocation[]
+  proofs SettlementProof[]
+  fulfilment EnquiryFulfilment?
+  @@map("financial_cases")
+}
+
+model SettlementAccount {
+  id String @id @default(uuid()) @db.Uuid
+  code String @unique
+  name String
+  method String
+  currency String
+  instructions String
+  approvalEvidence String @map("approval_evidence")
+  active Boolean @default(true)
+  version Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  proofs SettlementProof[]
+  @@map("settlement_accounts")
+}
+
+model SettlementProof {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  accountId String @map("account_id") @db.Uuid
+  account SettlementAccount @relation(fields: [accountId], references: [id], onDelete: Restrict)
+  referenceKey String @map("reference_key")
+  externalRef String @map("external_ref")
+  amountMinor Int @map("amount_minor")
+  currency String
+  kind String
+  partyKey String @map("party_key")
+  occurredAt DateTime @map("occurred_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  receipt OffsiteReceipt?
+  entries FinancialEntry[]
+  @@unique([accountId, referenceKey])
+  @@map("settlement_proofs")
+}
+
+model OffsiteReceipt {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  proofId String @unique @map("proof_id") @db.Uuid
+  proof SettlementProof @relation(fields: [proofId], references: [id], onDelete: Restrict)
+  payer String
+  status String @default("PENDING")
+  reconciledAt DateTime? @map("reconciled_at") @db.Timestamptz
+  reconciledById String? @map("reconciled_by_id") @db.Uuid
+  allocations ReceiptAllocation[]
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("offsite_receipts")
+}
+
+model ReceiptAllocation {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  receiptId String @map("receipt_id") @db.Uuid
+  receipt OffsiteReceipt @relation(fields: [receiptId], references: [id], onDelete: Restrict)
+  amountMinor Int @map("amount_minor")
+  status String @default("ACTIVE")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  entries FinancialEntry[]
+  @@index([receiptId, status])
+  @@map("receipt_allocations")
+}
+
+model Supplier {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  category String
+  contact String
+  escalation String
+  serviceArea String @map("service_area")
+  deliverables String
+  limitations String
+  commercialTerms String @map("commercial_terms")
+  currencies String[]
+  agreementEvidence String @map("agreement_evidence")
+  performanceNotes String @default("") @map("performance_notes")
+  nextReviewAt DateTime? @map("next_review_at") @db.Timestamptz
+  publicationAllowed Boolean @default(false) @map("publication_allowed")
+  approvedWording String @default("") @map("approved_wording")
+  status String @default("DRAFT")
+  version Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  commitments SupplierCommitment[]
+  @@map("suppliers")
+}
+
+model SupplierCommitment {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  supplierId String @map("supplier_id") @db.Uuid
+  supplier Supplier @relation(fields: [supplierId], references: [id], onDelete: Restrict)
+  label String
+  referenceKey String @map("reference_key")
+  contractRef String @map("contract_ref")
+  costMinor Int @map("cost_minor")
+  confirmationRef String? @map("confirmation_ref")
+  confirmedAt DateTime? @map("confirmed_at") @db.Timestamptz
+  verifiedById String? @map("verified_by_id") @db.Uuid
+  confirmationEvidence String? @map("confirmation_evidence")
+  evidence String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  entries FinancialEntry[]
+  fulfilments EnquiryFulfilment[]
+  @@unique([caseId, supplierId, referenceKey])
+  @@map("supplier_commitments")
+}
+
+model CustomerRefund {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  referenceKey String @map("reference_key")
+  amountMinor Int @map("amount_minor")
+  reason String
+  evidence String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  entries FinancialEntry[]
+  @@unique([caseId, referenceKey])
+  @@map("customer_refunds")
+}
+
+model FinancialOperation {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  actorId String @map("actor_id") @db.Uuid
+  intentKey String @unique @map("intent_key") @db.Uuid
+  inputHash String @map("input_hash")
+  action String
+  evidence String
+  changes Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  entries FinancialEntry[]
+  @@index([caseId, createdAt])
+  @@map("financial_operations")
+}
+
+model FinancialEntry {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  operationId String @map("operation_id") @db.Uuid
+  operation FinancialOperation @relation(fields: [operationId], references: [id], onDelete: Restrict)
+  kind String
+  amountMinor Int @map("amount_minor")
+  proofId String? @map("proof_id") @db.Uuid
+  proof SettlementProof? @relation(fields: [proofId], references: [id], onDelete: Restrict)
+  commitmentId String? @map("commitment_id") @db.Uuid
+  commitment SupplierCommitment? @relation(fields: [commitmentId], references: [id], onDelete: Restrict)
+  refundId String? @map("refund_id") @db.Uuid
+  refund CustomerRefund? @relation(fields: [refundId], references: [id], onDelete: Restrict)
+  allocationId String? @map("allocation_id") @db.Uuid
+  allocation ReceiptAllocation? @relation(fields: [allocationId], references: [id], onDelete: Restrict)
+  referenceKey String? @unique @map("reference_key")
+  reversesId String? @unique @map("reverses_id") @db.Uuid
+  reverses FinancialEntry? @relation("EntryReversal", fields: [reversesId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  reversedBy FinancialEntry? @relation("EntryReversal")
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([caseId, createdAt])
+  @@map("financial_entries")
+}
+
+model EnquiryFulfilment {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @unique @map("case_id") @db.Uuid
+  financialCase FinancialCase @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  commitmentId String @map("commitment_id") @db.Uuid
+  commitment SupplierCommitment @relation(fields: [commitmentId], references: [id], onDelete: Restrict)
+  confirmationRef String @map("confirmation_ref")
+  evidence String
+  verifiedById String @map("verified_by_id") @db.Uuid
+  confirmedAt DateTime @default(now()) @map("confirmed_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  legacyBookingId String? @unique @map("legacy_booking_id") @db.Uuid
+  legacyBooking Booking? @relation(fields: [legacyBookingId], references: [id], onDelete: Restrict)
+  @@map("enquiry_fulfilments")
+}
+
+model RegistryAudit {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  entityId String @map("entity_id") @db.Uuid
+  intentKey String @unique @map("intent_key") @db.Uuid
+  inputHash String @map("input_hash")
+  action String
+  changes Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([entityId, createdAt])
+  @@map("registry_audits")
+}
+
+/// A service is request-only until an administrator records publication evidence.
+model ServicePublication {
+  service String @id
+  mode String @default("ENQUIRY")
+  evidence String
+  approvedById String @map("approved_by_id") @db.Uuid
+  version Int @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("service_publications")
+}
+
+model OperationsPolicy {
+  id Int @id @default(1)
+  version Int @default(0)
+  supportHours String @map("support_hours")
+  escalation String
+  emergencyNotice String @map("emergency_notice")
+  documentPurpose String @map("document_purpose")
+  documentDays Int @map("document_days")
+  documentsEnabled Boolean @default(false) @map("documents_enabled")
+  evidence String
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("operations_policy")
+}
+
+model SupportCase {
+  id String @id @default(uuid()) @db.Uuid
+  reference String @unique
+  enquiryId String? @map("enquiry_id") @db.Uuid
+  bookingId String? @map("booking_id") @db.Uuid
+  enquiry Enquiry? @relation(fields: [enquiryId], references: [id])
+  booking Booking? @relation(fields: [bookingId], references: [id])
+  ownerId String @map("owner_id") @db.Uuid
+  category String
+  priority String @default("NORMAL")
+  status String @default("OPEN")
+  summary String
+  nextActionAt DateTime @map("next_action_at") @db.Timestamptz
+  outcome String?
+  version Int @default(0)
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  activities SupportActivity[]
+  @@index([ownerId, status, nextActionAt])
+  @@map("support_cases")
+}
+
+model SupportActivity {
+  id String @id @default(uuid()) @db.Uuid
+  caseId String @map("case_id") @db.Uuid
+  supportCase SupportCase @relation(fields: [caseId], references: [id])
+  actorId String @map("actor_id") @db.Uuid
+  intentKey String @unique @map("intent_key") @db.Uuid
+  inputHash String @map("input_hash")
+  changes Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("support_activities")
+}
+
+/// Non-identifying daily interaction counts. No contacts, URLs, IPs or user IDs.
+model InteractionDaily {
+  day DateTime @db.Date
+  service String
+  placement String
+  clicks Int @default(0)
+  @@id([day, service, placement])
+  @@map("interaction_daily")
+}
+
+/// Access and lifecycle evidence; never stores document bytes, names or reset tokens.
+model OperationsAudit {
+  id String @id @default(uuid()) @db.Uuid
+  actorId String @map("actor_id") @db.Uuid
+  entityId String @map("entity_id")
+  action String
+  evidence String
+  changes Json
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([entityId, createdAt])
+  @@map("operations_audit")
 }

@@ -74,6 +74,10 @@ export async function saveEnquiry(input: CapturedEnquiry, actorId?: string) {
       throw new EnquirySubmissionError(
         "Several requests have been received for this contact. Please contact us or try again later.",
       );
+    if (!actorId) {
+      const publication = await tx.servicePublication.findUnique({ where: { service: input.service } });
+      if (publication?.mode === "HIDDEN") throw new EnquirySubmissionError("This service is not accepting new public requests. Contact the desk for help with an existing arrangement.");
+    }
     const privacy = await tx.legalDocument.findUnique({
       where: { slug: "privacy" },
       select: { version: true },

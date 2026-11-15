@@ -53,7 +53,6 @@ export default async function VehicleDetailPage({
 }: {
   params: Promise<{ slug: string }>;
 }) {
-  const site = await getSite();
   const { slug } = await params;
   const vehicle = await getVehicle(slug);
   if (!vehicle) notFound();
@@ -163,7 +162,7 @@ export default async function VehicleDetailPage({
                 passport or national ID at collection.
               </li>
               <li>
-                Comprehensive insurance is included. A refundable security
+                Insurance coverage and excess require confirmation. Any security
                 deposit is taken at handover and released on return.
               </li>
               <li>
@@ -179,8 +178,7 @@ export default async function VehicleDetailPage({
               Supplied by {vehicle.provider}
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-[var(--ink-muted)]">
-              Fleet licence and insurance verified by {site.name}. Every
-              vehicle is inspected and photographed at handover and return.
+              Ask the desk to confirm the operator, driver arrangements, insurance terms and handover requirements for your dates.
             </p>
           </section>
         </div>
