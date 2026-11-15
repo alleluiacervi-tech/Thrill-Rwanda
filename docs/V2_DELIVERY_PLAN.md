@@ -69,19 +69,21 @@ Phase 2 implementation: `/staff/enquiries` provides scoped triage; administrator
 
 ## Phase 3 — written quotes and reliable communication
 
-- [ ] Quote/version/items schema; immutable issued snapshots and expiry/payment deadlines.
-- [ ] Supplier conditions/baggage, service description, dates, currency/tax and approved fee breakdown.
-- [ ] Separate internal supplier economics from customer-facing quotation fields.
-- [ ] Staff editor, preview, issue/share and revision history; attach written quote if PDF automation is deferred.
-- [ ] Acceptance evidence bound to the exact issued version; handle expired/revised quotes explicitly.
-- [ ] Transactional outbox or equivalent durable notification jobs with per-recipient outcome, retries and safe staff alerts.
-- [ ] Customer acknowledgement and staff-owner notifications through approved channels only.
-- [ ] Repair existing notification `sentAt` bookkeeping so one recipient's successful send cannot mark other attempts as sent.
-- [ ] Add quote PDF automation if selected; consistent written quotes are required regardless.
+- [x] Quote/version/items schema; immutable issued snapshots and expiry/payment deadlines.
+- [x] Supplier conditions/baggage, service description, dates, currency/tax and approved fee breakdown.
+- [x] Exclude internal notes from customer copies; structured supplier net costs, commission and contribution accounting remain Phase 4.
+- [x] Staff editor, preview, issue/share and revision history; attach written quote if PDF automation is deferred.
+- [x] Acceptance evidence bound to the exact issued version; handle expired/revised quotes explicitly.
+- [x] Transactional outbox or equivalent durable notification jobs with per-recipient outcome, retries and safe staff alerts.
+- [x] Customer acknowledgement and staff-owner notifications through approved channels only.
+- [x] Repair existing notification `sentAt` bookkeeping so one recipient's successful send cannot mark other attempts as sent.
+- [ ] Optional automated PDF generator remains deferred; customer-ready HTML download, print/save-as-PDF preview and HTML/plain-text email copies are implemented.
 
 Integration with prior work: reuse branded email rendering/templates and inbox UI, but do not assume best-effort booking notifications satisfy durable lead delivery. Sending a quote is not booking confirmation.
 
 Gate: staff can issue/revise a reproducible quotation, record exact acceptance and recover notification failures without losing the lead or showing false success.
+
+Phase 3 now enforces quote issuance and exact-version acceptance in the quotation workspace; generic triage cannot bypass those steps. Acceptance is recorded by authorized staff with evidence, not through a new customer portal. Delivery is durable but requires a configured sender and recurring worker in deployment. See [Quotations and delivery](QUOTATIONS_AND_DELIVERY.md) for commercial fields, retries, scheduling and limitations.
 
 ## Phase 4 — approved payments, supplier fulfilment and finance
 
@@ -161,3 +163,13 @@ The flight form is dynamically rendered so each page load has a fresh submission
 - Chromium against the production build passed durable contact/transport capture with catalogue context, admin staff grant/revocation, sales claim/note/follow-up, cross-owner 404, finance contact/travel redaction and milestone recording, offline WhatsApp group capture, and 390/768/1024/1440 layouts without page overflow or browser page errors. Production authentication throttling was respected when creating test accounts. Browser tooling and fixtures are local test artifacts, not application dependencies.
 - Existing Unsplash placeholder images encountered network/DNS failures during testing; the workflow checks passed, but this is not evidence that remote imagery loads reliably in the environment.
 - No production migrations, environment publication, external customer messages or live payment operations were performed. The earlier audit and Phase 1 evidence remain historical baselines.
+
+
+## Validation evidence — Phase 3
+
+- Additive quote/version/acceptance/outbox/attempt and message-snapshot migrations applied to project-local PostgreSQL; existing booking/payment records retained.
+- Production build, TypeScript checking, ESLint and the no-send worker dry run passed.
+- 193 unit tests passed, including precise currency calculations, quotation field validation, nested-content hashing, document escaping, authorization and per-recipient legacy notification bookkeeping.
+- Local quotation integration passed immutable revisions, concurrent issuance/acceptance, expired/superseded rejection, exact acceptance, delivery retries with stable idempotency, per-attempt records, concurrent worker leases, configuration blocks, uncertain-delivery review and revoked recipients. Transports were mocked; no external messages or money moved.
+- Chromium against the production build passed the quote editor, responsive preview, historical HTML download equality, private-note exclusion, latest-version acceptance, cross-owner/finance denial, blocked-notification retry UI and cron authorization.
+- Sender/provider inbox receipt, recurring scheduling, production migrations and business/policy approval remain deployment validation; no scheduler, service account or environment publication was activated. Existing booking/account emails remain best-effort, with corrected delivery timestamps.

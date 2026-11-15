@@ -1,6 +1,6 @@
 # Enquiry operations — Phase 2
 
-This guide describes the implemented staff workflow. It does not authorize publication of services, payment methods, supplier claims or policies. Quotes, notifications and financial ledgers have separate delivery gates in [the delivery plan](V2_DELIVERY_PLAN.md).
+This guide describes the implemented staff workflow. It does not authorize publication of services, payment methods, supplier claims or policies. Written quotes and notifications now have a separate [Phase 3 runbook](QUOTATIONS_AND_DELIVERY.md); financial ledgers have separate delivery gates in [the delivery plan](V2_DELIVERY_PLAN.md).
 
 ## Access and entry points
 
@@ -48,7 +48,7 @@ Allowed lifecycle edges:
 | Cancelled | Refunded |
 | Completed / Refunded / Lost | Terminal; no reopening through this workflow |
 
-A milestone changes only the enquiry record. It **does not** issue a ticket, generate/approve an invoice, reconcile a `Payment`, move money, reserve inventory or create a `Booking`. A confirmed milestone requires staff to have checked supplier confirmation externally. Automated quote versions, acceptance, receipts, reconciliation and supplier economics remain Phase 3/4 work; these manual reference records are their audit foundation.
+A milestone changes only the enquiry record. It **does not** issue a ticket, generate/approve an invoice, reconcile a `Payment`, move money, reserve inventory or create a `Booking`. A confirmed milestone requires staff to have checked supplier confirmation externally. Automated quote versions, acceptance, receipts, reconciliation and supplier economics remain Phase 4 work for financial/supplier ledgers. Phase 3 now provides actual written quote versions and exact-version acceptance; those two states must use the quotation workspace rather than generic triage.
 
 ## Concurrent changes and activity
 

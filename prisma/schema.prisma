@@ -674,6 +674,9 @@ model Enquiry {
   nextFollowUp   DateTime? @map("next_follow_up") @db.Timestamptz
   firstResponseAt DateTime? @map("first_response_at") @db.Timestamptz
   outcomeReason  String? @map("outcome_reason")
+  quoteVersions  QuoteVersion[]
+  quoteAcceptance QuoteAcceptance?
+  notificationJobs NotificationJob[]
   activities     EnquiryActivity[]
   service        String   @default("FLIGHT")
   source         String   @default("WEBSITE")
@@ -739,4 +742,92 @@ model StaffAccessChange {
   nextRole String? @map("next_role")
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   @@map("staff_access_changes")
+}
+
+
+/// Issued versions are append-only in the application. Revisions create new rows.
+model QuoteVersion {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  number Int
+  intentKey String @unique @map("intent_key") @db.Uuid
+  inputHash String @map("input_hash")
+  contentHash String @map("content_hash")
+  snapshot Json
+  internalNotes String @default("") @map("internal_notes")
+  currency String
+  totalMinor Int @map("total_minor")
+  issuedAt DateTime @default(now()) @map("issued_at") @db.Timestamptz
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  paymentDeadline DateTime @map("payment_deadline") @db.Timestamptz
+  createdById String @map("created_by_id") @db.Uuid
+  acceptance QuoteAcceptance?
+  notificationJobs NotificationJob[]
+  @@unique([enquiryId, number])
+  @@map("quote_versions")
+}
+
+model QuoteAcceptance {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @unique @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  quoteId String @unique @map("quote_id") @db.Uuid
+  quote QuoteVersion @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  customerName String @map("customer_name")
+  channel String
+  evidence String
+  actorId String @map("actor_id") @db.Uuid
+  acceptedAt DateTime @default(now()) @map("accepted_at") @db.Timestamptz
+  @@map("quote_acceptances")
+}
+
+enum NotificationJobStatus {
+  PENDING
+  SENDING
+  SENT
+  FAILED
+  BLOCKED
+  CANCELLED
+}
+
+model NotificationJob {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  quoteId String? @map("quote_id") @db.Uuid
+  quote QuoteVersion? @relation(fields: [quoteId], references: [id], onDelete: Restrict)
+  dedupeKey String @unique @map("dedupe_key")
+  kind String
+  channel String
+  recipientId String? @map("recipient_id") @db.Uuid
+  toEmail String? @map("to_email")
+  status NotificationJobStatus @default(PENDING)
+  attempts Int @default(0)
+  nextAttemptAt DateTime @default(now()) @map("next_attempt_at") @db.Timestamptz
+  leaseUntil DateTime? @map("lease_until") @db.Timestamptz
+  leaseToken String? @map("lease_token") @db.Uuid
+  firstAttemptAt DateTime? @map("first_attempt_at") @db.Timestamptz
+  sentAt DateTime? @map("sent_at") @db.Timestamptz
+  lastError String? @map("last_error")
+  providerId String? @map("provider_id")
+  message Json?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  deliveries NotificationAttempt[]
+  @@index([status, nextAttemptAt])
+  @@index([enquiryId, createdAt])
+  @@map("notification_jobs")
+}
+
+model NotificationAttempt {
+  id String @id @default(uuid()) @db.Uuid
+  jobId String @map("job_id") @db.Uuid
+  job NotificationJob @relation(fields: [jobId], references: [id], onDelete: Restrict)
+  number Int
+  status String
+  errorCode String? @map("error_code")
+  startedAt DateTime @default(now()) @map("started_at") @db.Timestamptz
+  completedAt DateTime? @map("completed_at") @db.Timestamptz
+  @@index([jobId, startedAt])
+  @@map("notification_attempts")
 }

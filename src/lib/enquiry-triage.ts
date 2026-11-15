@@ -1,3 +1,4 @@
+import { enqueueOwnerNotification } from "@/lib/enquiry-outbox";
 import { db } from "@/lib/db";
 import {
   allowedEnquiryTransitions,
@@ -30,6 +31,13 @@ export async function updateEnquiry(actorId: string, input: TriageInput) {
         "Someone updated this enquiry. Reload before saving your changes.",
       );
     const changedStatus = input.status !== row.status;
+    if (
+      changedStatus &&
+      ["QUOTE_SENT", "AWAITING_PAYMENT"].includes(input.status)
+    )
+      throw new EnquiryWorkflowError(
+        "Use the quotation workspace to issue a version or record exact-version acceptance.",
+      );
     if (
       changedStatus &&
       !allowedEnquiryTransitions(actor, row.status).includes(input.status)
@@ -151,6 +159,8 @@ export async function updateEnquiry(actorId: string, input: TriageInput) {
       throw new EnquiryWorkflowError(
         "Someone updated this enquiry. Reload before saving your changes.",
       );
+    if (ownerId && row.ownerId !== ownerId)
+      await enqueueOwnerNotification(tx, row.id, ownerId, input.version + 1);
     await tx.enquiryActivity.create({
       data: {
         enquiryId: row.id,

@@ -85,11 +85,18 @@ async function withTemplate(
 
 /** Writes in-app rows for everyone, then tries email. Never throws. */
 export async function notify(input: NotifyInput) {
-  const { to, type, title, body, href, emailToo = true } = input;
+  const { type, title, body, href, emailToo = true } = input;
+  const to = [
+    ...new Map(
+      input.to.map((recipient) => [recipient.userId, recipient]),
+    ).values(),
+  ];
+  let rows: { id: string; userId: string }[] = [];
   if (to.length === 0) return;
 
   try {
-    await db.notification.createMany({
+    rows = await db.notification.createManyAndReturn({
+      select: { id: true, userId: true },
       data: to.map((r) => ({
         userId: r.userId,
         type,
@@ -105,27 +112,29 @@ export async function notify(input: NotifyInput) {
 
   if (!emailToo) return;
 
-  const results = await Promise.allSettled(
-    to.map((r) => sendEmail(r, input)),
-  );
+  const results = await Promise.allSettled(to.map((r) => sendEmail(r, input)));
 
-  for (const [i, res] of results.entries()) {
-    if (res.status === "rejected") {
-      console.error(`[notify] email to ${to[i]?.email} failed`, res.reason);
-    }
-  }
-
-  // Mark what actually went out, so support can tell "never sent" from
-  // "sent but not received".
-  const sent = results.some((r) => r.status === "fulfilled" && !r.value.skipped);
-  if (sent) {
+  // Mark only this event's rows for the recipients whose provider call succeeded.
+  // A failed recipient or an older unsent event must never inherit another send's timestamp.
+  const deliveredUserIds = to
+    .filter(
+      (_recipient, index) =>
+        results[index]?.status === "fulfilled" &&
+        !(results[index] as PromiseFulfilledResult<{ skipped: boolean }>).value
+          .skipped,
+    )
+    .map((recipient) => recipient.userId);
+  const deliveredIds = rows
+    .filter((row) => deliveredUserIds.includes(row.userId))
+    .map((row) => row.id);
+  if (deliveredIds.length) {
     try {
       await db.notification.updateMany({
-        where: { type, userId: { in: to.map((r) => r.userId) }, sentAt: null },
+        where: { id: { in: deliveredIds } },
         data: { sentAt: new Date() },
       });
     } catch {
-      /* bookkeeping only — never worth surfacing */
+      /* Keep the notification available even if bookkeeping fails. */
     }
   }
 }

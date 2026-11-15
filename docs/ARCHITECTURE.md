@@ -501,3 +501,10 @@ Each type carries its own per-day cap, and that number becomes
 
 Forms take **whole shillings**; the action multiplies by 100 once,
 server-side, before storing minor units. The client never sends cents.
+
+
+## Version 2 quotations and delivery
+
+Quotations are append-only customer-facing snapshots with separate staff-verified acceptance records. New issued versions supersede earlier unaccepted versions; accepted versions cannot be silently replaced. Mutation uses the enquiry version as a compare-and-swap guard and issue intents for duplicate-safe retries. Customer copies never render internal notes. Currency-specific minor-unit calculations are separate from legacy booking formatting so RWF's zero-decimal rules do not change existing USD booking records.
+
+New enquiry acknowledgements/staff assignment alerts and requested quote emails use a PostgreSQL outbox. Claims have leases/tokens, persistent attempts, provider idempotency, exact email snapshots and a bounded retry/review policy. Sending is outside the business transaction; no external provider is called while saving an enquiry or issuing a quote. Existing booking notifications remain best-effort, with exact-event per-recipient sent timestamps. Read [the Phase 3 operations guide](QUOTATIONS_AND_DELIVERY.md) before enabling delivery or configuring a scheduler.

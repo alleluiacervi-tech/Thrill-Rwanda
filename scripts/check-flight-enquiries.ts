@@ -1,3 +1,4 @@
+import { removeEnquiryFixtures } from "./enquiry-test-cleanup";
 /** Local-only integration check. Run: npx tsx scripts/check-flight-enquiries.ts */
 import "dotenv/config";
 import assert from "node:assert/strict";
@@ -81,7 +82,14 @@ async function main() {
       "PASS: concurrent retries create one lead; changed payload rejected; concurrent contact limit enforced; consent saved; no bookings/payments created.",
     );
   } finally {
-    await db.enquiry.deleteMany({ where: { submissionKey: { in: keys } } });
+    await removeEnquiryFixtures(
+      (
+        await db.enquiry.findMany({
+          where: { submissionKey: { in: keys } },
+          select: { id: true },
+        })
+      ).map((row) => row.id),
+    );
   }
 }
 main()
