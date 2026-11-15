@@ -38,10 +38,12 @@ export async function requireUser(next = "/account") {
   if (!session?.user) signInRedirect(next);
 
   // A deactivated account keeps its rows but must not act.
-  if (session.user.isActive === false) {
-    redirect("/suspended");
-  }
-  return session.user;
+  const fresh = await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { role: true, staffRole: true, isActive: true },
+  });
+  if (!fresh?.isActive) redirect("/suspended");
+  return { ...session.user, ...fresh };
 }
 
 export async function requireRole(role: Role, next: string) {
@@ -58,13 +60,23 @@ export async function requireProvider(next = "/provider") {
   const user = await requireUser(next);
   if (user.role !== "PROVIDER" && user.role !== "ADMIN") {
     // Approval updates the role in the DB, but the session cookie can hold the old one for up to 5 minutes.
-    const fresh = await db.user.findUnique({ where: { id: user.id }, select: { role: true } });
+    const fresh = await db.user.findUnique({
+      where: { id: user.id },
+      select: { role: true },
+    });
     if (fresh?.role !== "PROVIDER") redirect("/account?denied=1");
   }
 
   const provider = await db.provider.findUnique({
     where: { userId: user.id },
-    select: { id: true, businessName: true, status: true, slug: true, kind: true, kinds: true },
+    select: {
+      id: true,
+      businessName: true,
+      status: true,
+      slug: true,
+      kind: true,
+      kinds: true,
+    },
   });
 
   // A PROVIDER role with no provider row means the application was never
@@ -72,7 +84,12 @@ export async function requireProvider(next = "/provider") {
   if (!provider) redirect("/provider/apply");
   if (provider.status !== "VERIFIED") redirect("/provider/pending");
 
-  return { user, provider, providerId: provider.id, kinds: providerKinds(provider) };
+  return {
+    user,
+    provider,
+    providerId: provider.id,
+    kinds: providerKinds(provider),
+  };
 }
 
 /**
@@ -126,7 +143,9 @@ export async function resolveListingOwner(
   if (user.role === "ADMIN") {
     const id = String(formData.get("providerId") ?? "").trim();
     if (!id) {
-      throw new ListingOwnerError("Choose which provider this listing belongs to.");
+      throw new ListingOwnerError(
+        "Choose which provider this listing belongs to.",
+      );
     }
 
     // Verified only — a pending account isn't cleared to trade.
@@ -135,7 +154,9 @@ export async function resolveListingOwner(
       select: { id: true, kind: true, kinds: true, businessName: true },
     });
     if (!provider) {
-      throw new ListingOwnerError("That provider doesn't exist or isn't verified.");
+      throw new ListingOwnerError(
+        "That provider doesn't exist or isn't verified.",
+      );
     }
     // Checked for admins too: approving a hotel shouldn't quietly allow cars.
     if (kind && !providerKinds(provider).includes(kind)) {
@@ -148,7 +169,9 @@ export async function resolveListingOwner(
 
   const session = await requireProvider(next);
   if (kind && !session.kinds.includes(kind)) {
-    throw new ListingOwnerError("Your account isn't approved to list in this category.");
+    throw new ListingOwnerError(
+      "Your account isn't approved to list in this category.",
+    );
   }
   return { providerId: session.providerId, onBehalf: false };
 }
@@ -156,8 +179,7 @@ export async function resolveListingOwner(
 // Scope for an EXISTING listing. A union, not `providerId?: string`: an
 // optional id lets a bug drop the owner filter and expose every listing.
 export type ListingScope =
-  | { kind: "admin" }
-  | { kind: "provider"; providerId: string };
+  { kind: "admin" } | { kind: "provider"; providerId: string };
 
 export async function resolveListingScope(
   next = "/provider/listings",
@@ -178,8 +200,17 @@ export function scopeFilter(scope: ListingScope) {
 /** For pages that should bounce an already-signed-in visitor (sign-in/up). */
 /** Where a user lands after signing in: their role's home, or the application status page for a provider applicant. */
 export async function landingPath(user: { id: string; role?: string | null }) {
+  const account = await db.user.findUnique({
+    where: { id: user.id },
+    select: { staffRole: true, isActive: true },
+  });
+  if (!account?.isActive) return "/suspended";
   if (user.role === "ADMIN") return "/admin";
-  const provider = await db.provider.findUnique({ where: { userId: user.id }, select: { status: true } });
+  if (account.staffRole) return "/staff/enquiries";
+  const provider = await db.provider.findUnique({
+    where: { userId: user.id },
+    select: { status: true },
+  });
   if (!provider) return homeForRole(user.role);
   return provider.status === "VERIFIED" ? "/provider" : "/provider/pending";
 }
@@ -207,8 +238,26 @@ export async function workspacesFor(
 
   return [
     { label: "Customer", href: "/account", current: current === "customer" },
+    ...((
+      await db.user.findUnique({
+        where: { id: user.id },
+        select: { staffRole: true },
+      })
+    )?.staffRole
+      ? [{ label: "Staff", href: "/staff/enquiries", current: false }]
+      : []),
     // Pending and rejected applicants keep the link: it leads to their status page.
-    ...(provider ? [{ label: "Provider", href: "/provider", current: current === "provider" }] : []),
-    ...(user.role === "ADMIN" ? [{ label: "Admin", href: "/admin", current: current === "admin" }] : []),
+    ...(provider
+      ? [
+          {
+            label: "Provider",
+            href: "/provider",
+            current: current === "provider",
+          },
+        ]
+      : []),
+    ...(user.role === "ADMIN"
+      ? [{ label: "Admin", href: "/admin", current: current === "admin" }]
+      : []),
   ];
 }

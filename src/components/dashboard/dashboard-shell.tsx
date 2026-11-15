@@ -73,7 +73,7 @@ export function DashboardShell({
   children: React.ReactNode;
 }) {
   const roleLabel =
-    role === "ADMIN" ? "Admin" : role === "PROVIDER" ? "Provider" : "Customer";
+    role === "ADMIN" ? "Admin" : role === "PROVIDER" ? "Provider" : ["SALES", "OPERATIONS", "FINANCE"].includes(role) ? role.toLowerCase() : "Customer";
 
   if (groups) {
     return (

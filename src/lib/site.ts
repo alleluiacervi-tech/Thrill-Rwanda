@@ -42,6 +42,7 @@ export const site = {
 /** Primary navigation — mirrors the live site's information architecture. */
 /** `blurb` is the one line under each item in the phone menu. */
 export const primaryNav = [
+  { label: "Flights", href: "/flights", blurb: "Request a checked written flight quote" },
   { label: "Tours & Safaris", href: "/tours", blurb: "Gorillas, chimpanzees and the Big Five" },
   { label: "Hotels", href: "/hotels", blurb: "Lodges, lakeside stays and city suites" },
   { label: "Car Hire", href: "/cars", blurb: "4x4s and executive cars for the road ahead" },
@@ -51,6 +52,7 @@ export const primaryNav = [
 
 export const footerNav = {
   Explore: [
+    { label: "Request a flight quote", href: "/flights" },
     { label: "Tours & Safaris", href: "/tours" },
     { label: "Hotels & Concierge", href: "/hotels" },
     { label: "Car Hire", href: "/cars" },

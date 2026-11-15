@@ -89,7 +89,7 @@ const text = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null)
 
 /** What the homepage said before the paragraph was editable: the tagline plus the booking promise. */
 export const defaultHeroText = (tagline: string) =>
-  `${tagline} Booked with verified local providers, confirmed against live availability, paid securely by mobile money or card.`;
+  `${tagline} Tell us your plans. Prices, availability and confirmation follow staff and supplier checks.`;
 
 /** The client's description, with the registered name the admin set. */
 export const describe = (legalName: string) =>

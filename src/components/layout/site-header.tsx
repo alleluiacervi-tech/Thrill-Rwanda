@@ -251,8 +251,8 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   </span>
                   {session ? (firstName ?? "Account") : "Sign in"}
                 </Link>
-                <Button href="/tours" variant="accent" size="sm" className="group font-semibold">
-                  Book now
+                <Button href="/flights" variant="accent" size="sm" className="group font-semibold">
+                  Flight quote
                   <ArrowRight
                     aria-hidden
                     className="hidden size-3.5 transition-transform duration-300 group-hover:translate-x-0.5 sm:block"
@@ -537,8 +537,8 @@ function PhoneMenu({
             <Button href={accountHref} variant="outline" size="lg" onClick={onClose} className="border-white/25 px-4 text-bone-50 hover:bg-bone-50 hover:text-forest-900">
               {accountLabel}
             </Button>
-            <Button href="/tours" variant="accent" size="lg" onClick={onClose} className="px-4">
-              Book now
+            <Button href="/flights" variant="accent" size="lg" onClick={onClose} className="px-4">
+              Flight quote
             </Button>
             {whatsapp ? (
               <a

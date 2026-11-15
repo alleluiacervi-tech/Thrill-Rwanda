@@ -126,6 +126,8 @@ reintroduce reveals that start hidden.
 
 Three roles on `users.role`: `CUSTOMER`, `PROVIDER`, `ADMIN`.
 
+Version 2 staff capabilities are separate in nullable `users.staff_role`: SALES, OPERATIONS and FINANCE. New enquiries use a separate domain and audited state model; they do not allocate inventory or change payments. Fresh database permissions govern `/staff/enquiries`, while existing customer/provider/admin roles remain compatible. See [Enquiry operations](ENQUIRY_OPERATIONS.md) for scopes, manual milestone evidence, conflict handling and limitations.
+
 A provider sees only their own listings and bookings. Every provider-scoped
 query must filter on `providerId` derived from the **session**, never from a
 request parameter — that is the Step 18 boundary that matters most.

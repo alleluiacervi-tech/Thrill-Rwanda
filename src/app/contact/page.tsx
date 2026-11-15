@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { Clock3, Mail, MapPin, MessageCircle, Phone } from "lucide-react";
@@ -6,6 +7,8 @@ import { EnquiryForm } from "@/components/booking/enquiry-form";
 import { Container, Eyebrow } from "@/components/ui/primitives";
 import { getSite } from "@/lib/settings";
 import { destinationImages } from "@/lib/images";
+
+export const dynamic = "force-dynamic";
 
 export async function generateMetadata(): Promise<Metadata> {
   const site = await getSite();
@@ -25,7 +28,7 @@ export default async function ContactPage() {
       value: site.contact.phone,
       href: site.contact.phoneHref,
       alt: site.contact.phoneAlt,
-      note: "Daily, 7am – 9pm EAT",
+      note: site.contact.hours ?? "Contact us about your travel plans",
     },
     {
       icon: MessageCircle,
@@ -41,7 +44,7 @@ export default async function ContactPage() {
       value: site.contact.email,
       href: `mailto:${site.contact.email}`,
       alt: undefined as string | undefined,
-      note: "We reply within one working day",
+      note: "Include your enquiry reference if you have one",
     },
   ].filter((channel) => channel.value && channel.href);
 
@@ -50,45 +53,54 @@ export default async function ContactPage() {
       <PageHero
         eyebrow="Contact"
         title="Get in touch"
-        lede="Our contact channels are being set up. Please check back when Thrill Rwanda is ready to take enquiries."
+        lede="Share your travel plans or ask a question. Your request is saved for our team to review."
         crumbs={[{ label: "Contact" }]}
         image={destinationImages["kigali"]}
       />
 
-      <Container wide className="grid gap-14 py-16 lg:grid-cols-[1fr_1.15fr] lg:gap-20">
+      <Container
+        wide
+        className="grid gap-14 py-16 lg:grid-cols-[1fr_1.15fr] lg:gap-20"
+      >
         {/* ------------------------------------------------------- Channels */}
         <div className="min-w-0">
           <Eyebrow>Direct lines</Eyebrow>
-          {channels.length ? <ul className="mt-8 space-y-4">
-            {channels.map((c) => (
-              <li key={c.label}>
-                <a
-                  href={c.href}
-                  className="group flex items-start gap-4 rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] p-5 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-lift)]"
-                >
-                  <span className="grid size-11 shrink-0 place-items-center rounded-full bg-forest-800 text-bone-50 transition-colors group-hover:bg-sun-500 group-hover:text-forest-950">
-                    <c.icon className="size-5" />
-                  </span>
-                  <span className="min-w-0">
-                    <span className="block text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
-                      {c.label}
+          {channels.length ? (
+            <ul className="mt-8 space-y-4">
+              {channels.map((c) => (
+                <li key={c.label}>
+                  <a
+                    href={c.href}
+                    className="group flex items-start gap-4 rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] p-5 transition-all duration-400 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-0.5 hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-lift)]"
+                  >
+                    <span className="grid size-11 shrink-0 place-items-center rounded-full bg-forest-800 text-bone-50 transition-colors group-hover:bg-sun-500 group-hover:text-forest-950">
+                      <c.icon className="size-5" />
                     </span>
-                    <span className="mt-1 block truncate font-display text-lg font-semibold">
-                      {c.value}
-                    </span>
-                    {c.alt ? (
-                      <span className="block truncate font-display text-lg font-semibold">
-                        {c.alt}
+                    <span className="min-w-0">
+                      <span className="block text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+                        {c.label}
                       </span>
-                    ) : null}
-                    <span className="mt-0.5 block text-2xs text-[var(--ink-faint)]">
-                      {c.note}
+                      <span className="mt-1 block truncate font-display text-lg font-semibold">
+                        {c.value}
+                      </span>
+                      {c.alt ? (
+                        <span className="block truncate font-display text-lg font-semibold">
+                          {c.alt}
+                        </span>
+                      ) : null}
+                      <span className="mt-0.5 block text-2xs text-[var(--ink-faint)]">
+                        {c.note}
+                      </span>
                     </span>
-                  </span>
-                </a>
-              </li>
-            ))}
-          </ul> : <p className="mt-8 text-sm text-[var(--ink-muted)]">Phone, WhatsApp and email details have not been configured.</p>}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="mt-8 text-sm text-[var(--ink-muted)]">
+              Phone, WhatsApp and email details have not been configured.
+            </p>
+          )}
 
           {site.contact.address || site.contact.hours ? (
             <div className="mt-10 space-y-4 rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-sunken)] p-6">
@@ -96,7 +108,9 @@ export default async function ContactPage() {
                 <p className="flex items-start gap-3 text-sm text-[var(--ink-muted)]">
                   <MapPin className="mt-0.5 size-4 shrink-0 text-clay-700" />
                   <span>
-                    <span className="block font-medium text-[var(--ink)]">{site.legalName}</span>
+                    <span className="block font-medium text-[var(--ink)]">
+                      {site.legalName}
+                    </span>
                     {site.contact.address}
                   </span>
                 </p>
@@ -115,19 +129,11 @@ export default async function ContactPage() {
         <div className="min-w-0">
           <Eyebrow>Send an enquiry</Eyebrow>
           <h2 className="mt-5 text-3xl">What can we plan for you?</h2>
-          {site.contact.email ? (
-            <div className="mt-8">
-              <Suspense
-                fallback={
-                  <div className="h-[32rem] rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)]" />
-                }
-              >
-                <EnquiryForm />
-              </Suspense>
-            </div>
-          ) : (
-            <p className="mt-8 text-sm text-[var(--ink-muted)]">The enquiry form will be available once a business email is configured.</p>
-          )}
+          <div className="mt-8">
+            <Suspense fallback={<p>Loading enquiry form…</p>}>
+              <EnquiryForm submissionKey={randomUUID()} />
+            </Suspense>
+          </div>
         </div>
       </Container>
     </PageShell>
