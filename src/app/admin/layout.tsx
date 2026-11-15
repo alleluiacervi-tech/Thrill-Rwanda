@@ -34,6 +34,7 @@ export default async function AdminLayout({
       label: "Main",
       items: [
         { label: "Overview", href: "/admin", icon: "overview" },
+        { label: "Enquiries", href: "/admin/enquiries", icon: "bookings" },
         { label: "Bookings", href: "/admin/bookings", icon: "bookings" },
       ],
     },

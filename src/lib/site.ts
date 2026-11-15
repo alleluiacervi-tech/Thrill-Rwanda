@@ -41,6 +41,7 @@ export const site = {
 
 /** Primary navigation — mirrors the live site's information architecture. */
 export const primaryNav = [
+  { label: "Flights", href: "/flights" },
   { label: "Tours & Safaris", href: "/tours" },
   { label: "Hotels", href: "/hotels" },
   { label: "Car Hire", href: "/cars" },
@@ -50,6 +51,7 @@ export const primaryNav = [
 
 export const footerNav = {
   Explore: [
+    { label: "Request a flight quote", href: "/flights" },
     { label: "Tours & Safaris", href: "/tours" },
     { label: "Hotels & Concierge", href: "/hotels" },
     { label: "Car Hire", href: "/cars" },

@@ -147,6 +147,10 @@ async function Hero({
                 {site.heroText}
               </p>
 
+              <div className="mt-6 flex flex-wrap gap-3">
+                <Button href="/flights" variant="accent">Request a flight quote</Button>
+                <Button href="/contact" variant="outline">Plan a trip</Button>
+              </div>
               <HeroSequenceControls className="mt-5 lg:hidden" />
             </div>
 
@@ -414,7 +418,7 @@ function WhyUs() {
       <Container wide>
         <SectionHead
           eyebrow="Why book with us"
-          title="A Booking That Actually Holds — Guaranteed."
+          title="Travel starts with a conversation"
           lede="This booking platform is being adapted for Rwanda. Provider checks, payment and fulfilment processes must be confirmed before launch."
         />
 

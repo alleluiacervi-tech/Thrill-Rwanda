@@ -1,5 +1,7 @@
 # Thrill Rwanda v1.0.3
 
+Current Version 2 delivery work is tracked in [the phased plan and checklist](docs/V2_DELIVERY_PLAN.md), based on [the implementation audit](docs/V2_IMPLEMENTATION_AUDIT.md). The first additive slice provides guest flight enquiries at `/flights` and a protected admin inbox at `/admin/enquiries`. Enquiries are separate from the existing booking engine and do not reserve inventory or initiate payment. Staff triage, quotations, lead notifications and the full quote-led launch remain scheduled in the plan.
+
 Rwanda-focused travel booking demo for **Thrill Rwanda**, featuring Volcanoes
 National Park, Nyungwe and Akagera as destination examples. Customer, provider
 and admin roles share one booking engine.

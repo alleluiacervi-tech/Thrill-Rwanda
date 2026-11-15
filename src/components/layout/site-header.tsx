@@ -123,8 +123,8 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   ? (session.user.name?.split(" ")[0] ?? "Account")
                   : "Sign in"}
               </Button>
-              <Button href="/tours" variant="accent" size="sm" className="font-semibold">
-                Book now
+              <Button href="/flights" variant="accent" size="sm" className="font-semibold">
+                Flight quote
               </Button>
               <button
                 type="button"

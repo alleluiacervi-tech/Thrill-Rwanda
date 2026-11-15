@@ -655,3 +655,28 @@ model BookingDocument {
   @@unique([bookingId, kind])
   @@map("booking_documents")
 }
+
+/// Guest enquiries are separate from inventory-backed bookings.
+/// No customer account, provider, payment or inventory reservation is created.
+model Enquiry {
+  id             String   @id @default(uuid()) @db.Uuid
+  reference      String   @unique
+  submissionKey  String   @unique @map("submission_key") @db.Uuid
+  fingerprint    String
+  contactKey     String   @map("contact_key")
+  service        String   @default("FLIGHT")
+  source         String   @default("WEBSITE")
+  name           String
+  phone          String
+  email          String?
+  replyChannel   String   @map("reply_channel")
+  details        Json
+  consentVersion String   @map("consent_version")
+  consentText    String   @map("consent_text")
+  privacyVersion Int      @map("privacy_version")
+  createdAt      DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  @@index([createdAt])
+  @@index([contactKey, createdAt])
+  @@map("enquiries")
+}
