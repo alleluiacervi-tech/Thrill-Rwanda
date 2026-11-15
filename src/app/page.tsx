@@ -105,7 +105,10 @@ async function Hero({
     <section className="on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-950 lg:-mt-24">
       <HeroSequence clips={phoneHeroSequence}>
         {/* Phone ground: the three clips in sequence, then a scrim heaviest where the type and panel sit. */}
-        <HeroSequenceBackdrop className="absolute inset-0 lg:hidden" />
+        {/* The footage is framed to the first screen, not the whole hero: the hero runs on
+            past the fold to hold the search panel, and stretching a clip over that height
+            is what blows it up. It fades into the ground below. */}
+        <HeroSequenceBackdrop className="absolute inset-x-0 top-0 h-[100svh] max-h-full [mask-image:linear-gradient(to_bottom,#000_72%,transparent)] lg:hidden" />
         <div
           aria-hidden
           className="absolute inset-0 bg-gradient-to-b from-forest-950/75 via-forest-950/45 to-forest-950 lg:hidden"

@@ -40,13 +40,14 @@ export const site = {
 } as const;
 
 /** Primary navigation — mirrors the live site's information architecture. */
+/** `blurb` is the one line under each item in the phone menu. */
 export const primaryNav = [
-  { label: "Flights", href: "/flights" },
-  { label: "Tours & Safaris", href: "/tours" },
-  { label: "Hotels", href: "/hotels" },
-  { label: "Car Hire", href: "/cars" },
-  { label: "Airport Transfers", href: "/transfers" },
-  { label: "Corporate & Events", href: "/corporate" },
+  { label: "Flights", href: "/flights", blurb: "Request a checked written flight quote" },
+  { label: "Tours & Safaris", href: "/tours", blurb: "Gorillas, chimpanzees and the Big Five" },
+  { label: "Hotels", href: "/hotels", blurb: "Lodges, lakeside stays and city suites" },
+  { label: "Car Hire", href: "/cars", blurb: "4x4s and executive cars for the road ahead" },
+  { label: "Airport Transfers", href: "/transfers", blurb: "To and from Kigali International Airport" },
+  { label: "Corporate & Events", href: "/corporate", blurb: "Retreats, conferences and group travel" },
 ] as const;
 
 export const footerNav = {

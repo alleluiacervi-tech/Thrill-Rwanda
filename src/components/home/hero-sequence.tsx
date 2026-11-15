@@ -3,7 +3,7 @@
 import * as React from "react";
 import Image from "next/image";
 import { MapPin, Pause, Play } from "lucide-react";
-import type { HeroSequenceClip } from "@/lib/media";
+import { cropStyle, featherMask, fitFor, visibleSize, type HeroSequenceClip } from "@/lib/media";
 import { cn } from "@/lib/utils";
 import { useMotionAllowed } from "./hero-reel";
 
@@ -25,19 +25,8 @@ import { useMotionAllowed } from "./hero-reel";
  */
 
 const BELOW_DESKTOP = "(max-width: 1023px)";
-/** How much a clip may be enlarged past "fits whole" to fill the hero. 1.25 = at most a fifth cropped away. */
-const MAX_FILL_ZOOM = 1.25;
 /** Matches the cross-fade below; the outgoing clip keeps playing until it has faded. */
 const FADE_MS = 1000;
-
-type Fit = "cover" | "contain";
-
-function fitFor(box: { w: number; h: number } | null, w: number, h: number): Fit {
-  if (!box || !box.w || !box.h) return "cover";
-  const sx = box.w / w;
-  const sy = box.h / h;
-  return Math.max(sx, sy) / Math.min(sx, sy) <= MAX_FILL_ZOOM ? "cover" : "contain";
-}
 
 type Sequence = {
   clips: HeroSequenceClip[];
@@ -132,7 +121,9 @@ export function HeroSequence({ clips, children }: { clips: HeroSequenceClip[]; c
     const tick = () => {
       const v = videos.current[index];
       if (v && v.readyState >= 2) {
-        const end = Math.min(clip.start + clip.length, v.duration || Infinity);
+        // Hand over a fade's length early, so the outgoing clip spends its cross-fade
+        // inside its own moment instead of running on into whatever the reel cuts to next.
+        const end = Math.min(clip.start + clip.length, v.duration || Infinity) - FADE_MS / 1000;
         const progress = Math.max(0, Math.min(1, (v.currentTime - clip.start) / (end - clip.start)));
         if (fillRef.current) fillRef.current.style.transform = `scaleX(${progress})`;
         if (progress >= 1 || v.ended) {
@@ -175,7 +166,16 @@ export function HeroSequenceBackdrop({ className }: { className?: string }) {
     <div ref={backdropRef} className={cn("overflow-hidden bg-forest-950", className)}>
       {shown.map((clip, i) => {
         const active = !live || i === index;
-        const fit = fitFor(box, clip.width, clip.height);
+        // A cropped clip's element is taller than the frame by 1 / (1 - cropTop).
+        const keep = 1 - (clip.cropTop ?? 0);
+        const crop = cropStyle(clip.cropTop);
+        const vis = visibleSize(clip);
+        const fit = box ? fitFor(box.w, box.h, vis.w, vis.h, clip.maxZoom) : "cover";
+        const mask = fit === "contain" && box ? featherMask(box.w, box.h / keep, clip.width, clip.height) : undefined;
+        // Stills are all 9:16 frames, whatever shape the clip is, so they are framed on their own.
+        const stillFit = box ? fitFor(box.w, box.h, 9, 16 * keep, clip.maxZoom) : "cover";
+        const stillMask = stillFit === "contain" && box ? featherMask(box.w, box.h / keep, 9, 16) : undefined;
+        const ambient = fit === "contain" || stillFit === "contain";
         const playing = live && started[i];
         return (
           <div
@@ -188,30 +188,33 @@ export function HeroSequenceBackdrop({ className }: { className?: string }) {
             style={{ transitionDuration: `${FADE_MS}ms` }}
           >
             {/* Ambient fill for a clip shown whole: its own still, blurred and dimmed. */}
-            {fit === "contain" ? (
+            {ambient ? (
               <Image
                 src={clip.poster}
                 alt=""
                 fill
                 sizes="40vw"
                 unoptimized
-                className="scale-125 object-cover opacity-60 blur-2xl"
+                className="scale-125 object-cover opacity-80 blur-2xl saturate-125"
               />
             ) : null}
-            <Image
-              src={clip.poster}
-              alt={i === 0 ? clip.alt : ""}
-              fill
-              sizes="100vw"
-              unoptimized
-              loading={i === 0 ? "eager" : undefined}
-              fetchPriority={i === 0 ? "high" : undefined}
-              className={cn(
-                "transition-opacity duration-700",
-                fit === "cover" ? "object-cover" : "object-contain",
-                playing ? "opacity-0" : "opacity-100",
-              )}
-            />
+            {/* next/image keeps a fill image at 100% height, so the crop goes on a wrapper. */}
+            <div
+              style={crop}
+              className={cn("absolute inset-0 transition-opacity duration-700", playing ? "opacity-0" : "opacity-100")}
+            >
+              <Image
+                src={clip.poster}
+                alt={i === 0 ? clip.alt : ""}
+                fill
+                sizes="100vw"
+                unoptimized
+                loading={i === 0 ? "eager" : undefined}
+                fetchPriority={i === 0 ? "high" : undefined}
+                style={stillMask ? { maskImage: stillMask, WebkitMaskImage: stillMask } : undefined}
+                className={stillFit === "cover" ? "object-cover" : "object-contain"}
+              />
+            </div>
             {live ? (
               <video
                 ref={(el) => register(i, el)}
@@ -225,6 +228,7 @@ export function HeroSequenceBackdrop({ className }: { className?: string }) {
                 disablePictureInPicture
                 onPlaying={() => onPlaying(i)}
                 onError={onError}
+                style={{ ...crop, ...(mask ? { maskImage: mask, WebkitMaskImage: mask } : null) }}
                 className={cn(
                   "absolute inset-0 size-full transition-opacity duration-700",
                   fit === "cover" ? "object-cover" : "object-contain",
