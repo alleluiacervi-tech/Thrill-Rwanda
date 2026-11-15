@@ -22,10 +22,8 @@ function createClient() {
   const adapter = adapterFor(connectionString!);
   return new PrismaClient({
     adapter,
-    log:
-      process.env.NODE_ENV === "development"
-        ? ["warn", "error"]
-        : ["error"],
+    // Validation/driver exceptions can include bound customer values. Application handlers report safe outcomes.
+    log: process.env.NODE_ENV === "development" ? ["warn"] : [],
   });
 }
 

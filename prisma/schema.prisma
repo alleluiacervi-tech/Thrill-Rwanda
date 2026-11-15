@@ -76,6 +76,8 @@ enum ReviewStatus {
  */
 
 model User {
+  clientCaseAccess ClientCaseAccess[]
+  corporateMemberships CorporateMember[]
   id            String   @id @default(uuid()) @db.Uuid
   email         String   @unique
   emailVerified Boolean  @default(false) @map("email_verified")
@@ -649,6 +651,7 @@ enum BookingDocumentKind {
 /// Car hire: the customer's licence and ID copies. Private — served only to the
 /// customer, the booking's provider and admins, never from a public URL.
 model BookingDocument {
+  legalHoldReason String? @map("legal_hold_reason")
   expiresAt DateTime? @map("expires_at") @db.Timestamptz
   retentionPurpose String? @map("retention_purpose")
   id          String              @id @default(uuid()) @db.Uuid
@@ -671,6 +674,10 @@ model BookingDocument {
 /// Guest enquiries are separate from inventory-backed bookings.
 /// No customer account, provider, payment or inventory reservation is created.
 model Enquiry {
+  clientAccess ClientCaseAccess[]
+  corporateAccess CorporateCaseAccess[]
+  supplierReviews SupplierReview[]
+  whatsappConsent WhatsAppConsent?
   supportCases SupportCase[]
   id             String   @id @default(uuid()) @db.Uuid
   reference      String   @unique
@@ -936,6 +943,7 @@ model ReceiptAllocation {
 }
 
 model Supplier {
+  reviews SupplierReview[]
   id String @id @default(uuid()) @db.Uuid
   name String
   category String
@@ -1144,4 +1152,100 @@ model OperationsAudit {
   createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
   @@index([entityId, createdAt])
   @@map("operations_audit")
+}
+
+model ClientCaseAccess {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields:[enquiryId], references:[id])
+  userId String @map("user_id") @db.Uuid
+  user User @relation(fields:[userId], references:[id])
+  active Boolean @default(true)
+  canAccept Boolean @default(false) @map("can_accept")
+  version Int @default(0)
+  @@unique([enquiryId,userId])
+  @@map("client_case_access")
+}
+model CorporateAccount {
+  id String @id @default(uuid()) @db.Uuid
+  name String
+  active Boolean @default(true)
+  version Int @default(0)
+  members CorporateMember[]
+  cases CorporateCaseAccess[]
+  @@map("corporate_accounts")
+}
+model CorporateMember {
+  id String @id @default(uuid()) @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+  account CorporateAccount @relation(fields:[accountId],references:[id])
+  userId String @map("user_id") @db.Uuid
+  user User @relation(fields:[userId],references:[id])
+  active Boolean @default(true)
+  version Int @default(0)
+  @@unique([accountId,userId])
+  @@map("corporate_members")
+}
+model CorporateCaseAccess {
+  id String @id @default(uuid()) @db.Uuid
+  accountId String @map("account_id") @db.Uuid
+  account CorporateAccount @relation(fields:[accountId],references:[id])
+  enquiryId String @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields:[enquiryId],references:[id])
+  active Boolean @default(true)
+  version Int @default(0)
+  @@unique([accountId,enquiryId])
+  @@map("corporate_case_access")
+}
+model SupplierReview {
+  id String @id @default(uuid()) @db.Uuid
+  supplierId String @map("supplier_id") @db.Uuid
+  supplier Supplier @relation(fields:[supplierId],references:[id])
+  enquiryId String @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields:[enquiryId],references:[id])
+  actorId String @map("actor_id") @db.Uuid
+  intentKey String @unique @map("intent_key") @db.Uuid
+  inputHash String @map("input_hash")
+  score Int
+  outcome String
+  action String
+  evidence String
+  reviewAt DateTime @map("review_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@index([supplierId, createdAt])
+  @@map("supplier_reviews")
+}
+model ReleaseRecord {
+  environment String
+  key String
+  owner String
+  state String @default("PENDING")
+  evidence String
+  reviewAt DateTime @map("review_at") @db.Timestamptz
+  costMinor Int? @map("cost_minor")
+  currency String?
+  renewalAt DateTime? @map("renewal_at") @db.Timestamptz
+  version Int @default(0)
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@id([environment,key])
+  @@map("release_records")
+}
+model WorkerHeartbeat {
+  name String @id
+  startedAt DateTime @map("started_at") @db.Timestamptz
+  succeededAt DateTime? @map("succeeded_at") @db.Timestamptz
+  errorCode String? @map("error_code")
+  processed Int @default(0)
+  @@map("worker_heartbeats")
+}
+model WhatsAppConsent {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @unique @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields:[enquiryId],references:[id])
+  phone String
+  active Boolean @default(false)
+  version Int @default(0)
+  evidence String
+  actorId String @map("actor_id") @db.Uuid
+  @@map("whatsapp_consents")
 }

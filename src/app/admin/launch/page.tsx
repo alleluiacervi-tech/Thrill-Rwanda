@@ -17,6 +17,7 @@ export default async function Page() {
       kind: true,
       uploadedAt: true,
       expiresAt: true,
+      legalHoldReason:true,
       booking: { select: { reference: true } },
     },
     orderBy: { uploadedAt: "asc" },
@@ -174,21 +175,7 @@ export default async function Page() {
         bytes and leaves audit evidence. Backups follow the separate
         backup-retention procedure.
       </p>
-      {documents.map((d) => (
-        <OperationsForm
-          key={d.id}
-          title={`${d.booking.reference} · ${d.kind} · uploaded ${d.uploadedAt.toISOString().slice(0, 10)} · deadline ${d.expiresAt?.toISOString().slice(0, 10) ?? "legacy 30-day maximum"}`}
-          hidden={{ command: "DOCUMENT_DELETE", id: d.id }}
-          fields={[
-            {
-              name: "evidence",
-              label: "Deletion authority and reason",
-              type: "textarea",
-              required: true,
-            },
-          ]}
-        />
-      ))}
+      {documents.map(d=><div key={d.id}><p>{d.booking.reference} · {d.kind} · {d.legalHoldReason?"LEGAL HOLD":"No legal hold"}</p><OperationsForm title="Record or release legal hold" hidden={{command:"DOCUMENT_HOLD",id:d.id}} fields={[{name:"mode",label:"Hold action",options:[{value:"HOLD",label:"Hold"},{value:"RELEASE",label:"Release"}]},{name:"evidence",label:"Legal authority and reason (20+ characters)",type:"textarea",required:true}]}/><OperationsForm title="Delete retained copy" hidden={{command:"DOCUMENT_DELETE",id:d.id}} fields={[{name:"evidence",label:"Deletion authority and reason",type:"textarea",required:true}]}/></div>)}
       <h2 className="mt-8 text-xl">Recent approvals</h2>
       <ul>
         {audit.map((a) => (

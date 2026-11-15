@@ -261,12 +261,14 @@ export async function deleteRetainedDocument(
     const actor = await tx.user.findUnique({ where: { id: actorId } });
     if (!actor?.isActive || actor.role !== "ADMIN")
       throw new OperationsError("Administrator access required");
+    await tx.$queryRaw`SELECT id FROM booking_documents WHERE id=${id}::uuid FOR UPDATE`;
     const doc = await tx.bookingDocument.findUnique({
       where: { id },
-      select: { id: true, bookingId: true, kind: true },
+      select: { id: true, bookingId: true, kind: true, legalHoldReason:true },
     });
     if (!doc)
       throw new OperationsError("Document already deleted or not found");
+    if (doc.legalHoldReason) throw new OperationsError("Release the document legal hold with authority before deletion");
     await tx.bookingDocument.delete({ where: { id } });
     await tx.operationsAudit.create({
       data: {

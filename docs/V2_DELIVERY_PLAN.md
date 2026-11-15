@@ -124,21 +124,37 @@ Gate: the [audit acceptance matrix](V2_IMPLEMENTATION_AUDIT.md#12-v2-acceptance-
 
 ## Phase 6 — operational release and handover
 
-- [ ] Dev/staging/production separation, protected secrets, company-owned accounts and access register.
-- [ ] Tested database backup/restore, deployment/rollback, incident monitoring and named operational owners.
-- [ ] Admin/staff guides, environment-variable list, current schema/export instructions and known limitations.
-- [ ] Third-party costs, subscriptions, account owners and renewals documented.
-- [ ] Approved brand/content/policies and supplier evidence recorded; restricted soft launch with manual request review.
-- [ ] Update stale README/architecture status against implemented behavior and current test evidence.
+- [x] Explicit environment identity, configuration preflight, isolated PostgreSQL CI and private-preview access controls; real deployment/account separation remains an operational gate.
+- [x] Consistent encrypted backup, authenticated manifest and guarded disposable restore test; all 56 table counts verified locally.
+- [x] Deployment/rollback/incident procedures, health probe, protected worker heartbeats and readiness dashboard.
+- [x] Admin/staff/customer guides, environment reference, current schema/export/retention instructions and known limitations.
+- [x] Company-owned account/access/cost/renewal/evidence register with review expiry; actual owners and costs are recorded by the company, not fabricated.
+- [x] Approval/evidence gates, invited-preview tooling and manual service review controls; no production publication or live channel activation.
+- [x] README/architecture updated to the delivered software and validation scope.
+- [ ] Provision and verify real staging/production databases, hosting, secrets, company-owned accounts, backup storage and operational owners.
+- [ ] Approve brand/content/policies, supplier evidence, staffed support, retention/holds, external costs and account access.
+- [ ] Activate and observe approved backup/worker/monitoring schedules; production restore/rollback exercise, staff walkthrough, staging acceptance and founder sign-off.
 
-Gate: acceptance evidence, restore test, staff walkthrough and founder sign-off; publishing is a separate action.
+Gate: [Release and handover](RELEASE_AND_HANDOVER.md) evidence and the remaining external checks above. A record or passing local build does not publish or establish production readiness.
 
-## Later phases — evidence-led expansion
+## Phase 7 — customer and corporate request workspaces
 
-- [ ] Extend the existing customer area to own enquiry/quote history (Phase 2 business roadmap enhancement).
-- [ ] Automated WhatsApp updates after approved provider/channel setup.
-- [ ] Expanded supplier performance tools, curated packages and optional quotation automation.
-- [ ] Corporate client portal and supplier integrations only after commercial justification, permissions and founder approval.
+- [x] Explicit identity/authority/consent grants; no automatic guest-to-account or email-domain merge.
+- [x] Customer request/immutable quote history and protected downloads, with private staff/cost redaction.
+- [x] Authorized exact-version customer acceptance with expiry, current-access checks, concurrency and retry protection.
+- [x] Duplicate-safe customer support requests routed to the current responsible staff owner.
+- [x] Company workspaces with explicit membership and per-case sharing/revocation; acceptance authority remains separate.
+
+## Phase 8 — supplier follow-through, quotation assistance and optional channels
+
+- [x] Case-linked supplier performance scores, outcomes, evidence, corrective action and review dates.
+- [x] Editable revision prefill from an integrity-checked previous quote, with fresh deadlines and human approval required.
+- [x] Durable WhatsApp reference/status template adapter with explicit case opt-in, release/configuration gating, opt-out, stale-status cancellation and uncertain-send blocking.
+- [x] Legal holds and dry-run-first scheduled document-retention tooling, with audited bounded deletion after explicit operational approval.
+- [ ] Company-approved Meta account/template/costs and real recipient tests before enabling WhatsApp.
+- [ ] A named supplier API, contract, sandbox, credentials and data-sharing/settlement approval before any live supplier integration. The existing checked fulfilment workflow remains the adapter-independent path.
+
+Procedures: [Client portals and channels](CLIENT_PORTALS_AND_CHANNELS.md), [Environment reference](ENVIRONMENT_REFERENCE.md), [Release and handover](RELEASE_AND_HANDOVER.md).
 
 Remain out of launch scope: live airline/GDS fares, automatic ticket issuance/fare holds, card storage, wallets, automatic supplier payouts, native apps, loyalty and AI planning. Optional brand division names do not require separate applications.
 
@@ -196,3 +212,14 @@ The flight form is dynamically rendered so each page load has a fresh submission
 - Chromium against the production build passed public and admin launch/support/report pages at 390/768/1024/1440 widths without overflow; no unsolicited homepage video downloads; anonymous click recording; local PNG share image; hidden-service route/navigation invalidation and restoration; keyboard menu Escape/focus return; support submission with retained validation-error input; scoped CSV and immediate session revocation. No browser page errors.
 - Axe WCAG 2 A/AA and 2.1 AA scans found no serious/critical violations on the sampled home, transfer, corporate, how-it-works, support and cancellation pages. This is a limited automated check, not complete assistive-technology, content or performance certification. Browser/accessibility tools and screenshots are local test artifacts, not new application dependencies.
 - Disposable records were removed and prior publication/policy records restored. Actual business approvals, staging sign-off, production migrations, retention review scheduling, operational accounts and publication remain pending. The Phase 6 handover/release gate is separate.
+
+
+## Validation evidence — combined Phases 6–8
+
+- Additive client/company access, supplier-review, release-evidence, worker-health, channel-consent and legal-hold migration applied to project-local PostgreSQL. Earlier enquiries, immutable quotes, bookings and separate financial ledgers retained.
+- 229 unit tests passed, including backup encryption/authentication/corruption, restore target guards, readiness evidence expiry, sandbox/live payment boundaries, minimal WhatsApp template content and private-preview intake rejection. TypeScript, ESLint and production build passed.
+- All six guarded PostgreSQL integrations passed sequentially: public captures, staff triage, quotations/outbox, finance/fulfilment, launch/support/reporting and client/release features. New checks include exact-version concurrent customer acceptance, no email auto-link, corporate case scope, cost redaction, support idempotency, live access revocation, mocked WhatsApp opt-in/configuration/uncertain-send behavior, supplier reviews and hold-aware scoped retention. Fixtures were removed; no external messages or money moved.
+- Actual local PostgreSQL 17 backup/restore passed using a consistent AES-256-GCM archive, HMAC-authenticated manifest and matching counts for all 56 tables; foreign keys validated and the fresh restore database/plaintext/test artifacts removed. Error-path checks preserved an existing output file, removed failed artifacts, terminated child processes and did not log the encryption key. This is local evidence, not production recovery certification.
+- Chromium passed admin readiness/company/supplier/staff pages and customer/company portals at 390/768/1024/1440 without page overflow/errors; exact-version acceptance, private HTML download, internal-cost exclusion, support submission, company cross-case denial, health response, live revocation and an independently running invited-preview instance. Sampled portal Axe checks found no serious/critical WCAG 2 A/AA or 2.1 AA violations. Tools/screenshots remain local test artifacts.
+- Configuration preflight accurately reports missing local worker, email and persistent backup-key configuration; these were not fabricated or activated. A least-privilege GitHub validation workflow is committed, but its remote run and actual staging/production schedules/accounts require provider-side evidence.
+- Remaining items are real business/account/API approvals, external infrastructure/schedules/provider delivery, production restore/rollback, final walkthrough/staging/founder sign-off and publication. No deployment, environment publication, live gateway, Meta account, supplier API or paid service was activated.

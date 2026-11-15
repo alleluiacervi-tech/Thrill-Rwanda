@@ -1,5 +1,6 @@
 "use server";
 
+import {publicPreviewAllowed} from "@/lib/soft-launch";
 import { directBookingEnabled } from "@/lib/publication";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
@@ -38,6 +39,7 @@ export async function bookTransfer(
     return { status: "error", message: parsed.error.issues[0]?.message ?? "Check those details." };
   }
 
+  if (!(await publicPreviewAllowed())) return {status:"error",message:"This private preview accepts new arrangements from invited accounts only."};
   if (!(await directBookingEnabled("TRANSFER"))) return { status: "error", message: "Transfers are available by checked quotation. Please send a transport enquiry." };
   const { maxPassengers } = (await getSite()).rules;
   if (parsed.data.passengers > maxPassengers) {

@@ -1,5 +1,6 @@
 "use server";
 
+import {publicPreviewAllowed} from "@/lib/soft-launch";
 import {
   flightEnquirySchema,
   todayInRwanda,
@@ -35,6 +36,7 @@ export async function submitFlightEnquiry(
       message: "Choose a departure date that has not passed.",
       fieldErrors: { departureDate: "Choose today or a future date" },
     };
+  if (!(await publicPreviewAllowed())) return {status:"error",message:"This private preview accepts requests from invited accounts only. Sign in with your verified account."};
   try {
     const saved = await saveFlightEnquiry(parsed.data);
     return { status: "success", reference: saved.reference };

@@ -1,3 +1,4 @@
+import { enqueueWhatsAppStatus } from "@/lib/whatsapp";
 import { createHash } from "node:crypto";
 import { db } from "@/lib/db";
 import type { Prisma } from "@/generated/prisma/client";
@@ -875,11 +876,12 @@ export async function executeFinanceCommand(
           throw new FinanceError(
             "Correction conflicts with later refunds/recoveries. Reverse dependent records first.",
           );
-        let caseStatus =
+        const priorCaseStatus =
           enquiryId === row.id
-            ? nextStatus
+            ? fresh.status
             : (await tx.enquiry.findUniqueOrThrow({ where: { id: enquiryId } }))
                 .status;
+        let caseStatus = enquiryId === row.id ? nextStatus : priorCaseStatus;
         if (
           caseStatus === "REFUNDED" &&
           (totals.refundDue > 0 || totals.customerCredit > 0)
@@ -897,6 +899,8 @@ export async function executeFinanceCommand(
           where: { id: enquiryId },
           data: { version: { increment: 1 }, status: caseStatus },
         });
+        if (caseStatus !== priorCaseStatus)
+          await enqueueWhatsAppStatus(tx, enquiryId);
         await tx.enquiryActivity.create({
           data: {
             enquiryId,

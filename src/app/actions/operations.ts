@@ -1,4 +1,11 @@
 "use server";
+import { saveWhatsAppConsent } from "@/lib/whatsapp";
+import {
+  saveReleaseRecord,
+  setDocumentHold,
+  recordSupplierReview,
+} from "@/lib/release-operations";
+import { linkClient, saveCorporateAccess } from "@/lib/client-portal";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { requireEnquiryStaff } from "@/lib/enquiry-access";
@@ -25,6 +32,36 @@ export async function recordOperation(
   try {
     const input = Object.fromEntries(form);
     switch (form.get("command")) {
+      case "WHATSAPP_CONSENT":
+        await saveWhatsAppConsent(actor.id, {
+          ...input,
+          active: form.get("active") === "on",
+        });
+        break;
+      case "RELEASE_RECORD":
+        await saveReleaseRecord(actor.id, input);
+        break;
+      case "DOCUMENT_HOLD":
+        await setDocumentHold(actor.id, input);
+        break;
+      case "SUPPLIER_REVIEW":
+        await recordSupplierReview(actor.id, input);
+        break;
+      case "CLIENT_ACCESS":
+        await linkClient(actor.id, {
+          ...input,
+          active: form.get("active") === "on",
+          canAccept: form.get("canAccept") === "on",
+        });
+        revalidatePath("/account/enquiries", "layout");
+        break;
+      case "CORPORATE_ACCESS":
+        await saveCorporateAccess(actor.id, {
+          ...input,
+          active: form.get("active") === "on",
+        });
+        revalidatePath("/account", "layout");
+        break;
       case "OFFER":
         await approveOffer(
           actor.id,

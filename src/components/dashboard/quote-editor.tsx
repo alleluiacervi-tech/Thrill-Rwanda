@@ -12,6 +12,7 @@ import {
   formatQuoteMoney,
   quoteTotals,
   type QuoteActionState,
+  type QuoteSnapshot,
 } from "@/lib/quote-rules";
 const field =
   "mt-2 block w-full rounded-xl border border-[var(--line-strong)] bg-[var(--paper-raised)] p-3";
@@ -20,16 +21,18 @@ export function QuoteEditor({
   enquiryVersion,
   intentKey,
   emailAllowed,
+  seed,
 }: {
   reference: string;
   enquiryVersion: number;
   intentKey: string;
   emailAllowed: boolean;
+  seed?: QuoteSnapshot;
 }) {
   const [state, action, pending] = useActionState(issueWrittenQuote, {
     status: "idle",
   } as QuoteActionState);
-  const [currency, setCurrency] = useState("USD");
+  const [currency, setCurrency] = useState(seed?.currency ?? "USD");
   const [lines, setLines] = useState<
     {
       kind: (typeof LINE_KINDS)[number];
@@ -37,20 +40,31 @@ export function QuoteEditor({
       quantity: number;
       unitPrice: string;
     }[]
-  >([
-    {
-      kind: "SUPPLIER",
-      description: "Supplier fare / service",
-      quantity: 1,
-      unitPrice: "",
-    },
-    {
-      kind: "SERVICE_FEE",
-      description: "Thrill Rwanda service fee",
-      quantity: 1,
-      unitPrice: "0",
-    },
-  ]);
+  >(
+    seed
+      ? seed.items.map((item) => ({
+          kind: item.kind,
+          description: item.description,
+          quantity: item.quantity,
+          unitPrice: String(
+            item.unitMinor / (seed.currency === "RWF" ? 1 : 100),
+          ),
+        }))
+      : [
+          {
+            kind: "SUPPLIER",
+            description: "Supplier fare / service",
+            quantity: 1,
+            unitPrice: "",
+          },
+          {
+            kind: "SERVICE_FEE",
+            description: "Thrill Rwanda service fee",
+            quantity: 1,
+            unitPrice: "0",
+          },
+        ],
+  );
   let preview = "Enter valid line amounts for a total preview.";
   try {
     preview = `Draft customer total: ${formatQuoteMoney(quoteTotals(lines, currency).totalMinor, currency)}`;
@@ -78,6 +92,12 @@ export function QuoteEditor({
           edited. Check supplier options, conditions and approved commercial
           terms before issuing. All deadline inputs use Kigali time (UTC+2).
         </p>
+        {seed && (
+          <p>
+            Previous version values are prefilled as an editable draft. Recheck
+            suppliers, amounts and conditions; set new deadlines before issuing.
+          </p>
+        )}
         <input type="hidden" name="reference" value={reference} />
         <input type="hidden" name="enquiryVersion" value={enquiryVersion} />
         <input type="hidden" name="intentKey" value={intentKey} />
@@ -105,6 +125,7 @@ export function QuoteEditor({
             Service description
             <textarea
               name="serviceDescription"
+              defaultValue={seed?.serviceDescription}
               required
               minLength={10}
               maxLength={2000}
@@ -115,6 +136,7 @@ export function QuoteEditor({
             Travel dates, route or itinerary
             <textarea
               name="travelSummary"
+              defaultValue={seed?.travelSummary}
               required
               minLength={5}
               maxLength={2000}
@@ -213,6 +235,7 @@ export function QuoteEditor({
             Taxes / charges treatment
             <textarea
               name="taxTreatment"
+              defaultValue={seed?.taxTreatment}
               required
               minLength={5}
               maxLength={1000}
@@ -223,6 +246,7 @@ export function QuoteEditor({
             Supplier fare / baggage / service conditions
             <textarea
               name="supplierConditions"
+              defaultValue={seed?.supplierConditions}
               required
               minLength={10}
               maxLength={4000}
@@ -233,6 +257,7 @@ export function QuoteEditor({
             Payment instructions and change / cancellation / refund terms
             <textarea
               name="terms"
+              defaultValue={seed?.terms}
               required
               minLength={20}
               maxLength={6000}

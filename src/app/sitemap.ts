@@ -5,9 +5,10 @@ import { listHotels, listTours, listVehicles } from "@/lib/catalogue";
 import { site } from "@/lib/site";
 
 // Step 19. Built from the live catalogue, refreshed hourly.
-export const revalidate = 3600;
+export const dynamic = "force-dynamic";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
+  if(process.env.SOFT_LAUNCH_PRIVATE === "true")return [];
   const publications = await getPublications();
   const now = new Date();
   const url = (path: string) => `${site.url}${path}`;

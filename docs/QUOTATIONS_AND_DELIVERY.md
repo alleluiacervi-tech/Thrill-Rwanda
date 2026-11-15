@@ -83,3 +83,5 @@ Run `npm test`, `npm run lint`, `npm run typecheck`, `npm run build`, plus the g
 The quotation integration script injects fake transports and sends no external email. It checks immutable revisions/download content, exact-version acceptance, expired/superseded quotes, concurrent issue/accept requests, retries/idempotency, per-attempt records, worker leases, missing configuration, uncertain-delivery review, revoked access and unchanged booking/payment counts. Cleanup removes only generated test fixtures.
 
 Real provider acceptance/inbox delivery, recurring scheduling, founder approval of commercial/policy wording, retention/backups and production rollout remain deployment/business validation. No production migration, publication, customer message or live payment was performed during this implementation.
+
+Revision assistance and customer exact-version acceptance are documented in [Client portals and channels](CLIENT_PORTALS_AND_CHANNELS.md). Optional WhatsApp uses the same durable outbox but blocks uncertain sends because its endpoint is not assumed idempotent.

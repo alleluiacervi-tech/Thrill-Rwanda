@@ -1,4 +1,5 @@
 "use server";
+import {publicPreviewAllowed} from "@/lib/soft-launch";
 import { z } from "zod";
 import { revalidatePath } from "next/cache";
 import { saveEnquiry, EnquirySubmissionError } from "@/lib/flight-enquiries";
@@ -67,6 +68,7 @@ async function capture(
   } = input;
   void consent;
   void website;
+  if (!manual && !(await publicPreviewAllowed())) return {status:"error",message:"This private preview accepts requests from invited accounts only. Sign in with your verified account."};
   try {
     const result = await saveEnquiry(
       {

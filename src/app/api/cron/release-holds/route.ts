@@ -1,3 +1,4 @@
+import { runObservedWorker } from "@/lib/worker-health";
 import { releaseStaleHolds } from "@/lib/booking";
 
 // Daily sweep of dates held at step one and never confirmed. New bookings also
@@ -15,6 +16,6 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const released = await releaseStaleHolds();
+  const released = await runObservedWorker("release-holds", () => releaseStaleHolds(), value => value);
   return Response.json({ released });
 }

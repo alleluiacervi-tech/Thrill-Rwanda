@@ -1,3 +1,4 @@
+vi.mock("@/lib/whatsapp", () => ({ enqueueWhatsAppStatus: vi.fn() }));
 vi.mock("@/lib/enquiry-outbox", () => ({
   enqueueEnquiryNotifications: vi.fn(),
   enqueueOwnerNotification: vi.fn(),

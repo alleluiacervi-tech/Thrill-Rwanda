@@ -1,3 +1,4 @@
+import { enqueueWhatsAppStatus } from "@/lib/whatsapp";
 import { enqueueOwnerNotification } from "@/lib/enquiry-outbox";
 import { db } from "@/lib/db";
 import {
@@ -184,6 +185,7 @@ export async function updateEnquiry(actorId: string, input: TriageInput) {
         changes,
       },
     });
+    if (changedStatus) await enqueueWhatsAppStatus(tx, row.id);
     return row.reference;
   });
 }

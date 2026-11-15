@@ -59,3 +59,8 @@ CLAUDE.md
 # local media (development storage driver — see src/lib/storage.ts)
 .uploads/
 .local-postgres/
+
+# Encrypted database backups and restore artifacts
+.backups/
+*.trb
+*.dump

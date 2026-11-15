@@ -1,3 +1,5 @@
+import {publicPreviewAllowed} from "@/lib/soft-launch";
+vi.mock("@/lib/soft-launch",()=>({publicPreviewAllowed:vi.fn(async()=>true)}));
 import { beforeEach, expect, it, vi } from "vitest";
 const { save, staff } = vi.hoisted(() => ({ save: vi.fn(), staff: vi.fn() }));
 vi.mock("@/lib/flight-enquiries", () => ({ saveEnquiry: save, EnquirySubmissionError: class extends Error {} }));
@@ -9,7 +11,7 @@ const form = () => {
  for (const [key, value] of Object.entries({ submissionKey: "55cb5b18-56d3-42ac-893a-acab45440714", service: "GENERAL", name: "Test Guest", phone: "", email: "guest@example.invalid", replyChannel: "EMAIL", startDate: "", endDate: "", partySize: "2", location: "", pickup: "", dropoff: "", organization: "", budget: "", message: "Please help us plan our trip", context: "Catalogue request", consent: "on", website: "" })) data.set(key, value);
  return data;
 };
-beforeEach(() => { vi.resetAllMocks(); save.mockResolvedValue({ reference: "TRQ-test" }); staff.mockResolvedValue({ id: "staff", role: "CUSTOMER", staffRole: "SALES", isActive: true }); });
+beforeEach(() => { vi.resetAllMocks(); vi.mocked(publicPreviewAllowed).mockResolvedValue(true); save.mockResolvedValue({ reference: "TRQ-test" }); staff.mockResolvedValue({ id: "staff", role: "CUSTOMER", staffRole: "SALES", isActive: true }); });
 it("persists website requests and ignores a spoofed lead source", async () => {
  const data = form(); data.set("source", "PHONE");
  expect((await submitServiceEnquiry({ status: "idle" }, data)).status).toBe("success");
@@ -43,3 +45,5 @@ it("does not report success or expose sensitive database errors on persistence f
  const result = await submitServiceEnquiry({ status: "idle" }, form());
  expect(result.status).toBe("error"); expect(result.reference).toBeUndefined(); expect(JSON.stringify(result)).not.toContain("sensitive");
 });
+
+it("rejects uninvited private-preview requests before saving",async()=>{vi.mocked(publicPreviewAllowed).mockResolvedValue(false);const result=await submitServiceEnquiry({status:"idle"},form());expect(result.status).toBe("error");expect(result.message).toContain("invited");expect(save).not.toHaveBeenCalled();});
