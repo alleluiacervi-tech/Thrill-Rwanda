@@ -71,7 +71,7 @@ Phase 2 implementation: `/staff/enquiries` provides scoped triage; administrator
 
 - [x] Quote/version/items schema; immutable issued snapshots and expiry/payment deadlines.
 - [x] Supplier conditions/baggage, service description, dates, currency/tax and approved fee breakdown.
-- [x] Exclude internal notes from customer copies; structured supplier net costs, commission and contribution accounting remain Phase 4.
+- [x] Exclude internal notes from customer copies; structured supplier net costs, commission and contribution accounting are delivered in Phase 4.
 - [x] Staff editor, preview, issue/share and revision history; attach written quote if PDF automation is deferred.
 - [x] Acceptance evidence bound to the exact issued version; handle expired/revised quotes explicitly.
 - [x] Transactional outbox or equivalent durable notification jobs with per-recipient outcome, retries and safe staff alerts.
@@ -87,15 +87,15 @@ Phase 3 now enforces quote issuance and exact-version acceptance in the quotatio
 
 ## Phase 4 — approved payments, supplier fulfilment and finance
 
-- [ ] Approved off-site payment instructions and receipt/reference capture.
-- [ ] Permission-scoped reconciliation, duplicate receipt protection, partial allocations and reversals.
-- [ ] Separate collections, supplier/ticket payable, retained fees/commission, charges, refunds and contribution by currency.
-- [ ] Supplier register or controlled internal register: categories, contacts, agreements/rate sheets, service areas, restrictions, escalation and publication permission.
-- [ ] Supplier processing and checked confirmation/ticket reference; issuance remains with the authorized ticketing partner.
-- [ ] Explicit link from accepted/reconciled enquiry to a fulfilled booking/service record where needed; preserve legacy bookings and gateway attempts.
-- [ ] Refund/cancellation obligations tracked independently of a simple cancelled status.
-- [ ] Update reporting terminology: customer collections are not retained revenue or profit.
-- [ ] Validate payment search against `Payment.idempotencyKey` rather than the absent schema field `merchantReference`.
+- [x] Approved off-site payment instructions and receipt/reference capture.
+- [x] Permission-scoped reconciliation, duplicate receipt protection, partial allocations and reversals.
+- [x] Separate collections, supplier/ticket payable, retained fees/commission, charges, refunds and contribution by currency.
+- [x] Supplier register or controlled internal register: categories, contacts, agreements/rate sheets, service areas, restrictions, escalation and publication permission.
+- [x] Supplier processing and checked confirmation/ticket reference; issuance remains with the authorized ticketing partner.
+- [x] Explicit link from accepted/reconciled enquiry to a fulfilled booking/service record where needed; preserve legacy bookings and gateway attempts.
+- [x] Refund/cancellation obligations tracked independently of a simple cancelled status.
+- [x] Update reporting terminology: customer collections are not retained revenue or profit.
+- [x] Validate payment search against `Payment.idempotencyKey` rather than the absent schema field `merchantReference`.
 - [ ] Activate Pesapal only if provider account, settlement, ownership, refunds and reconciliation are approved; otherwise keep it deferred for the quote-led launch.
 
 Integration with prior work: preserve the existing payment ledger and reconciliation safeguards. Never mark a legacy payment succeeded from an unchecked staff form or reuse booking inventory holds as flight fare holds.
@@ -173,3 +173,12 @@ The flight form is dynamically rendered so each page load has a fresh submission
 - Local quotation integration passed immutable revisions, concurrent issuance/acceptance, expired/superseded rejection, exact acceptance, delivery retries with stable idempotency, per-attempt records, concurrent worker leases, configuration blocks, uncertain-delivery review and revoked recipients. Transports were mocked; no external messages or money moved.
 - Chromium against the production build passed the quote editor, responsive preview, historical HTML download equality, private-note exclusion, latest-version acceptance, cross-owner/finance denial, blocked-notification retry UI and cron authorization.
 - Sender/provider inbox receipt, recurring scheduling, production migrations and business/policy approval remain deployment validation; no scheduler, service account or environment publication was activated. Existing booking/account emails remain best-effort, with corrected delivery timestamps.
+
+
+## Validation evidence — Phase 4
+
+- Additive finance, settlement, supplier and fulfilment migration applied to project-local PostgreSQL. Existing bookings and gateway attempts remain separate.
+- 205 unit tests passed. Local finance integration passed concurrent split-allocation limits, idempotency, role revocation, pending/reconciled funds, funding thresholds, supplier approval and confirmation, supplier credits/recoveries, partial refunds, reversals, currency isolation and legacy booking-link safeguards. Fixtures were removed; booking/payment counts did not change.
+- Production build, TypeScript checking and ESLint passed. Chromium passed admin finance, supplier and accepted-case screens at 390/768/1024/1440 widths without overflow or page errors, plus a pending-receipt form submission and finance/operations field redaction.
+- Staff procedure, accounting definitions, corrections and limitations are documented in [FINANCE_AND_SUPPLIERS.md](FINANCE_AND_SUPPLIERS.md).
+- Approved bank/mobile-money accounts, supplier contracts, actual statement checking and production business approval remain operational prerequisites. Pesapal activation remains deferred. No external money movement or environment publication was performed.

@@ -66,7 +66,9 @@ export default async function AdminLayout({
     {
       label: "Operations",
       items: [
-        { label: "Payments", href: "/admin/payments", icon: "payments" },
+        { label: "Off-site finance", href: "/admin/finance", icon: "payments" },
+        { label: "Supplier register", href: "/admin/suppliers", icon: "providers" },
+        { label: "Gateway payments", href: "/admin/payments", icon: "payments" },
         { label: "Reviews", href: "/admin/reviews", badge: pendingReviews, icon: "reviews" },
         { label: "Users & roles", href: "/admin/users", icon: "users" },
         { label: "Email templates", href: "/admin/emails", icon: "emails" },

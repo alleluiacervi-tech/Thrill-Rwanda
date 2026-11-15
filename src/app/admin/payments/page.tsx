@@ -55,7 +55,7 @@ export default async function AdminPaymentsPage({
       ? {
           OR: [
             { transactionId: { contains: q, mode: "insensitive" as const } },
-            { merchantReference: { contains: q, mode: "insensitive" as const } },
+            { idempotencyKey: { contains: q, mode: "insensitive" as const } },
             { booking: { reference: { contains: q, mode: "insensitive" as const } } },
             { booking: { customer: { fullName: { contains: q, mode: "insensitive" as const } } } },
             { booking: { customer: { email: { contains: q, mode: "insensitive" as const } } } },
@@ -93,14 +93,16 @@ export default async function AdminPaymentsPage({
       },
     }),
     db.payment.groupBy({ by: ["status"], _count: { _all: true } }),
-    db.payment.aggregate({ where: { status: "SUCCEEDED" }, _sum: { amountMinor: true } }),
-    db.payment.aggregate({ where: { status: "REFUNDED" }, _sum: { amountMinor: true } }),
+    db.payment.groupBy({ by: ["currency"], where: { status: "SUCCEEDED" }, _sum: { amountMinor: true } }),
+    db.payment.groupBy({ by: ["currency"], where: { status: "REFUNDED" }, _sum: { amountMinor: true } }),
   ]);
 
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
   const total = counts.reduce((n, c) => n + c._count._all, 0);
 
-  const net = (collected._sum.amountMinor ?? 0) - (refunded._sum.amountMinor ?? 0);
+  const currencies = [...new Set([...collected.map(row => row.currency), ...refunded.map(row => row.currency)])];
+  const amounts = (rows: typeof collected) => rows.map(row => formatMoney(row._sum.amountMinor ?? 0, row.currency)).join(" · ") || "No amounts";
+  const net = currencies.map(currency => formatMoney((collected.find(row => row.currency === currency)?._sum.amountMinor ?? 0) - (refunded.find(row => row.currency === currency)?._sum.amountMinor ?? 0), currency)).join(" · ") || "No amounts";
 
   return (
     <>
@@ -110,9 +112,9 @@ export default async function AdminPaymentsPage({
       />
 
       <dl className="mb-6 grid gap-3 sm:grid-cols-3">
-        <Figure label="Collected" value={formatMoney(collected._sum.amountMinor ?? 0)} />
-        <Figure label="Refunded" value={formatMoney(refunded._sum.amountMinor ?? 0)} />
-        <Figure label="Net" value={formatMoney(net)} strong />
+        <Figure label="Collected" value={amounts(collected)} />
+        <Figure label="Refunded" value={amounts(refunded)} />
+        <Figure label="Net collections" value={net} strong />
       </dl>
 
       <div className="mb-4 flex flex-wrap items-center gap-3">

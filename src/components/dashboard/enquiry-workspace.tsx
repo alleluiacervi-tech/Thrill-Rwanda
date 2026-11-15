@@ -1,3 +1,4 @@
+import { FinancialWorkspace } from "@/components/dashboard/financial-workspace";
 import { QuoteWorkspace } from "@/components/dashboard/quote-workspace";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -213,7 +214,9 @@ export async function EnquiryDetail({
     include: {
       owner: { select: { fullName: true } },
       activities: {
-        where: finance ? { kind: "FINANCE_MILESTONE" } : {},
+        where: finance
+          ? { kind: { in: ["FINANCE_MILESTONE", "FINANCE"] } }
+          : {},
         orderBy: { createdAt: "desc" },
         take: 100,
         include: { actor: { select: { fullName: true } } },
@@ -324,6 +327,7 @@ export async function EnquiryDetail({
         </>
       )}
       {!finance && <QuoteWorkspace enquiry={row} actor={actor} base={base} />}
+      <FinancialWorkspace enquiry={row} actor={actor} />
       <EnquiryTriageForm
         key={row.version}
         reference={row.reference}
@@ -342,7 +346,15 @@ export async function EnquiryDetail({
         }
         owners={owners}
         transitions={allowedEnquiryTransitions(actor, row.status).filter(
-          (status) => !["QUOTE_SENT", "AWAITING_PAYMENT"].includes(status),
+          (status) =>
+            ![
+              "QUOTE_SENT",
+              "AWAITING_PAYMENT",
+              "PARTNER_PROCESSING",
+              "CONFIRMED",
+              "COMPLETED",
+              "REFUNDED",
+            ].includes(status),
         )}
       />
       <section className="mt-8">

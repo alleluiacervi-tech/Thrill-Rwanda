@@ -33,6 +33,15 @@ export async function updateEnquiry(actorId: string, input: TriageInput) {
     const changedStatus = input.status !== row.status;
     if (
       changedStatus &&
+      ["PARTNER_PROCESSING", "CONFIRMED", "COMPLETED", "REFUNDED"].includes(
+        input.status,
+      )
+    )
+      throw new EnquiryWorkflowError(
+        "Use the finance and supplier fulfilment workspace for this milestone.",
+      );
+    if (
+      changedStatus &&
       ["QUOTE_SENT", "AWAITING_PAYMENT"].includes(input.status)
     )
       throw new EnquiryWorkflowError(
@@ -122,6 +131,11 @@ export async function updateEnquiry(actorId: string, input: TriageInput) {
       input.status,
     );
     if (closed) nextFollowUp = null;
+    if (changedStatus && input.status === "CANCELLED")
+      await tx.financialCase.updateMany({
+        where: { enquiryId: row.id },
+        data: { reviewed: false, reviewEvidence: null },
+      });
     const changes = {
       before: {
         status: row.status,
