@@ -5,6 +5,7 @@ import { refreshPublicCatalogue } from "@/lib/catalogue";
 import { z } from "zod";
 import { openCalendar } from "@/lib/booking";
 import { db } from "@/lib/db";
+import { isTourCollection } from "@/lib/journey-requests";
 import { resolveListingScope, scopeFilter } from "@/lib/session";
 import type { Prisma } from "@/generated/prisma/client";
 import {
@@ -168,6 +169,10 @@ export async function updateVehicle(
 
 /* ------------------------------------------------------------ edit tour */
 
+/** The collection chosen in the tour form, or null when it is unfiled or not one we know. */
+const tourCollection = (value: FormDataEntryValue | null) =>
+  isTourCollection(value) ? value : null;
+
 export async function updateTour(
   _prev: ListingState,
   formData: FormData,
@@ -211,6 +216,10 @@ export async function updateTour(
             destination: t.destination,
             description: t.description || null,
             pickupInfo: t.pickupInfo || null,
+          collection: tourCollection(formData.get("collection")),
+          // Unticked boxes are absent from the form, so absence means off.
+          enquiryOnly: formData.get("enquiryOnly") === "on",
+          fixedDepartures: formData.get("fixedDepartures") === "on",
           itinerary: String(formData.get("itinerary") ?? "").trim().slice(0,6000),
           suitability: String(formData.get("suitability") ?? "").trim().slice(0,3000),
           inclusions: toList(formData.get("inclusions")),

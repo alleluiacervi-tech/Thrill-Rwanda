@@ -196,6 +196,14 @@ model Provider {
  */
 
 model Tour {
+  /// Which way of travelling this offer is filed under: SAFARI, PRIVATE_LUXURY,
+  /// HONEYMOON, CITY_TOUR, TEMBERA or SCHOOL (src/lib/journey-requests.ts). Null is unfiled.
+  collection String?
+  /// Sold by written quote only, even while trips can be booked directly (Admin → Launch).
+  enquiryOnly Boolean @default(false) @map("enquiry_only")
+  /// Runs only on the dates in tour_departures. Any other start date is refused.
+  fixedDepartures Boolean @default(false) @map("fixed_departures")
+  departures TourDeparture[]
   itinerary String @default("")
   suitability String @default("")
   inclusions String[] @default([])
@@ -226,8 +234,53 @@ model Tour {
 
   @@index([destination])
   @@index([providerId])
+  @@index([collection])
   @@map("tours")
   
+}
+
+/// A place Thrill Rwanda can reserve for a wedding or event. Venues are
+/// reserved on the customer's behalf after a written quote: there is no
+/// price and no calendar here, only what helps a couple choose.
+model Venue {
+  id          String   @id @default(uuid()) @db.Uuid
+  name        String
+  slug        String   @unique
+  /// One of VENUE_KINDS (src/lib/venue-rules.ts), e.g. "Garden or lakeshore".
+  kind        String
+  /// Town or area, as a guest would say it: "Kigali", "Rubavu, Lake Kivu".
+  location    String
+  /// Most guests the venue takes.
+  capacity    Int      @db.SmallInt
+  description String
+  /// Short facts: "On-site catering", "Parking for 80 cars".
+  features    String[] @default([])
+  images      String[] @default([])
+  isPublished Boolean  @default(false) @map("is_published")
+  createdAt   DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@index([isPublished])
+  @@map("venues")
+}
+
+/// A dated run of a fixed-departure tour (a Tembera u Rwanda edition).
+/// Seats are not stored here: they are the tour's own capacity, held day by
+/// day in `availability` like every other booking, so one inventory decides.
+model TourDeparture {
+  id        String   @id @default(uuid()) @db.Uuid
+  tourId    String   @map("tour_id") @db.Uuid
+  /// First day. The run lasts the tour's durationDays.
+  startsOn  DateTime @map("starts_on") @db.Date
+  /// Optional line shown with the date, e.g. "Umuganura weekend".
+  note      String?
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+
+  tour Tour @relation(fields: [tourId], references: [id], onDelete: Cascade)
+
+  @@unique([tourId, startsOn])
+  @@index([startsOn])
+  @@map("tour_departures")
 }
 
 model Hotel {

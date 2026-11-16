@@ -134,6 +134,16 @@ export async function submitBooking(
     };
   }
 
+  if (
+    input.serviceType === "TOUR" &&
+    (await db.tour.findUnique({ where: { id: resourceId }, select: { enquiryOnly: true } }))?.enquiryOnly
+  ) {
+    return {
+      status: "error",
+      message: "This journey is arranged by written quote. Please send a request instead.",
+    };
+  }
+
   if (input.serviceType === "TOUR" && !input.residency) {
     return {
       status: "error",
@@ -193,6 +203,8 @@ export async function submitBooking(
 
     // No notifications yet: the customer, provider and admins hear once it's confirmed at checkout.
     revalidatePath("/account/bookings");
+    // A dated tour shows seats left; the page should not go on offering the ones just taken.
+    if (input.serviceType === "TOUR") revalidatePath(`/tours/${input.slug}`);
     return { status: "success", reference: booking.reference };
   } catch (err) {
     if (err instanceof BookingError) {

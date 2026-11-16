@@ -1,5 +1,6 @@
 import { getPublications } from "@/lib/publication";
 import { serviceFor } from "@/lib/launch-rules";
+import { JOURNEY_SERVICE, isJourneyKey } from "@/lib/journey-requests";
 import { notFound } from "next/navigation";
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
@@ -19,10 +20,16 @@ export default async function Page({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
-  const service =
-    ["TRIP", "STAY", "TRANSPORT", "GROUP", "EVENT"].find(
-      (s) => s === params.service,
-    ) ?? "GENERAL";
+  // `?journey=HONEYMOON` opens the tailored form; flights have their own page.
+  const journey =
+    isJourneyKey(params.journey) && params.journey !== "FLIGHT"
+      ? params.journey
+      : "";
+  const service = journey
+    ? JOURNEY_SERVICE[journey]
+    : (["TRIP", "STAY", "TRANSPORT", "GROUP", "EVENT"].find(
+        (s) => s === params.service,
+      ) ?? "GENERAL");
   const selected = serviceFor(service);
   if (selected && (await getPublications())[selected] === "HIDDEN") notFound();
   return (
@@ -37,6 +44,7 @@ export default async function Page({
         <ServiceEnquiryForm
           submissionKey={randomUUID()}
           initialService={service}
+          journey={journey}
           context={
             typeof params.subject === "string"
               ? params.subject.slice(0, 1000)

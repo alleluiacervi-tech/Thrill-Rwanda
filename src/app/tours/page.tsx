@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
 import { listTours, type CatalogueTour } from "@/lib/catalogue";
 import { destinations } from "@/lib/content";
+import { JOURNEY_LABELS, TOUR_COLLECTIONS } from "@/lib/journey-requests";
 import { destinationImages } from "@/lib/images";
 
 export const metadata: Metadata = {
@@ -30,6 +31,11 @@ const sorts = [
 ];
 
 const filterGroups = [
+  {
+    key: "collection",
+    label: "Style",
+    options: TOUR_COLLECTIONS.map((key) => ({ value: key, label: JOURNEY_LABELS[key] })),
+  },
   {
     key: "destination",
     label: "Destination",
@@ -71,6 +77,10 @@ function applyFilters(list: CatalogueTour[], sp: Record<string, string>) {
 
   if (sp.destination) {
     out = out.filter((t) => t.destination === sp.destination);
+  }
+
+  if (sp.collection) {
+    out = out.filter((t) => t.collection === sp.collection);
   }
 
   if (sp.duration === "day") out = out.filter((t) => t.durationDays === 1);

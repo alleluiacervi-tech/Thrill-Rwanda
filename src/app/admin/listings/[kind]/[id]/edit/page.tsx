@@ -1,7 +1,10 @@
 import { notFound } from "next/navigation";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
 import { HotelForm } from "@/components/dashboard/hotel-form";
+import { TourDepartures } from "@/components/dashboard/tour-departures";
 import { TourForm } from "@/components/dashboard/tour-form";
+import { upcomingDepartures } from "@/lib/departures";
+import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import { VehicleForm } from "@/components/dashboard/vehicle-form";
 import { backToListings } from "@/app/admin/listings/new/shared";
 import { db } from "@/lib/db";
@@ -57,7 +60,7 @@ export default async function AdminEditListingPage({
       select: {
         id: true, name: true, destination: true, durationDays: true,
         maxParticipants: true, priceMinor: true, priceResidentMinor: true, priceNonResidentMinor: true, description: true,
-        pickupInfo: true, activities: true, images: true, itinerary: true, suitability: true, inclusions: true, exclusions: true,
+        pickupInfo: true, activities: true, images: true, itinerary: true, suitability: true, inclusions: true, exclusions: true, collection: true, enquiryOnly: true, fixedDepartures: true,
         provider: { select: { businessName: true } },
       },
     });
@@ -66,6 +69,14 @@ export default async function AdminEditListingPage({
     return (
       <Frame title={`Edit ${tour.name}`} owner={tour.provider.businessName}>
         <TourForm existing={tour} basePath="/admin/listings" />
+        <TourDepartures
+          tourId={tour.id}
+          fixed={tour.fixedDepartures}
+          durationDays={tour.durationDays}
+          seats={tour.maxParticipants}
+          departures={await upcomingDepartures(tour)}
+          today={todayInRwanda()}
+        />
       </Frame>
     );
   }

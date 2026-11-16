@@ -2,6 +2,7 @@ import { getPublications } from "@/lib/publication";
 import { visiblePath } from "@/lib/launch-rules";
 import type { MetadataRoute } from "next";
 import { listHotels, listTours, listVehicles } from "@/lib/catalogue";
+import { TEMBERA, collections } from "@/lib/journeys";
 import { site } from "@/lib/site";
 
 // Step 19. Built from the live catalogue, refreshed hourly.
@@ -19,6 +20,11 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     { path: "/support", priority: 0.7, changeFrequency: "monthly" as const },
     { path: "/enquire", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/flights", priority: 0.9, changeFrequency: "weekly" as const },
+    { path: "/experiences", priority: 0.9, changeFrequency: "weekly" as const },
+    ...collections.map((c) => ({ path: `/experiences/${c.slug}`, priority: 0.8, changeFrequency: "weekly" as const })),
+    { path: TEMBERA.href, priority: 0.9, changeFrequency: "daily" as const },
+    { path: "/weddings", priority: 0.8, changeFrequency: "weekly" as const },
+    { path: "/groups", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/tours", priority: 0.9, changeFrequency: "daily" as const },
     { path: "/hotels", priority: 0.9, changeFrequency: "daily" as const },
     { path: "/cars", priority: 0.9, changeFrequency: "daily" as const },

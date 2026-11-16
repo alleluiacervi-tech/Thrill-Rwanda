@@ -13,6 +13,7 @@ import {
   SectionHead,
 } from "@/components/ui/primitives";
 import { getTour, listTours } from "@/lib/catalogue";
+import { upcomingDepartures } from "@/lib/departures";
 import {
   RESIDENCY_HINTS,
   RESIDENCY_LABELS,
@@ -71,6 +72,8 @@ export default async function TourDetailPage({
   const itinerary = tour.itinerary.split(/\n+/).filter(Boolean).map((body,i)=>({day:i+1,title:`Day ${i+1}`,body}));
   const { depositPercent } = await getSiteSettings();
   const related = (await listTours()).filter((t) => t.slug !== tour.slug).slice(0, 3);
+  // Dated editions: the only days this tour can be booked, with live seat counts.
+  const departures = tour.fixedDepartures ? await upcomingDepartures(tour) : undefined;
 
   /* Step 19: structured data so this page can win a rich result. */
   const jsonLd = {
@@ -175,7 +178,7 @@ export default async function TourDetailPage({
             ))}
           </ul>
 
-          {site.publications.TRIP === "DIRECT" && hasTieredPricing(tour) ? (
+          {site.publications.TRIP === "DIRECT" && !tour.enquiryOnly && hasTieredPricing(tour) ? (
             <section className="mt-16">
               <Eyebrow>Rates</Eyebrow>
               <h2 className="mt-5 text-3xl">What it costs, per person</h2>
@@ -274,9 +277,12 @@ export default async function TourDetailPage({
         </div>
 
         {/* ---------------------------------------------------- Booking rail */}
-        <aside className="lg:sticky lg:top-28 lg:self-start">
+        <aside id="book" className="scroll-mt-28 lg:sticky lg:top-28 lg:self-start">
           <BookingPanel
             title={tour.name}
+            enquiryOnly={tour.enquiryOnly}
+            journey={tour.collection ?? undefined}
+            departures={departures}
             slug={tour.slug}
             unitLabel="per person"
             priceMinor={tour.priceFrom}

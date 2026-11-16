@@ -11,6 +11,18 @@ import {
 import { requireEnquiryStaff } from "@/lib/enquiry-access";
 import { isFinance, SOURCES } from "@/lib/enquiry-workflow";
 
+const TAILORED = [
+  "journey",
+  "eventType",
+  "venueStyle",
+  "needs",
+  "students",
+  "chaperones",
+  "ageGroup",
+  "learningFocus",
+  "addOns",
+];
+
 async function capture(
   form: FormData,
   manual = false,
@@ -64,10 +76,17 @@ async function capture(
     phone,
     email,
     replyChannel,
-    ...details
+    ...answers
   } = input;
   void consent;
   void website;
+  // Tailored questions that were not asked are left off the record, so staff
+  // read only what the customer actually answered.
+  const details = Object.fromEntries(
+    Object.entries(answers).filter(
+      ([key, value]) => !TAILORED.includes(key) || (value !== "" && value !== 0),
+    ),
+  ) as typeof answers;
   if (!manual && !(await publicPreviewAllowed())) return {status:"error",message:"This private preview accepts requests from invited accounts only. Sign in with your verified account."};
   try {
     const result = await saveEnquiry(

@@ -18,11 +18,15 @@ import {
 } from "@/components/dashboard/listing-fields";
 import { Button } from "@/components/ui/button";
 import { destinations } from "@/lib/content";
+import { JOURNEY_LABELS, TOUR_COLLECTIONS } from "@/lib/journey-requests";
 import { cn } from "@/lib/utils";
 
 const initial: ListingState = { status: "idle" };
 
 export type TourInitial = {
+  collection: string | null;
+  enquiryOnly: boolean;
+  fixedDepartures: boolean;
   itinerary: string; suitability: string; inclusions: string[]; exclusions: string[];
   id: string;
   name: string;
@@ -93,6 +97,56 @@ export function TourForm({
           className={fieldCls}
         />
       </Labelled>
+
+      <Labelled
+        label="Collection"
+        hint="Where this offer appears under Tours & Experiences. Unfiled offers appear only in the full list."
+      >
+        <select name="collection" defaultValue={existing?.collection ?? ""} className={fieldCls}>
+          <option value="">Unfiled</option>
+          {TOUR_COLLECTIONS.map((key) => (
+            <option key={key} value={key}>
+              {JOURNEY_LABELS[key]}
+            </option>
+          ))}
+        </select>
+      </Labelled>
+
+      <fieldset className="space-y-3 rounded-[var(--radius-inset)] border border-[var(--line)] p-4">
+        <legend className="px-1 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+          How it is sold
+        </legend>
+        <label className="flex items-start gap-3 text-sm leading-relaxed">
+          <input
+            type="checkbox"
+            name="fixedDepartures"
+            defaultChecked={existing?.fixedDepartures}
+            className="mt-0.5 size-4 shrink-0 accent-forest-800"
+          />
+          <span>
+            <span className="font-medium">Runs on set dates only</span>
+            <span className="block text-[var(--ink-muted)]">
+              For Tembera u Rwanda editions and other group departures. Travellers
+              choose from the dates you add after saving; no other date can be booked.
+            </span>
+          </span>
+        </label>
+        <label className="flex items-start gap-3 text-sm leading-relaxed">
+          <input
+            type="checkbox"
+            name="enquiryOnly"
+            defaultChecked={existing?.enquiryOnly}
+            className="mt-0.5 size-4 shrink-0 accent-forest-800"
+          />
+          <span>
+            <span className="font-medium">Sold by written quote only</span>
+            <span className="block text-[var(--ink-muted)]">
+              For private, luxury and honeymoon journeys. Travellers send a request
+              instead of booking, even while direct booking is switched on for trips.
+            </span>
+          </span>
+        </label>
+      </fieldset>
 
       <div className="grid gap-4 sm:grid-cols-2">
         <Labelled label="Destination" error={errors.destination}>

@@ -46,6 +46,7 @@ export default async function AdminLayout({
         { label: "Hotels & rooms", href: "/admin/listings?kind=HOTEL", icon: "hotels" },
         { label: "Vehicles", href: "/admin/listings?kind=VEHICLE", icon: "vehicles" },
         { label: "Transfer zones", href: "/admin/transfers", icon: "transfers" },
+        { label: "Wedding venues", href: "/admin/venues", icon: "listings" },
       ],
     },
     {

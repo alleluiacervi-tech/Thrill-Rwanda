@@ -47,3 +47,14 @@ it("does not report success or expose sensitive database errors on persistence f
 });
 
 it("rejects uninvited private-preview requests before saving",async()=>{vi.mocked(publicPreviewAllowed).mockResolvedValue(false);const result=await submitServiceEnquiry({status:"idle"},form());expect(result.status).toBe("error");expect(result.message).toContain("invited");expect(save).not.toHaveBeenCalled();});
+
+it("keeps tailored answers and leaves unasked questions off the record", async () => {
+ const data = form();
+ expect((await submitServiceEnquiry({ status: "idle" }, data)).status).toBe("success");
+ expect(save.mock.calls[0][0].details).not.toHaveProperty("eventType");
+ expect(save.mock.calls[0][0].details).not.toHaveProperty("students");
+ for (const [key, value] of Object.entries({ service: "EVENT", journey: "WEDDING", location: "Lake Kivu", partySize: "120", eventType: "Wedding", venueStyle: "Lodge or hilltop", needs: "Venue reservation, Catering", addOns: "A honeymoon" })) data.set(key, value);
+ expect((await submitServiceEnquiry({ status: "idle" }, data)).status).toBe("success");
+ expect(save.mock.calls[1][0]).toMatchObject({ service: "EVENT", details: { journey: "WEDDING", eventType: "Wedding", venueStyle: "Lodge or hilltop", needs: "Venue reservation, Catering", addOns: "A honeymoon", partySize: 120 } });
+ expect(save.mock.calls[1][0].details).not.toHaveProperty("ageGroup");
+});

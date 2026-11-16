@@ -13,7 +13,8 @@ import { homeForRole } from "@/lib/session-routes";
 import { useSite } from "@/components/layout/site-context";
 import { destinations } from "@/lib/content";
 import { destinationImages } from "@/lib/images";
-import { visiblePath } from "@/lib/launch-rules";
+import { TEMBERA, collections, essentials, journeyImages } from "@/lib/journeys";
+import { visiblePath, type Publications } from "@/lib/launch-rules";
 import { primaryNav as allPrimaryNav } from "@/lib/site";
 import { cn } from "@/lib/utils";
 
@@ -26,7 +27,8 @@ import { cn } from "@/lib/utils";
  *  - Past the first screen it slides away while the visitor scrolls down to
  *    read and comes back the moment they scroll up, or tab into it.
  *  - On desktop one highlight glides to whichever link is under the pointer,
- *    and "Tours & Safaris" opens a destinations panel.
+ *    and "Tours & Experiences" opens a panel: ways to travel, where to go,
+ *    the Tembera u Rwanda editions and the travel essentials.
  *  - On phones the menu is a full-screen sheet: each section with a line of
  *    context, popular places, and the two actions people come for.
  */
@@ -70,6 +72,11 @@ function useScrollState() {
 
 const toursFor = (name: string) => `/tours?destination=${encodeURIComponent(name)}`;
 
+/** The item that opens the panel, and the section it stays lit for. */
+const PANEL_HREF = "/experiences";
+const isActive = (pathname: string, href: string) =>
+  pathname.startsWith(href) || (href === PANEL_HREF && pathname.startsWith("/tours"));
+
 export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
   const site = useSite();
   const primaryNav = allPrimaryNav.filter(n => visiblePath(n.href, site.publications));
@@ -106,9 +113,18 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
 
   /* ----- the destinations panel: opens on hover intent, survives the gap to the panel ----- */
   const megaTimer = React.useRef(0);
+  const panelRef = React.useRef<HTMLDivElement>(null);
+  const [megaLeft, setMegaLeft] = React.useState(0);
   const openMega = (delay = 90) => {
     window.clearTimeout(megaTimer.current);
-    megaTimer.current = window.setTimeout(() => setMega(true), delay);
+    megaTimer.current = window.setTimeout(() => {
+      // Centre the panel on the bar rather than on its own link, so it never runs off a narrow screen.
+      const nav = navRef.current;
+      const bar = nav?.parentElement;
+      const panel = panelRef.current;
+      if (nav && bar && panel) setMegaLeft((bar.clientWidth - panel.offsetWidth) / 2 - nav.offsetLeft);
+      setMega(true);
+    }, delay);
   };
   const closeMega = (delay = 160) => {
     window.clearTimeout(megaTimer.current);
@@ -184,8 +200,8 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   style={{ left: glide?.left ?? 0, width: glide?.width ?? 0, opacity: glide ? 1 : 0 }}
                 />
                 {primaryNav.map((item) => {
-                  const active = pathname.startsWith(item.href);
-                  const isTours = item.href === "/tours";
+                  const active = isActive(pathname, item.href);
+                  const isTours = item.href === PANEL_HREF;
                   const link = (
                     <Link
                       href={item.href}
@@ -222,10 +238,16 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                       onBlur={(e) => {
                         if (!e.currentTarget.contains(e.relatedTarget as Node | null)) closeMega(0);
                       }}
-                      className="relative"
                     >
                       {link}
-                      <ToursPanel open={mega} onNavigate={() => setMega(false)} onEnter={() => openMega(0)} />
+                      <ExperiencesPanel
+                        ref={panelRef}
+                        left={megaLeft}
+                        open={mega}
+                        publications={site.publications}
+                        onNavigate={() => setMega(false)}
+                        onEnter={() => openMega(0)}
+                      />
                     </div>
                   );
                 })}
@@ -292,57 +314,120 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
   );
 }
 
-/* ------------------------------------------------- Tours & Safaris panel */
+/* --------------------------------------------- Tours & Experiences panel */
 
-function ToursPanel({
+const panelLabel = "px-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-bone-500";
+const panelRow =
+  "group flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-bone-100 focus-visible:bg-bone-100";
+
+function PanelThumb({ src }: { src?: string }) {
+  return (
+    <span className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-bone-200">
+      {src ? (
+        <Image
+          src={src}
+          alt=""
+          fill
+          sizes="44px"
+          className="object-cover transition-transform duration-500 group-hover:scale-110"
+        />
+      ) : null}
+    </span>
+  );
+}
+
+function PanelArrow() {
+  return (
+    <ArrowUpRight
+      aria-hidden
+      className="size-4 shrink-0 -translate-x-1 text-forest-700 opacity-0 transition duration-300 group-hover:translate-x-0 group-hover:opacity-100"
+    />
+  );
+}
+
+function ExperiencesPanel({
+  ref,
+  left,
   open,
+  publications,
   onNavigate,
   onEnter,
 }: {
+  ref: React.Ref<HTMLDivElement>;
+  /** Offset from the nav's left edge that centres the panel on the bar. */
+  left: number;
   open: boolean;
+  publications: Publications;
   onNavigate: () => void;
   onEnter: () => void;
 }) {
+  const extras = essentials.filter((e) => publications[e.service] !== "HIDDEN");
   return (
     // The top padding bridges the gap from the link, so the pointer can travel into the panel.
     <div
+      ref={ref}
       onPointerEnter={onEnter}
+      style={{ left }}
       className={cn(
-        // Anchored to the link's left edge (it is the first item), so it never runs off a narrow screen.
-        "absolute -left-4 top-full z-10 w-[min(46rem,calc(100vw-4rem))] pt-4 transition-[opacity,transform,visibility] duration-300 [transition-timing-function:var(--ease-out-expo)]",
+        "absolute top-full z-10 w-[min(60rem,calc(100vw-3rem))] pt-4 transition-[opacity,transform,visibility] duration-300 [transition-timing-function:var(--ease-out-expo)]",
         open ? "visible translate-y-0 opacity-100" : "invisible -translate-y-1.5 opacity-0",
       )}
     >
-      <div className="grid grid-cols-[1.25fr_1fr] gap-2 overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-white p-2 text-[var(--ink)] shadow-[0_40px_80px_-32px_rgb(15_58_44/0.5),0_2px_6px_rgb(15_58_44/0.06)]">
+      <div className="grid grid-cols-[1.15fr_1fr_1.05fr] gap-2 overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-white p-2 text-[var(--ink)] shadow-[0_40px_80px_-32px_rgb(15_58_44/0.5),0_2px_6px_rgb(15_58_44/0.06)]">
         <div className="p-3">
-          <p className="px-2 text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-bone-500">Where to go</p>
+          <p className={panelLabel}>Ways to travel</p>
+          <ul className="mt-2">
+            {collections.map((c) => (
+              <li key={c.slug}>
+                <Link href={`/experiences/${c.slug}`} onClick={onNavigate} className={panelRow}>
+                  <PanelThumb src={c.image} />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-sm font-semibold text-forest-900">{c.name}</span>
+                    <span className="block truncate text-xs text-bone-600">{c.blurb}</span>
+                  </span>
+                  <PanelArrow />
+                </Link>
+              </li>
+            ))}
+            <li>
+              <Link href="/tours" onClick={onNavigate} className={panelRow}>
+                <PanelThumb src={journeyImages.safari} />
+                <span className="min-w-0 flex-1">
+                  <span className="block truncate text-sm font-semibold text-forest-900">Tours & safaris</span>
+                  <span className="block truncate text-xs text-bone-600">Gorillas, chimpanzees and the Big Five</span>
+                </span>
+                <PanelArrow />
+              </Link>
+            </li>
+          </ul>
+          <Link
+            href="/experiences"
+            onClick={onNavigate}
+            className="group mt-2 flex items-center justify-between rounded-[1.125rem] bg-forest-800 px-4 py-3 text-sm font-semibold text-bone-50 transition-colors hover:bg-forest-700"
+          >
+            All tours & experiences
+            <ArrowRight aria-hidden className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
+          </Link>
+        </div>
+
+        <div className="rounded-[1.375rem] bg-bone-100/70 p-3">
+          <p className={panelLabel}>Where to go</p>
           <ul className="mt-2">
             {destinations.map((d) => (
               <li key={d.slug}>
                 <Link
                   href={toursFor(d.name)}
                   onClick={onNavigate}
-                  className="group flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-bone-100 focus-visible:bg-bone-100"
+                  className="group flex items-center gap-3 rounded-2xl p-2 transition-colors hover:bg-white focus-visible:bg-white"
                 >
-                  <span className="relative size-11 shrink-0 overflow-hidden rounded-xl bg-bone-200">
-                    {destinationImages[d.slug] ? (
-                      <Image
-                        src={destinationImages[d.slug]!}
-                        alt=""
-                        fill
-                        sizes="44px"
-                        className="object-cover transition-transform duration-500 group-hover:scale-110"
-                      />
-                    ) : null}
-                  </span>
+                  <PanelThumb src={destinationImages[d.slug]} />
                   <span className="min-w-0 flex-1">
-                    <span className="block truncate text-sm font-semibold text-forest-900">{d.name}</span>
+                    <span className="block truncate text-sm font-semibold text-forest-900">
+                      {d.name.replace(" National Park", "")}
+                    </span>
                     <span className="block truncate text-xs text-bone-600">{d.region}</span>
                   </span>
-                  <ArrowUpRight
-                    aria-hidden
-                    className="size-4 shrink-0 -translate-x-1 text-forest-700 opacity-0 transition duration-300 group-hover:translate-x-0 group-hover:opacity-100"
-                  />
+                  <PanelArrow />
                 </Link>
               </li>
             ))}
@@ -351,37 +436,48 @@ function ToursPanel({
 
         <div className="flex flex-col gap-2">
           <Link
-            href={toursFor("Volcanoes National Park")}
+            href={TEMBERA.href}
             onClick={onNavigate}
-            className="group relative flex min-h-[17rem] flex-1 flex-col justify-end overflow-hidden rounded-[1.375rem] p-5 text-white"
+            className="group relative flex min-h-[13.5rem] flex-1 flex-col justify-end overflow-hidden rounded-[1.375rem] p-5 text-white"
           >
             <Image
-              src="/media/photos/volcanoes-trek.jpeg"
+              src={journeyImages.tembera}
               alt=""
               fill
-              sizes="300px"
+              sizes="320px"
               className="object-cover transition-transform duration-[1.2s] ease-out group-hover:scale-105"
             />
             <span aria-hidden className="scrim-b absolute inset-0" />
             <span className="relative text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-sun-300">
-              Signature experience
+              All-inclusive editions
             </span>
-            <span className="on-media relative mt-1.5 font-display text-[1.45rem] leading-[1.1]">
-              Trek to the mountain gorillas
+            <span className="on-media relative mt-1.5 font-display text-[1.45rem] leading-[1.1]" lang="rw">
+              {TEMBERA.name}
             </span>
             <span className="relative mt-2 flex items-center gap-1.5 text-xs text-white/85">
               <MapPin aria-hidden className="size-3.5 text-sun-400" />
-              Volcanoes National Park
+              Transport, meals and stays in one booking
             </span>
           </Link>
-          <Link
-            href="/tours"
-            onClick={onNavigate}
-            className="group flex items-center justify-between rounded-[1.125rem] bg-forest-800 px-4 py-3 text-sm font-semibold text-bone-50 transition-colors hover:bg-forest-700"
-          >
-            All tours & safaris
-            <ArrowRight aria-hidden className="size-4 transition-transform duration-300 group-hover:translate-x-0.5" />
-          </Link>
+          {extras.length ? (
+            <div className="rounded-[1.375rem] border border-[var(--line)] p-3">
+              <p className={panelLabel}>Travel essentials</p>
+              <ul className="mt-1.5">
+                {extras.map((e) => (
+                  <li key={e.href}>
+                    <Link
+                      href={e.href}
+                      onClick={onNavigate}
+                      className="group flex items-center justify-between gap-3 rounded-xl px-2 py-1.5 text-sm transition-colors hover:bg-bone-100 focus-visible:bg-bone-100"
+                    >
+                      <span className="font-medium text-forest-900">{e.label}</span>
+                      <PanelArrow />
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : null}
         </div>
       </div>
     </div>
@@ -476,7 +572,7 @@ function PhoneMenu({
           <nav aria-label="Sections">
             <ul>
               {primaryNav.map((item, i) => {
-                const active = pathname.startsWith(item.href);
+                const active = isActive(pathname, item.href);
                 return (
                   <li
                     key={item.href}
@@ -510,29 +606,49 @@ function PhoneMenu({
             </ul>
           </nav>
 
-          {site.publications.TRIP !== "HIDDEN" && (          <div
-            style={{ animationDelay: "340ms" }}
-            className={cn("mt-8", open && "anim-rise")}
-          >
-            <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-300">Popular places</p>
-            <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:-mx-8 sm:px-8 [&::-webkit-scrollbar]:hidden">
-              {destinations.map((d) => (
-                <Link
-                  key={d.slug}
-                  href={toursFor(d.name)}
-                  onClick={onClose}
-                  className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-1.5 pr-3.5 text-sm text-bone-50 ring-1 ring-white/12 transition-colors hover:bg-white/15"
-                >
-                  <span className="relative size-7 overflow-hidden rounded-full bg-forest-800">
-                    {destinationImages[d.slug] ? (
-                      <Image src={destinationImages[d.slug]!} alt="" fill sizes="28px" className="object-cover" />
-                    ) : null}
-                  </span>
-                  {d.name.replace(" National Park", "")}
-                </Link>
-              ))}
+          {site.publications.TRIP !== "HIDDEN" && (
+            <div style={{ animationDelay: "340ms" }} className={cn("mt-8", open && "anim-rise")}>
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-300">Ways to travel</p>
+              <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:-mx-8 sm:px-8 [&::-webkit-scrollbar]:hidden">
+                {[
+                  ...collections.map((c) => ({ href: `/experiences/${c.slug}`, label: c.name, image: c.image })),
+                  { href: "/tours", label: "Tours & safaris", image: journeyImages.safari },
+                ].map((c) => (
+                  <Link
+                    key={c.href}
+                    href={c.href}
+                    onClick={onClose}
+                    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-1.5 pr-3.5 text-sm text-bone-50 ring-1 ring-white/12 transition-colors hover:bg-white/15"
+                  >
+                    <span className="relative size-7 overflow-hidden rounded-full bg-forest-800">
+                      <Image src={c.image} alt="" fill sizes="28px" className="object-cover" />
+                    </span>
+                    {c.label}
+                  </Link>
+                ))}
+              </div>
             </div>
-          </div>)}
+          )}
+
+          {essentials.some((e) => site.publications[e.service] !== "HIDDEN") && (
+            <div style={{ animationDelay: "370ms" }} className={cn("mt-6", open && "anim-rise")}>
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-300">Travel essentials</p>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {essentials
+                  .filter((e) => site.publications[e.service] !== "HIDDEN")
+                  .map((e) => (
+                    <Link
+                      key={e.href}
+                      href={e.href}
+                      onClick={onClose}
+                      className="rounded-full px-3.5 py-1.5 text-sm text-forest-100 ring-1 ring-white/15 transition-colors hover:bg-white/10 hover:text-white"
+                    >
+                      {e.label}
+                    </Link>
+                  ))}
+              </div>
+            </div>
+          )}
 
           <div
             style={{ animationDelay: "400ms" }}
