@@ -22,6 +22,29 @@ describe("launch controls and operational boundaries", () => {
     expect(visiblePath("/transfers", p)).toBe(false);
     expect(visiblePath("/flights", p)).toBe(true);
   });
+  it("gates the product doors and the pages nested under them", () => {
+    const trips = publicationMap([{ service: "TRIP", mode: "HIDDEN" }]);
+    for (const path of [
+      "/experiences",
+      "/experiences/honeymoon",
+      "/experiences/kigali-city-tour?from=home",
+      "/tembera-urwanda",
+      "/tours/gorilla-trekking",
+    ])
+      expect(visiblePath(path, trips)).toBe(false);
+    expect(visiblePath("/weddings", trips)).toBe(true);
+    expect(visiblePath("/groups", trips)).toBe(true);
+    const events = publicationMap([{ service: "EVENT", mode: "HIDDEN" }]);
+    expect(visiblePath("/weddings", events)).toBe(false);
+    expect(visiblePath("/weddings#request", events)).toBe(false);
+    expect(visiblePath("/experiences/honeymoon", events)).toBe(true);
+    const groups = publicationMap([{ service: "GROUP", mode: "HIDDEN" }]);
+    expect(visiblePath("/groups", groups)).toBe(false);
+    expect(visiblePath("/corporate", groups)).toBe(false);
+    // Pages with no service behind them are never hidden.
+    for (const path of ["/", "/about", "/how-it-works", "/legal/privacy"])
+      expect(visiblePath(path, trips)).toBe(true);
+  });
   it("rejects direct flight, group and event booking", () => {
     for (const service of ["FLIGHT", "GROUP", "EVENT"])
       expect(

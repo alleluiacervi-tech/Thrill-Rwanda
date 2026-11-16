@@ -50,4 +50,5 @@ jobs:
           npx tsx scripts/check-finance.ts
           npx tsx scripts/check-launch-operations.ts
           npx tsx scripts/check-client-release.ts
+          npx tsx scripts/check-departures.ts
       - run: npm run build

@@ -270,6 +270,35 @@ export type CreateBookingInput = {
  * makes concurrent overbooking impossible. Do not "optimise" it into a
  * read-then-write.
  */
+/**
+ * A tour sold as dated editions runs only on its scheduled departures, and
+ * only for its full length. Checked inside the booking transaction, not in
+ * the form, so no caller can book a day in between two runs or half a run.
+ * Tours without fixed departures pass untouched.
+ */
+export async function assertScheduledRun(
+  tx: Prisma.TransactionClient,
+  tourId: string,
+  start: Date,
+  days: number,
+) {
+  const tour = await tx.tour.findUnique({
+    where: { id: tourId },
+    select: { fixedDepartures: true, durationDays: true },
+  });
+  if (!tour?.fixedDepartures) return;
+  const departure = await tx.tourDeparture.findUnique({
+    where: { tourId_startsOn: { tourId, startsOn: start } },
+    select: { id: true },
+  });
+  if (!departure || days !== Math.max(1, tour.durationDays)) {
+    throw new BookingError(
+      "This journey runs on set dates. Please choose one of the listed departures.",
+      "UNAVAILABLE",
+    );
+  }
+}
+
 export async function createBooking(input: CreateBookingInput) {
   // Forgotten holds on this listing go back on sale before this one is checked.
   await releaseStaleHolds({ serviceType: input.serviceType, resourceId: input.resourceId });
@@ -299,6 +328,9 @@ export async function createBooking(input: CreateBookingInput) {
 
   try {
     return await db.$transaction(async (tx) => {
+      // 0. A tour sold as dated editions runs only on those dates.
+      if (input.serviceType === "TOUR") await assertScheduledRun(tx, input.resourceId, start, days);
+
       // 1. Hold the inventory.
       const held = await tx.availability.updateMany({
         where: {

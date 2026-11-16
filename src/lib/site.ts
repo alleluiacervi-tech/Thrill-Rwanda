@@ -39,25 +39,32 @@ export const site = {
   },
 } as const;
 
-/** Primary navigation — mirrors the live site's information architecture. */
+/**
+ * Primary navigation: the five front doors, flights first. Hotels, car hire
+ * and transfers are reached from the experiences panel and the footer
+ * (see `essentials` in src/lib/journeys.ts).
+ */
 /** `blurb` is the one line under each item in the phone menu. */
 export const primaryNav = [
   { label: "Flights", href: "/flights", blurb: "Request a checked written flight quote" },
-  { label: "Tours & Safaris", href: "/tours", blurb: "Gorillas, chimpanzees and the Big Five" },
-  { label: "Hotels", href: "/hotels", blurb: "Lodges, lakeside stays and city suites" },
-  { label: "Car Hire", href: "/cars", blurb: "4x4s and executive cars for the road ahead" },
-  { label: "Airport Transfers", href: "/transfers", blurb: "To and from Kigali International Airport" },
-  { label: "Corporate & Events", href: "/corporate", blurb: "Retreats, conferences and group travel" },
+  { label: "Tours & Experiences", href: "/experiences", blurb: "Private, luxury, honeymoon and city journeys" },
+  { label: "Tembera u Rwanda", href: "/tembera-urwanda", blurb: "All-inclusive editions across the country" },
+  { label: "Weddings & Events", href: "/weddings", blurb: "Venues reserved, guests looked after" },
+  { label: "Groups & Schools", href: "/groups", blurb: "School trips, teams and associations" },
 ] as const;
 
 export const footerNav = {
   Explore: [
     { label: "Request a flight quote", href: "/flights" },
-    { label: "Tours & Safaris", href: "/tours" },
-    { label: "Hotels & Concierge", href: "/hotels" },
-    { label: "Car Hire", href: "/cars" },
-    { label: "Airport Transfers", href: "/transfers" },
-    { label: "Corporate & Events", href: "/corporate" },
+    { label: "Tours & Experiences", href: "/experiences" },
+    { label: "Tembera u Rwanda", href: "/tembera-urwanda" },
+    { label: "Weddings & Events", href: "/weddings" },
+    { label: "Groups & Schools", href: "/groups" },
+    { label: "All tours & safaris", href: "/tours" },
+    { label: "Hotels & stays", href: "/hotels" },
+    { label: "Car hire", href: "/cars" },
+    { label: "Airport transfers", href: "/transfers" },
+    { label: "Corporate travel", href: "/corporate" },
   ],
   Company: [
     { label: "How it works", href: "/how-it-works" },

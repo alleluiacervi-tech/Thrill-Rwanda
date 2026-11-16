@@ -42,6 +42,56 @@ describe("service-aware guest capture", () => {
       serviceEnquirySchema.safeParse({ ...input, ...change }).success,
     ).toBe(false);
   });
+  it("leaves tailored fields blank on a general request", () => {
+    const parsed = serviceEnquirySchema.parse(input);
+    expect(parsed).toMatchObject({ journey: "", eventType: "", needs: "", addOns: "", students: 0 });
+  });
+  it("accepts a wedding request with its venue questions and add-ons", () => {
+    const parsed = serviceEnquirySchema.parse({
+      ...input,
+      service: "EVENT",
+      journey: "WEDDING",
+      location: "Lake Kivu",
+      partySize: "180",
+      eventType: "Wedding",
+      venueStyle: "Garden or lakeshore",
+      needs: "Venue reservation, Guest transport",
+      addOns: "A honeymoon, Flights",
+    });
+    expect(parsed.needs).toBe("Venue reservation, Guest transport");
+    expect(parsed.partySize).toBe(180);
+  });
+  it("accepts a school trip with students and staff inside the total", () => {
+    expect(
+      serviceEnquirySchema.parse({
+        ...input,
+        service: "GROUP",
+        journey: "SCHOOL",
+        organization: "Example Academy",
+        partySize: "44",
+        students: "40",
+        chaperones: "4",
+        ageGroup: "Upper secondary",
+        learningFocus: "Conservation and biology",
+      }).students,
+    ).toBe(40);
+  });
+  it.each([
+    // A journey filed under the wrong service.
+    { service: "TRIP", location: "Kigali", journey: "WEDDING" },
+    // Choices that were never offered.
+    { service: "EVENT", location: "Kigali", journey: "WEDDING", venueStyle: "Castle" },
+    { service: "EVENT", location: "Kigali", journey: "WEDDING", needs: "Venue reservation, Fireworks" },
+    { addOns: "Flights, <script>" },
+    { journey: "CRUISE" },
+    // A school trip with no students, or more people than the stated total.
+    { service: "GROUP", organization: "Example Academy", journey: "SCHOOL", students: "0" },
+    { service: "GROUP", organization: "Example Academy", journey: "SCHOOL", partySize: "10", students: "40", chaperones: "4" },
+  ])("rejects tailored details that do not hold together %j", (change) => {
+    expect(
+      serviceEnquirySchema.safeParse({ ...input, ...change }).success,
+    ).toBe(false);
+  });
   it("accepts transport and retains requested pickup/drop-off", () => {
     expect(
       serviceEnquirySchema.parse({

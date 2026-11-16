@@ -4,7 +4,7 @@ import { Media } from "@/components/ui/media";
 import { Badge, Rating } from "@/components/ui/primitives";
 import type { CatalogueHotel, CatalogueTour, CatalogueVehicle } from "@/lib/catalogue";
 import type { Destination } from "@/lib/content";
-import { destinationImages } from "@/lib/images";
+import { destinationFocus, destinationImages } from "@/lib/images";
 import { cn } from "@/lib/utils";
 
 /* --------------------------------------------------------------- Price tag */
@@ -277,6 +277,7 @@ export function DestinationPanel({
       <Media
         seed={destination.slug}
         src={destinationImages[destination.slug]}
+        position={destinationFocus[destination.slug]}
         alt={`${destination.name}, ${destination.region}`}
         sizes="(max-width: 1024px) 80vw, 40vw"
         className="absolute inset-0"

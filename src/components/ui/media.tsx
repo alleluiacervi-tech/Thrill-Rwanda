@@ -42,6 +42,7 @@ export function Media({
   fill = true,
   sizes,
   priority,
+  position,
   className,
   children,
 }: {
@@ -51,6 +52,8 @@ export function Media({
   fill?: boolean;
   sizes?: string;
   priority?: boolean;
+  /** CSS object-position, to keep the subject in frame when the box is cropped. */
+  position?: string;
   className?: string;
   children?: React.ReactNode;
 }) {
@@ -68,6 +71,7 @@ export function Media({
           // priority was renamed preload in Next 16; eager stops it waiting for layout.
           preload={priority}
           loading={priority ? "eager" : undefined}
+          style={position ? { objectPosition: position } : undefined}
           className="object-cover"
         />
       ) : (

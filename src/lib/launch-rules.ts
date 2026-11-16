@@ -22,6 +22,10 @@ export function serviceFor(value: string): PublicService | null {
     "/cars": "TRANSPORT",
     "/transfers": "TRANSPORT",
     "/corporate": "GROUP",
+    "/experiences": "TRIP",
+    "/tembera-urwanda": "TRIP",
+    "/weddings": "EVENT",
+    "/groups": "GROUP",
   };
   return Object.hasOwn(routes, value)
     ? routes[value]
@@ -46,8 +50,13 @@ export function publicationMap(
       result[r.service as PublicService] = r.mode as PublicMode;
   return result;
 }
+/**
+ * Whether a public path may be shown. A page nested under a service's door
+ * (`/experiences/honeymoon`, `/tours/some-tour`) follows that door.
+ */
 export function visiblePath(path: string, modes: Publications) {
-  const s = serviceFor(path.split("?")[0]);
+  const clean = path.split(/[?#]/)[0];
+  const s = serviceFor(clean) ?? serviceFor(`/${clean.split("/")[1] ?? ""}`);
   return !s || modes[s] !== "HIDDEN";
 }
 export const approvalSchema = z

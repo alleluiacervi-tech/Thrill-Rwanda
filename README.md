@@ -81,6 +81,8 @@ PostgreSQL client tools and a dedicated backup encryption key are required for b
 - [Customer/company portals and channels](docs/CLIENT_PORTALS_AND_CHANNELS.md)
 - [Release, restore, rollback and handover](docs/RELEASE_AND_HANDOVER.md)
 - [Environment reference](docs/ENVIRONMENT_REFERENCE.md)
+- [Product experience plan: the five front doors, phase by phase](docs/PRODUCT_EXPERIENCE_PLAN.md)
+- [Photograph sources](docs/PHOTO_SOURCES.md)
 - [Architecture](docs/ARCHITECTURE.md)
 
 Stack: Next.js 16.3 / React 19 / TypeScript / Tailwind 4 / Prisma 7 / PostgreSQL / Better Auth. Resend, Pesapal, Cloudinary/R2 and Meta are supported adapters whose company approval and deployment configuration are separate from implementation. There is no live GDS, automatic ticket issuance, wallet, automatic supplier payout, native app or AI planner.

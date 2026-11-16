@@ -1,12 +1,11 @@
 /**
  * Listing photography.
  *
- * PLACEHOLDER SET. Gorilla, Lake Kivu and Kigali frames are Rwanda photos;
- * the rest are generic safari stand-ins. These are Unsplash photographs standing in until
- * Thrill Rwanda supplies its own. Every id below was verified to return
- * HTTP 200 before being added — a few candidates 404'd and were dropped, so
- * re-verify with a HEAD request before adding more rather than trusting a
- * search result.
+ * MIXED SET. Paths under /media/photos are real: Thrill Rwanda's own
+ * pictures, and photographs from Visit Rwanda, which the owner confirmed
+ * may be used on this site (docs/PHOTO_SOURCES.md lists every file and where
+ * it came from). Everything built with photo() is still an Unsplash
+ * stand-in: the hotels, the vehicles and the sign-in panel.
  *
  * When real photography arrives:
  *   1. Upload to R2 and set R2_PUBLIC_URL (next.config.ts then allows that
@@ -37,18 +36,18 @@ export const heroImage = photo("photo-1516426122078-c23e76319801", 2400);
 export const authImage = photo("photo-1621139261252-27d1a67449f4", 1400);
 
 export const tourImages: Record<string, string> = {
-  "gorilla-trekking-volcanoes-2-day": photo("photo-1589442690840-1c2c880254ac"),
-  "akagera-big-five-3-day": photo("photo-1519659528534-7fd733a832a0"),
-  "nyungwe-canopy-chimps-3-day": "/media/photos/nyungwe-canopy-walk.jpeg",
+  "gorilla-trekking-volcanoes-2-day": "/media/photos/silverback-bamboo.jpg",
+  "akagera-big-five-3-day": "/media/photos/akagera-lioness.jpg",
+  "nyungwe-canopy-chimps-3-day": "/media/photos/nyungwe-colobus.jpg",
   "kigali-city-memorial-day": "/media/photos/kigali-convention-centre-night.jpeg",
-  "lake-kivu-congo-nile-3-day": photo("photo-1514548383638-cef9251a73ec"),
-  "grand-rwanda-7-day": photo("photo-1564101160531-4838e8a5f4e7"),
+  "lake-kivu-congo-nile-3-day": "/media/photos/lake-kivu-islands.jpeg",
+  "grand-rwanda-7-day": "/media/photos/virunga-volcano.jpg",
 };
 
 export const hotelImages: Record<string, string> = {
   "volcanoes-ridge-lodge": photo("photo-1781039869379-5561fe260d26"),
-  "kivu-lakeshore-lodge": photo("photo-1514548383638-cef9251a73ec"),
-  "kigali-parkside-suites": photo("photo-1708772565599-2c4e4b3ed9db"),
+  "kivu-lakeshore-lodge": "/media/photos/lake-kivu-islands.jpeg",
+  "kigali-parkside-suites": "/media/photos/kigali-skyline.jpg",
   "akagera-savannah-camp": photo("photo-1779216175784-a67b6da108bb"),
 };
 
@@ -61,10 +60,19 @@ export const vehicleImages: Record<string, string> = {
 
 export const destinationImages: Record<string, string> = {
   "volcanoes-national-park": "/media/photos/volcanoes-summit-mist.jpeg",
-  "nyungwe-national-park": "/media/photos/nyungwe-canopy-walk-2.jpeg",
-  "akagera-national-park": "/thrill-rwanda-mark.svg",
-  "lake-kivu": "/media/hero/kivu.webp",
-  kigali: "/media/photos/kigali-convention-centre-night.jpeg",
+  "nyungwe-national-park": "/media/photos/nyungwe-canopy-walk.jpeg",
+  "akagera-national-park": "/media/photos/akagera-lioness.jpg",
+  "lake-kivu": "/media/photos/lake-kivu-islands.jpeg",
+  // The daytime frame: the night one reads as a black panel in the destination rail.
+  kigali: "/media/photos/kigali-convention-centre-day.jpg",
+};
+
+/**
+ * Where to anchor a destination photo when its tall, narrow panel crops it,
+ * so the subject (here the canopy bridge) stays in frame.
+ */
+export const destinationFocus: Record<string, string> = {
+  "nyungwe-national-park": "22% 50%",
 };
 
 /** Extra frames for detail-page galleries. */

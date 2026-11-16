@@ -7,6 +7,7 @@ import { useActionState } from "react";
 import { useRouter } from "next/navigation";
 import {
   AlertTriangle,
+  ArrowRight,
   CalendarDays,
   CheckCircle2,
   Minus,
@@ -25,6 +26,8 @@ import {
   type TourRates,
 } from "@/lib/residency";
 import { depositMinor } from "@/lib/deposit";
+import { formatRun } from "@/lib/departure-rules";
+import type { Departure } from "@/lib/departures";
 import { useSite } from "@/components/layout/site-context";
 import {
   cn,
@@ -51,10 +54,90 @@ const initial: BookingState = { status: "idle" };
  * price — this component never sends a price, only dates and guests. If the
  * two ever disagree, the server wins.
  */
-export function BookingPanel(props: Parameters<typeof DirectBookingPanel>[0]) {
-  const site = useSite(); const service = serviceFor(props.mode)!;
-  if (site.publications[service] !== "DIRECT") return <section className="rounded-2xl border border-[var(--line)] bg-[var(--paper-raised)] p-6"><h2 className="text-2xl">Request a checked quote</h2><p className="my-4">Share your dates and preferences. The written quote confirms availability, inclusions, fees and applicable terms before you decide.</p><Button data-service={service} data-placement="SERVICE_REQUEST" href={`/enquire?service=${service}&subject=${encodeURIComponent(props.title)}`}>Enquire about this service</Button></section>;
-  return <DirectBookingPanel {...props}/>;
+export function BookingPanel({
+  enquiryOnly,
+  journey,
+  ...props
+}: Parameters<typeof DirectBookingPanel>[0] & {
+  /** This offer is sold by written quote even while its service can be booked directly. */
+  enquiryOnly?: boolean;
+  /** The collection the offer is filed under, so the request form asks the right questions. */
+  journey?: string;
+}) {
+  const site = useSite();
+  const service = serviceFor(props.mode)!;
+  if (site.publications[service] !== "DIRECT" || enquiryOnly)
+    return <QuotePanel service={service} journey={journey} title={props.title} departures={props.departures} />;
+  // A dated tour with nothing left to sell has no form to show.
+  if (props.departures && !props.departures.some((d) => d.seatsLeft > 0))
+    return <QuotePanel service={service} journey={journey} title={props.title} departures={props.departures} waiting />;
+  return <DirectBookingPanel {...props} />;
+}
+
+/** Shown in place of the booking form when the offer is arranged by request. */
+function QuotePanel({
+  service,
+  journey,
+  title,
+  departures,
+  waiting = false,
+}: {
+  service: string;
+  journey?: string;
+  title: string;
+  departures?: Departure[];
+  /** Bookable in principle, but no date is open right now. */
+  waiting?: boolean;
+}) {
+  const query = journey ? `journey=${journey}` : `service=${service}`;
+  return (
+    <section className="overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] shadow-[var(--shadow-lift)]">
+      <div className="px-6 py-6">
+        <h2 className="text-2xl leading-tight">
+          {waiting ? "No date is open right now" : "Request a checked quote"}
+        </h2>
+        <p className="mt-3 text-[0.9375rem] leading-relaxed text-[var(--ink-muted)]">
+          {waiting
+            ? "Every listed date is full, or the next ones are still being scheduled. Leave your details and we will tell you when a place opens."
+            : "Share your dates and preferences. The written quote confirms availability, inclusions, fees and applicable terms before you decide."}
+        </p>
+
+        {departures?.length ? (
+          <div className="mt-5">
+            <p className="text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+              Scheduled dates
+            </p>
+            <ul className="mt-2 divide-y divide-[var(--line)] border-y border-[var(--line)]">
+              {departures.slice(0, 5).map((d) => (
+                <li key={d.id} className="flex items-center justify-between gap-3 py-2.5 text-sm">
+                  <span className="tnum">{formatRun(d.startsOn, d.lastDay)}</span>
+                  <span className="shrink-0 text-xs text-[var(--ink-faint)]">
+                    {d.seatsLeft > 0 ? "Places left" : "Full"}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
+
+        <Button
+          data-service={service}
+          data-placement="SERVICE_REQUEST"
+          href={`/enquire?${query}&subject=${encodeURIComponent(title)}`}
+          variant="accent"
+          size="lg"
+          className="mt-6 w-full"
+        >
+          {waiting ? "Tell me when a place opens" : "Enquire about this journey"}
+          <ArrowRight className="size-4" aria-hidden />
+        </Button>
+      </div>
+      <p className="flex items-start gap-2.5 border-t border-[var(--line)] bg-[var(--paper-sunken)] px-6 py-4 text-2xs leading-relaxed text-[var(--ink-muted)]">
+        <ShieldCheck className="mt-px size-4 shrink-0 text-clay-700" aria-hidden />
+        A request does not reserve a place or take a payment.
+      </p>
+    </section>
+  );
 }
 function DirectBookingPanel({
   title,
@@ -70,6 +153,7 @@ function DirectBookingPanel({
   insuranceCharge,
   damageStatement,
   rates,
+  departures,
   className,
 }: {
   title: string;
@@ -91,34 +175,50 @@ function DirectBookingPanel({
   damageStatement?: string;
   /** Safaris: the per-person rate for each residency. */
   rates?: TourRates;
+  /** Dated tours only: the runs that can be booked. Replaces the free date fields. */
+  departures?: Departure[];
   className?: string;
 }) {
   const site = useSite();
   const router = useRouter();
   const [state, action, pending] = useActionState(submitBooking, initial);
 
-  const [start, setStart] = React.useState(() => localDatePlus(14));
-  const [end, setEnd] = React.useState(() =>
+  const [pickedStart, setStart] = React.useState(() => localDatePlus(14));
+  const [pickedEnd, setEnd] = React.useState(() =>
     localDatePlus(14 + Math.max(1, durationDays ?? 2)),
   );
+  // Dated tours: the first run with a seat is chosen to begin with.
+  const [departureId, setDepartureId] = React.useState(
+    () => departures?.find((d) => d.seatsLeft > 0)?.id ?? "",
+  );
+  const departure = departures?.find((d) => d.id === departureId);
+  const start = departure?.startsOn ?? pickedStart;
+  const end = departure?.end ?? pickedEnd;
   // Dates chosen in the home search arrive in the link. Read after load: these pages are static.
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const from = params.get("from") ?? "";
     const to = params.get("to") ?? "";
     const iso = /^\d{4}-\d{2}-\d{2}$/;
+    // A link from an edition card names its run by first day.
+    const linked = departures?.find((d) => d.startsOn === from && d.seatsLeft > 0);
+    if (departures) {
+      if (linked) queueMicrotask(() => setDepartureId(linked.id));
+      return;
+    }
     if (!iso.test(from) || !iso.test(to) || from < todayLocal() || to <= from) return;
     queueMicrotask(() => {
       setStart(from);
       setEnd(to);
     });
-  }, []);
+  }, [departures]);
 
 
   const [roomId, setRoomId] = React.useState(rooms?.[0]?.id ?? "");
   const room = rooms?.find((r) => r.id === roomId);
   // A room's own capacity and price win over the hotel-level figures.
-  const guestLimit = room?.capacity ?? maxGuests;
+  // On a dated tour nobody can book more places than the run has left.
+  const guestLimit = Math.min(room?.capacity ?? maxGuests, departure?.seatsLeft ?? Infinity);
   // Safari rates depend on residency, so nothing is assumed: they pick.
   const [residency, setResidency] = React.useState<Residency | "">("");
   const tourRate = rates && residency ? rateFor(rates, residency) : priceMinor;
@@ -246,34 +346,88 @@ function DirectBookingPanel({
           </label>
         ) : null}
 
-        <div className="grid grid-cols-2 gap-3">
-          <label className="flex flex-col gap-1.5">
-            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+        {departures ? (
+          <fieldset className="space-y-2">
+            <legend className="mb-2 flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
               <CalendarDays className="size-3 text-clay-600" />
-              {mode === "VEHICLE" ? "Pickup" : "Start"}
-            </span>
-            <input
-              type="date"
-              value={start}
-              min={todayLocal()}
-              onChange={(e) => setStart(e.target.value)}
-              className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-lake-600"
-            />
-          </label>
-          <label className="flex flex-col gap-1.5">
-            <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
-              <CalendarDays className="size-3 text-clay-600" />
-              {mode === "VEHICLE" ? "Return" : "End"}
-            </span>
-            <input
-              type="date"
-              value={end}
-              min={start}
-              onChange={(e) => setEnd(e.target.value)}
-              className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-lake-600"
-            />
-          </label>
-        </div>
+              Choose your date
+            </legend>
+            {departures.map((d) => {
+              const full = d.seatsLeft < 1;
+              const selected = d.id === departureId;
+              return (
+                <label
+                  key={d.id}
+                  className={cn(
+                    "flex items-start gap-3 rounded-[var(--radius-inset)] border p-3 transition-colors",
+                    full
+                      ? "cursor-not-allowed border-[var(--line)] opacity-55"
+                      : selected
+                        ? "cursor-pointer border-forest-800 bg-forest-100/50"
+                        : "cursor-pointer border-[var(--line-strong)] hover:border-forest-800",
+                  )}
+                >
+                  <input
+                    type="radio"
+                    name="departure"
+                    checked={selected}
+                    disabled={full}
+                    onChange={() => {
+                      setDepartureId(d.id);
+                      setGuests((g) => Math.max(1, Math.min(g, d.seatsLeft)));
+                    }}
+                    className="mt-0.5 size-4 shrink-0 accent-forest-800"
+                  />
+                  <span className="min-w-0 flex-1">
+                    <span className="flex flex-wrap items-baseline justify-between gap-x-2">
+                      <span className="tnum text-sm font-medium">{formatRun(d.startsOn, d.lastDay)}</span>
+                      <span
+                        className={cn(
+                          "tnum text-xs",
+                          full ? "text-[var(--ink-faint)]" : d.seatsLeft <= 5 ? "font-semibold text-clay-700" : "text-[var(--ink-muted)]",
+                        )}
+                      >
+                        {full ? "Full" : d.seatsLeft <= 5 ? `Only ${d.seatsLeft} left` : `${d.seatsLeft} places left`}
+                      </span>
+                    </span>
+                    {d.note ? (
+                      <span className="mt-0.5 block text-2xs leading-relaxed text-[var(--ink-muted)]">{d.note}</span>
+                    ) : null}
+                  </span>
+                </label>
+              );
+            })}
+          </fieldset>
+        ) : (
+          <div className="grid grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1.5">
+              <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+                <CalendarDays className="size-3 text-clay-600" />
+                {mode === "VEHICLE" ? "Pickup" : "Start"}
+              </span>
+              <input
+                type="date"
+                value={start}
+                min={todayLocal()}
+                onChange={(e) => setStart(e.target.value)}
+                className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-lake-600"
+              />
+            </label>
+            <label className="flex flex-col gap-1.5">
+              <span className="flex items-center gap-1.5 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+                <CalendarDays className="size-3 text-clay-600" />
+                {mode === "VEHICLE" ? "Return" : "End"}
+              </span>
+              <input
+                type="date"
+                value={end}
+                min={start}
+                onChange={(e) => setEnd(e.target.value)}
+                className="tnum w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-transparent px-3 py-2.5 text-sm outline-none focus-visible:border-lake-600"
+              />
+            </label>
+          </div>
+        )}
 
         <div className="flex items-center justify-between rounded-[var(--radius-inset)] border border-[var(--line-strong)] px-3 py-2">
           <span className="text-sm font-medium">
@@ -487,7 +641,7 @@ function DirectBookingPanel({
           className="w-full"
           disabled={pending}
         >
-          {pending ? "Holding your dates…" : "Continue to payment"}
+          {pending ? (departures ? "Holding your places…" : "Holding your dates…") : "Continue to payment"}
         </Button>
 
         {/* Some customers would rather talk than fill a form; this hands over what they already picked. */}

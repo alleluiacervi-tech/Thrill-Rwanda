@@ -1,4 +1,5 @@
 import { getPublications } from "@/lib/publication";
+import { isTourCollection, type TourCollection } from "@/lib/journey-requests";
 import { cache } from "react";
 import { revalidatePath, revalidateTag, unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
@@ -11,6 +12,12 @@ import type { ServiceType } from "@/generated/prisma/enums";
 // verified providers ever leave this module, so pages never filter themselves.
 
 export type CatalogueTour = {
+  /** The collection this offer is filed under, or null. */
+  collection: TourCollection | null;
+  /** Sold by written quote only, even while trips can be booked directly. */
+  enquiryOnly: boolean;
+  /** Runs only on its scheduled departures (src/lib/departures.ts). */
+  fixedDepartures: boolean;
   itinerary: string;
   suitability: string;
   inclusions: string[];
@@ -136,6 +143,9 @@ type TourRow = Awaited<ReturnType<typeof db.tour.findMany<{ include: typeof tour
 
 function mapTour(t: TourRow, tallies: Map<string, Tally>): CatalogueTour {
   return {
+    collection: isTourCollection(t.collection) ? t.collection : null,
+    enquiryOnly: t.enquiryOnly,
+    fixedDepartures: t.fixedDepartures,
     itinerary: t.itinerary, suitability: t.suitability, inclusions: t.inclusions, exclusions: t.exclusions,
     id: t.id,
     slug: t.slug,

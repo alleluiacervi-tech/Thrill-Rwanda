@@ -494,6 +494,18 @@
     transparent 62%
   );
 }
+/* For panels that carry a headline and a paragraph, not just a caption:
+   the dark reaches two thirds of the way up, so a bright interior or sky
+   behind four lines of type still reads. */
+.scrim-deep {
+  background: linear-gradient(
+    to top,
+    rgb(8 20 15 / 0.92) 0%,
+    rgb(8 20 15 / 0.76) 32%,
+    rgb(8 20 15 / 0.34) 60%,
+    transparent 84%
+  );
+}
 .scrim-t {
   background: linear-gradient(to bottom, rgb(8 20 15 / 0.55), transparent);
 }

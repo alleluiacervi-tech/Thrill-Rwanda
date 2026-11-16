@@ -1,6 +1,9 @@
 import { notFound } from "next/navigation";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
+import { TourDepartures } from "@/components/dashboard/tour-departures";
 import { TourForm } from "@/components/dashboard/tour-form";
+import { upcomingDepartures } from "@/lib/departures";
+import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import { db } from "@/lib/db";
 import { requireProviderFor } from "@/lib/session";
 
@@ -23,7 +26,7 @@ export default async function EditTourPage({
     select: {
       id: true, name: true, destination: true, durationDays: true,
       maxParticipants: true, priceMinor: true, priceResidentMinor: true, priceNonResidentMinor: true, description: true,
-      pickupInfo: true, activities: true, images: true, itinerary: true, suitability: true, inclusions: true, exclusions: true,
+      pickupInfo: true, activities: true, images: true, itinerary: true, suitability: true, inclusions: true, exclusions: true, collection: true, enquiryOnly: true, fixedDepartures: true,
     },
   });
   if (!tour) notFound();
@@ -37,6 +40,14 @@ export default async function EditTourPage({
       />
 
       <TourForm existing={tour} />
+      <TourDepartures
+        tourId={tour.id}
+        fixed={tour.fixedDepartures}
+        durationDays={tour.durationDays}
+        seats={tour.maxParticipants}
+        departures={await upcomingDepartures(tour)}
+        today={todayInRwanda()}
+      />
     </>
   );
 }

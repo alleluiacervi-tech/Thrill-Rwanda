@@ -23,6 +23,8 @@ export default async function FlightsPage() {
         title="Let’s plan your flight"
         lede="Share your travel plans. Our team will review your request and check options before providing a written quotation."
         crumbs={[{ label: "Flights" }]}
+        image="/media/photos/rwandair-takeoff.jpg"
+        imagePosition="center 60%"
       />
       <Container className="grid gap-10 py-12 lg:grid-cols-[1fr_2fr]">
         <aside className="space-y-5">
