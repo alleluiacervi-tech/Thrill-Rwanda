@@ -25,9 +25,12 @@ const connectionString = process.env.DIRECT_URL ?? process.env.DATABASE_URL;
 if (!connectionString) throw new Error("DIRECT_URL / DATABASE_URL not set");
 
 const host = new URL(connectionString).hostname;
-if (!["localhost", "127.0.0.1", "::1"].includes(host)) {
+// A hosted test database can opt in by naming its exact host, so a stray
+// production URL is still refused: DEMO_DATABASE_HOST=ep-....neon.tech
+const optedIn = !!process.env.DEMO_DATABASE_HOST && process.env.DEMO_DATABASE_HOST === host;
+if (!["localhost", "127.0.0.1", "::1"].includes(host) && !optedIn) {
   console.error(
-    `Refusing to run: ${host} is not a local database. This script writes demo approvals and must never touch a shared or production database.`,
+    `Refusing to run: ${host} is not a local database. This script writes demo approvals and must never touch a production database. For a test-only database, set DEMO_DATABASE_HOST=${host}.`,
   );
   process.exit(1);
 }

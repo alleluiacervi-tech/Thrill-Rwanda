@@ -4,16 +4,37 @@ import { adapterFor } from "../src/lib/db-adapter";
 
 
 
-const DEMO_PASSWORD = "thrill-demo-2026";
+/**
+ * Demo sign-ins: a customer, a provider, an administrator and one account per
+ * staff role. Re-running updates them; `--remove` deletes them.
+ *
+ * The password defaults to a known value for local use. On any database
+ * other people can reach (a hosted test site), set DEMO_PASSWORD to something
+ * private: otherwise anyone who reads this file can sign in as admin.
+ */
+const DEMO_PASSWORD = process.env.DEMO_PASSWORD || "thrill-demo-2026";
+if (DEMO_PASSWORD.length < 10) throw new Error("DEMO_PASSWORD must be at least 10 characters.");
 
-const DEMO = [
-  { email: "customer@thrillrwanda.test", name: "Amina Uwimana", role: "CUSTOMER" as const, phone: "+250788000001" },
-  { email: "provider@thrillrwanda.test", name: "Jean Claude Habimana", role: "PROVIDER" as const, phone: "+250788000002" },
-  { email: "admin@thrillrwanda.test", name: "Thrill Rwanda Admin", role: "ADMIN" as const, phone: "+250788000003" },
+type Demo = {
+  email: string;
+  name: string;
+  role: "CUSTOMER" | "PROVIDER" | "ADMIN";
+  staffRole?: "SALES" | "OPERATIONS" | "FINANCE";
+  phone: string;
+};
+
+const DEMO: Demo[] = [
+  { email: "customer@thrillrwanda.test", name: "Amina Uwimana", role: "CUSTOMER", phone: "+250788000001" },
+  { email: "provider@thrillrwanda.test", name: "Jean Claude Habimana", role: "PROVIDER", phone: "+250788000002" },
+  { email: "admin@thrillrwanda.test", name: "Thrill Rwanda Admin", role: "ADMIN", phone: "+250788000003" },
+  // Staff work the enquiry desk at /staff; each role sees and does different things.
+  { email: "sales@thrillrwanda.test", name: "Grace Mukamana", role: "CUSTOMER", staffRole: "SALES", phone: "+250788000004" },
+  { email: "operations@thrillrwanda.test", name: "Eric Niyonzima", role: "CUSTOMER", staffRole: "OPERATIONS", phone: "+250788000005" },
+  { email: "finance@thrillrwanda.test", name: "Diane Uwase", role: "CUSTOMER", staffRole: "FINANCE", phone: "+250788000006" },
 ];
 
-/** The seeded provider the demo provider account will own. */
-const PROVIDER_SLUG = "acacia-trails-kenya";
+/** The seeded provider the demo provider account will own (from src/lib/content.ts). */
+const PROVIDER_SLUG = "volcano-trails-rwanda";
 
 if (process.env.NODE_ENV === "production") {
   console.error("Refusing to seed demo accounts in production.");
@@ -82,10 +103,24 @@ async function create() {
     // the same path an admin promotion takes.
     await db.user.update({
       where: { email: d.email },
-      data: { role: d.role, phone: d.phone, emailVerified: true, isActive: true },
+      data: {
+        role: d.role,
+        staffRole: d.staffRole ?? null,
+        phone: d.phone,
+        emailVerified: true,
+        isActive: true,
+      },
     });
+    // An existing account keeps its old password unless it is set again.
+    if (existing) {
+      const { hashPassword } = await import("better-auth/crypto");
+      await db.account.updateMany({
+        where: { userId: existing.id, providerId: "credential" },
+        data: { password: await hashPassword(DEMO_PASSWORD) },
+      });
+    }
 
-    console.log(`  ${d.email.padEnd(26)} ${d.role}`);
+    console.log(`  ${d.email.padEnd(30)} ${d.staffRole ?? d.role}`);
   }
 
   /* The provider account needs a Provider record to have a dashboard. Point
@@ -122,7 +157,8 @@ async function create() {
     where: { customerId: customer.id },
   });
 
-  if (!existingBooking && provider) {
+  // createBooking reads cached site settings, which need the web server. Outside it, skip quietly.
+  if (!existingBooking && provider) try {
     const tour = await db.tour.findFirst({ where: { providerId: provider.id } });
     if (tour) {
       const { createBooking } = await import("../src/lib/booking");
@@ -142,9 +178,15 @@ async function create() {
       });
       console.log(`  demo booking ${b.reference} (${b.status}) on ${tour.name}`);
     }
+  } catch {
+    console.log("  demo booking skipped (needs the running app); book one from the site instead");
   }
 
-  console.log(`\n  password for all three: ${DEMO_PASSWORD}`);
+  console.log(
+    process.env.DEMO_PASSWORD
+      ? "\n  password: the DEMO_PASSWORD you set"
+      : `\n  password for every account: ${DEMO_PASSWORD}`,
+  );
 }
 
 const run = process.argv.includes("--remove") ? remove : create;
