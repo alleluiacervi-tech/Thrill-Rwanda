@@ -150,6 +150,8 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
 
       <header
         className={cn(
+          // The closed menu panel still takes up layout (it fades in and out), so it must not widen the page.
+          "overflow-x-clip",
           "sticky top-0 z-50 transition-transform duration-500 [transition-timing-function:var(--ease-out-expo)] focus-within:translate-y-0",
           tucked ? "-translate-y-[120%]" : "translate-y-0",
           floating && "on-dark",
@@ -189,7 +191,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                 ref={navRef}
                 aria-label="Primary"
                 onPointerLeave={() => setGlide(null)}
-                className="relative hidden items-center lg:flex"
+                className="relative hidden items-center xl:flex"
               >
                 <span
                   aria-hidden
@@ -210,7 +212,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                       onClick={() => setMega(false)}
                       aria-current={active ? "page" : undefined}
                       className={cn(
-                        "relative inline-flex h-9 items-center gap-1 rounded-full px-3.5 text-sm font-medium transition-colors duration-300 xl:px-4",
+                        "relative inline-flex h-9 items-center gap-1 whitespace-nowrap rounded-full px-3 text-sm font-medium transition-colors duration-300 2xl:px-4",
                         floating ? "text-white/80 hover:text-white" : "text-bone-700 hover:text-forest-900",
                         active && (floating ? "text-white" : "text-forest-800"),
                         isTours && "pr-2.5 xl:pr-3",
@@ -289,7 +291,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   aria-expanded={open}
                   aria-controls="site-menu"
                   className={cn(
-                    "grid size-10 place-items-center rounded-full transition-colors lg:hidden",
+                    "grid size-10 place-items-center rounded-full transition-colors xl:hidden",
                     floating ? "text-bone-50 hover:bg-white/10" : "text-forest-800 hover:bg-forest-100/70",
                   )}
                 >
@@ -544,7 +546,7 @@ function PhoneMenu({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "on-dark fixed inset-0 z-[70] overflow-y-auto bg-forest-950 transition-[opacity,visibility] duration-400 lg:hidden",
+        "on-dark fixed inset-0 z-[70] overflow-y-auto bg-forest-950 transition-[opacity,visibility] duration-400 xl:hidden",
         open ? "visible opacity-100" : "invisible opacity-0",
       )}
     >

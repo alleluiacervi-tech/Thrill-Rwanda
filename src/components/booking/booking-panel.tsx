@@ -132,7 +132,7 @@ function QuotePanel({
           <ArrowRight className="size-4" aria-hidden />
         </Button>
       </div>
-      <p className="flex items-start gap-2.5 border-t border-[var(--line)] bg-[var(--paper-sunken)] px-6 py-4 text-2xs leading-relaxed text-[var(--ink-muted)]">
+      <p className="flex items-start gap-2.5 border-t border-[var(--line)] bg-[var(--paper-sunken)] px-6 py-4 text-xs leading-relaxed text-[var(--ink-muted)]">
         <ShieldCheck className="mt-px size-4 shrink-0 text-clay-700" aria-hidden />
         A request does not reserve a place or take a payment.
       </p>
@@ -391,7 +391,7 @@ function DirectBookingPanel({
                       </span>
                     </span>
                     {d.note ? (
-                      <span className="mt-0.5 block text-2xs leading-relaxed text-[var(--ink-muted)]">{d.note}</span>
+                      <span className="mt-0.5 block text-xs leading-relaxed text-[var(--ink-muted)]">{d.note}</span>
                     ) : null}
                   </span>
                 </label>
@@ -485,14 +485,14 @@ function DirectBookingPanel({
                       <span className="text-sm font-medium">{RESIDENCY_LABELS[option]}</span>
                       <span className="tnum text-sm">{formatMoney(rateFor(rates, option))}</span>
                     </span>
-                    <span className="mt-0.5 block text-2xs leading-relaxed text-[var(--ink-muted)]">
+                    <span className="mt-0.5 block text-xs leading-relaxed text-[var(--ink-muted)]">
                       {RESIDENCY_HINTS[option]}
                     </span>
                   </span>
                 </label>
               );
             })}
-            <p className="text-2xs leading-relaxed text-[var(--ink-faint)]">
+            <p className="text-xs leading-relaxed text-[var(--ink-faint)]">
               Bring an ID or passport matching your choice — the operator checks it on the day.
             </p>
           </fieldset>
@@ -529,7 +529,7 @@ function DirectBookingPanel({
                 />
                 <span className="min-w-0 flex-1">
                   <span className="block text-sm font-medium">{option.label}</span>
-                  <span className="block text-2xs text-[var(--ink-muted)]">{option.note}</span>
+                  <span className="block text-xs text-[var(--ink-muted)]">{option.note}</span>
                 </span>
               </label>
             ))}
@@ -585,8 +585,8 @@ function DirectBookingPanel({
 
         {mode === "VEHICLE" && insuranceCharge && damageStatement ? (
           <div className="space-y-2.5 rounded-[var(--radius-inset)] border border-clay-300 bg-clay-100 p-4">
-            <p className="text-2xs leading-relaxed text-clay-900">{damageStatement}</p>
-            <label className="flex items-start gap-2.5 text-2xs leading-relaxed text-clay-900">
+            <p className="text-xs leading-relaxed text-clay-900">{damageStatement}</p>
+            <label className="flex items-start gap-2.5 text-xs leading-relaxed text-clay-900">
               <input
                 type="checkbox"
                 name="damageAccepted"
@@ -598,12 +598,12 @@ function DirectBookingPanel({
           </div>
         ) : null}
 
-        <details className="rounded-[var(--radius-inset)] border border-[var(--line)] p-3">
-          <summary className="cursor-pointer text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
+        <details className="rounded-[var(--radius-inset)] border border-[var(--line)]">
+          <summary className="flex min-h-11 cursor-pointer items-center px-3 text-2xs font-semibold uppercase tracking-[0.16em] text-[var(--ink-faint)]">
             Travelling details (optional)
           </summary>
-          <div className="mt-3 space-y-3">
-            <label className="flex flex-col gap-1 text-2xs text-[var(--ink-muted)]">
+          <div className="space-y-3 px-3 pb-3">
+            <label className="flex flex-col gap-1 text-xs text-[var(--ink-muted)]">
               Lead traveller, if not you
               <input
                 name="leadTraveller"
@@ -612,7 +612,7 @@ function DirectBookingPanel({
                 className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm outline-none focus-visible:border-lake-600"
               />
             </label>
-            <label className="flex flex-col gap-1 text-2xs text-[var(--ink-muted)]">
+            <label className="flex flex-col gap-1 text-xs text-[var(--ink-muted)]">
               Phone on the day
               <input
                 name="leadPhone"
@@ -621,7 +621,7 @@ function DirectBookingPanel({
                 className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-3 py-2 text-sm outline-none focus-visible:border-lake-600"
               />
             </label>
-            <label className="flex flex-col gap-1 text-2xs text-[var(--ink-muted)]">
+            <label className="flex flex-col gap-1 text-xs text-[var(--ink-muted)]">
               Anything we should know
               <textarea
                 name="notes"
@@ -678,19 +678,19 @@ function DirectBookingPanel({
           Book on WhatsApp
         </Button>
 
-        <p className="text-center text-2xs leading-relaxed text-[var(--ink-faint)]">
+        <p className="text-center text-xs leading-relaxed text-[var(--ink-faint)]">
           We hold your place against live availability straight away. Nothing is
           charged at this step — payment comes next.
         </p>
       </div>
 
       <div className="space-y-2.5 border-t border-[var(--line)] bg-[var(--paper-sunken)] px-6 py-5">
-        <p className="flex items-start gap-2.5 text-2xs leading-relaxed text-[var(--ink-muted)]">
+        <p className="flex items-start gap-2.5 text-xs leading-relaxed text-[var(--ink-muted)]">
           <ShieldCheck className="mt-px size-4 shrink-0 text-clay-700" />
           Funds are held until your service is delivered. Free cancellation up
           to 72 hours before the start date.
         </p>
-        <p className="text-2xs text-[var(--ink-faint)]">
+        <p className="text-xs text-[var(--ink-faint)]">
           Questions?{" "}
           <Link href={site.contact.whatsapp} className="link-draw text-clay-700">
             WhatsApp {site.contact.phone}
@@ -718,7 +718,7 @@ function Stepper({
       onClick={onClick}
       disabled={disabled}
       aria-label={label}
-      className="grid size-8 place-items-center rounded-full border border-[var(--line-strong)] transition-colors hover:border-forest-800 hover:bg-forest-800 hover:text-bone-50 disabled:pointer-events-none disabled:opacity-35"
+      className="grid size-10 place-items-center rounded-full border border-[var(--line-strong)] transition-colors hover:border-forest-800 hover:bg-forest-800 hover:text-bone-50 disabled:pointer-events-none disabled:opacity-35"
     >
       {children}
     </button>

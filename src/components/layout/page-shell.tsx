@@ -89,9 +89,9 @@ export function Breadcrumbs({
 }) {
   return (
     <nav aria-label="Breadcrumb" className={className}>
-      <ol className="flex flex-wrap items-center gap-1.5 text-2xs">
+      <ol className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
         <li>
-          <Link href="/" className="opacity-65 transition-opacity hover:opacity-100">
+          <Link href="/" className="relative after:absolute after:-inset-x-1 after:-inset-y-3 opacity-65 transition-opacity hover:opacity-100">
             Home
           </Link>
         </li>
@@ -101,7 +101,7 @@ export function Breadcrumbs({
             {item.href && i < items.length - 1 ? (
               <Link
                 href={item.href}
-                className="opacity-65 transition-opacity hover:opacity-100"
+                className="relative after:absolute after:-inset-x-1 after:-inset-y-3 opacity-65 transition-opacity hover:opacity-100"
               >
                 {item.label}
               </Link>

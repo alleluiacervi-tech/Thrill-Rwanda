@@ -128,7 +128,7 @@ export function ListingGallery({
               type="button"
               onClick={() => go(index - 1)}
               aria-label="Previous photo"
-              className="grid size-9 place-items-center rounded-full bg-forest-950/55 text-bone-50 backdrop-blur transition-colors hover:bg-forest-950/80"
+              className="grid size-11 place-items-center rounded-full bg-forest-950/55 text-bone-50 backdrop-blur transition-colors hover:bg-forest-950/80"
             >
               <ChevronLeft className="size-4.5" />
             </button>
@@ -137,7 +137,7 @@ export function ListingGallery({
               type="button"
               onClick={() => setZoomed(index)}
               aria-label={`View all ${images.length} photos`}
-              className="tnum rounded-full bg-forest-950/55 px-3 py-1.5 text-2xs font-semibold text-bone-50 backdrop-blur transition-colors hover:bg-forest-950/80"
+              className="tnum h-11 rounded-full bg-forest-950/55 px-4 text-xs font-semibold text-bone-50 backdrop-blur transition-colors hover:bg-forest-950/80"
             >
               {index + 1} / {images.length}
             </button>
@@ -145,7 +145,7 @@ export function ListingGallery({
               type="button"
               onClick={() => go(index + 1)}
               aria-label="Next photo"
-              className="grid size-9 place-items-center rounded-full bg-forest-950/55 text-bone-50 backdrop-blur transition-colors hover:bg-forest-950/80"
+              className="grid size-11 place-items-center rounded-full bg-forest-950/55 text-bone-50 backdrop-blur transition-colors hover:bg-forest-950/80"
             >
               <ChevronRight className="size-4.5" />
             </button>
@@ -234,7 +234,7 @@ function Lightbox({
             type="button"
             onClick={() => ref.current?.close()}
             aria-label="Close photos"
-            className="grid size-9 place-items-center rounded-full bg-bone-50/10 text-bone-50 transition-colors hover:bg-bone-50/20"
+            className="grid size-11 place-items-center rounded-full bg-bone-50/10 text-bone-50 transition-colors hover:bg-bone-50/20"
           >
             <X className="size-5" />
           </button>

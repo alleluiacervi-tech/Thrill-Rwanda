@@ -39,7 +39,7 @@ import { cn, todayLocal } from "@/lib/utils";
 const fieldCls =
   "mt-1.5 block w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-white px-3.5 py-3 text-[0.9375rem] leading-snug text-[var(--ink)] outline-none transition-[border-color,box-shadow] duration-200 focus-visible:border-forest-700 focus-visible:ring-4 focus-visible:ring-forest-100 aria-[invalid=true]:border-red-500";
 const labelCls =
-  "block text-2xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]";
+  "block text-xs font-semibold uppercase tracking-[0.12em] text-[var(--ink-faint)]";
 const chipCls =
   "inline-flex min-h-10 cursor-pointer items-center gap-2 rounded-full border border-[var(--line-strong)] bg-white px-4 text-sm transition-colors duration-200 hover:border-forest-700 peer-checked:border-forest-800 peer-checked:bg-forest-800 peer-checked:text-bone-50 peer-focus-visible:ring-4 peer-focus-visible:ring-forest-100";
 

@@ -81,7 +81,7 @@ export async function SiteFooter() {
                       <c.icon className="size-3.5 text-sun-400" aria-hidden />
                     </span>
                     {c.href ? (
-                      <a href={c.href} className="link-draw mt-1.5 text-forest-100 hover:text-white">
+                      <a href={c.href} className="link-draw relative after:absolute after:-inset-x-1 after:-inset-y-3 mt-1.5 text-forest-100 hover:text-white">
                         {c.label}
                       </a>
                     ) : (
@@ -139,7 +139,7 @@ export async function SiteFooter() {
             © {new Date().getFullYear()} {site.legalName}. Made in Kigali.
           </p>
           <p className="flex flex-wrap items-center gap-2">
-            <Link href="/how-it-works" className="underline">Payment instructions follow your checked quote</Link>
+            <Link href="/how-it-works" className="relative after:absolute after:-inset-x-1 after:-inset-y-3 underline">Payment instructions follow your checked quote</Link>
           </p>
         </div>
       </Container>

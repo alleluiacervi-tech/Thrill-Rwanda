@@ -363,8 +363,8 @@ export function FaqList({ items }: { items: readonly Faq[] }) {
   return (
     <div className="divide-y divide-[var(--line)] border-y border-[var(--line)]">
       {items.map(([question, answer]) => (
-        <details key={question} className="group py-5">
-          <summary className="flex cursor-pointer list-none items-center justify-between gap-6 font-display text-xl leading-snug [&::-webkit-details-marker]:hidden">
+        <details key={question} className="group">
+          <summary className="flex cursor-pointer list-none items-center justify-between gap-6 py-5 font-display text-xl leading-snug [&::-webkit-details-marker]:hidden">
             {question}
             <span
               aria-hidden
@@ -373,7 +373,7 @@ export function FaqList({ items }: { items: readonly Faq[] }) {
               +
             </span>
           </summary>
-          <p className="mt-3 max-w-2xl text-[0.9375rem] leading-relaxed text-[var(--ink-muted)]">
+          <p className="-mt-2 mb-5 max-w-2xl text-[0.9375rem] leading-relaxed text-[var(--ink-muted)]">
             {answer}
           </p>
         </details>
