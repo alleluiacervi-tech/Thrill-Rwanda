@@ -613,13 +613,13 @@ function FeaturedTours({ tours }: { tours: CatalogueTour[] }) {
         />
 
         {/* Swipe rail on phones, so three trips don't cost three screens of scrolling. */}
-        <div className="no-bar -mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:mx-0 sm:grid sm:grid-cols-2 sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 lg:mt-14 lg:grid-cols-3 lg:gap-6">
+        <div className="no-bar -mx-5 mt-10 flex snap-x snap-mandatory gap-4 overflow-x-auto px-5 pb-2 sm:-mx-8 sm:px-8 lg:mx-0 lg:mt-14 lg:grid lg:grid-cols-3 lg:gap-6 lg:overflow-visible lg:px-0 lg:pb-0">
           {tours.slice(0, 3).map((tour, i) => (
             <TourCard
               key={tour.slug}
               tour={tour}
               priority={i === 0}
-              className="w-[84vw] max-w-[22rem] shrink-0 snap-center sm:w-auto sm:max-w-none"
+              className="w-[84vw] max-w-[22rem] shrink-0 snap-center sm:w-[44vw] lg:w-auto lg:max-w-none"
             />
           ))}
         </div>

@@ -259,7 +259,7 @@ export function HeroSequenceControls({ className }: { className?: string }) {
             onClick={() => go(i)}
             aria-label={`Show ${c.place}`}
             aria-current={i === index ? "true" : undefined}
-            className="relative flex-1 py-3"
+            className="relative flex-1 py-[1.125rem]"
           >
             <span className="relative block h-[3px] overflow-hidden rounded-full bg-white/30">
               <span
@@ -283,7 +283,7 @@ export function HeroSequenceControls({ className }: { className?: string }) {
           type="button"
           onClick={togglePaused}
           aria-label={paused ? "Play background video" : "Pause background video"}
-          className="-mr-2 grid size-9 place-items-center rounded-full text-white/85 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-white"
+          className="-mr-2.5 grid size-11 place-items-center rounded-full text-white/85 transition-colors hover:text-white focus-visible:outline-2 focus-visible:outline-white"
         >
           {paused ? <Play className="size-4" aria-hidden /> : <Pause className="size-4" aria-hidden />}
         </button>
