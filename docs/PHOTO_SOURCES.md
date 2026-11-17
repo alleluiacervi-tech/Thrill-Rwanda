@@ -60,11 +60,3 @@ Replace before launch.
 | Private & luxury page, "The idea" | A lodge interior |
 | Sign-in and sign-up panel | Any wide Rwanda landscape |
 | Sample wedding venues (local demo data only) | Replaced when real venues are added |
-
-## Not used
-
-The nine files added at the root of `public/` (`10001.jpeg` to `10009.jpg`) are
-the originals of the first eight Visit Rwanda photographs above, plus
-`10006.jpg`, an aerial of the Kigali Special Economic Zone that has no place on
-the site yet. The copies under `public/media/photos/` are the ones the site
-reads, so the nine at the root can be deleted.
