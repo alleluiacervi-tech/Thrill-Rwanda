@@ -6,6 +6,7 @@ import { refreshPublicCatalogue } from "@/lib/catalogue";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { splitAreas, transferZoneSchema, type TransferZoneState } from "@/lib/transfer-zones-shared";
+import { logActivity } from "@/lib/activity";
 
 // Admin-only management of the transfer zone prices.
 
@@ -58,7 +59,7 @@ function refresh() {
 }
 
 export async function createTransferZone(_prev: TransferZoneState, formData: FormData): Promise<TransferZoneState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = parse(formData);
   if (!parsed.success) return invalid(parsed.error, formData);
 
@@ -68,12 +69,19 @@ export async function createTransferZone(_prev: TransferZoneState, formData: For
     console.error("[transfers] create failed", err);
     return { status: "error", message: "We couldn't save that zone. Please try again.", values: submitted(formData), attempt: Date.now() };
   }
+  await logActivity(admin.id, {
+    action: "transfer_zone.create",
+    area: "Transfers",
+    target: parsed.data.name,
+    summary: `Added transfer zone ${parsed.data.name}`,
+    changes: toRow(parsed.data) as never,
+  });
   refresh();
   return { status: "success" };
 }
 
 export async function updateTransferZone(_prev: TransferZoneState, formData: FormData): Promise<TransferZoneState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = z.string().uuid().safeParse(formData.get("id"));
   if (!id.success) return { status: "error", message: "That zone reference isn't valid." };
   const parsed = parse(formData);
@@ -88,6 +96,13 @@ export async function updateTransferZone(_prev: TransferZoneState, formData: For
     console.error("[transfers] update failed", err);
     return { status: "error", message: "We couldn't save that zone. Please try again." };
   }
+  await logActivity(admin.id, {
+    action: "transfer_zone.update",
+    area: "Transfers",
+    target: parsed.data.name,
+    summary: `Edited transfer zone ${parsed.data.name}`,
+    changes: toRow(parsed.data) as never,
+  });
   refresh();
   return { status: "success" };
 }
@@ -95,25 +110,37 @@ export async function updateTransferZone(_prev: TransferZoneState, formData: For
 type SimpleState = { status: "idle" | "error" | "ok"; message?: string };
 
 export async function setTransferZoneActive(_prev: SimpleState, formData: FormData): Promise<SimpleState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = z
     .object({ id: z.string().uuid(), active: z.enum(["true", "false"]) })
     .safeParse({ id: formData.get("id"), active: formData.get("active") });
   if (!parsed.success) return { status: "error", message: "That zone reference isn't valid." };
 
   await db.transferZone.updateMany({ where: { id: parsed.data.id }, data: { isActive: parsed.data.active === "true" } });
+  await logActivity(admin.id, {
+    action: "transfer_zone.visibility",
+    area: "Transfers",
+    targetId: String(formData.get("id") ?? ""),
+    summary: `${formData.get("active") === "true" ? "Showed" : "Hid"} a transfer zone`,
+  });
   refresh();
   return { status: "idle" };
 }
 
 // Bookings keep their own copy of the price and areas, so a delete is clean.
 export async function deleteTransferZone(_prev: SimpleState, formData: FormData): Promise<SimpleState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = z.string().uuid().safeParse(formData.get("id"));
   if (!id.success) return { status: "error", message: "That zone reference isn't valid." };
 
   const { count } = await db.transferZone.deleteMany({ where: { id: id.data } });
   if (count === 0) return { status: "error", message: "That zone was already deleted." };
+  await logActivity(admin.id, {
+    action: "transfer_zone.delete",
+    area: "Transfers",
+    targetId: String(formData.get("id") ?? ""),
+    summary: "Deleted a transfer zone",
+  });
   refresh();
   return { status: "ok", message: "Zone deleted." };
 }

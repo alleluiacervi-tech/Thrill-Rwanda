@@ -39,6 +39,8 @@ export type SiteInfo = {
   /** Hotels are never paid online; these switch the rest. */
   payOnline: { TOUR: boolean; VEHICLE: boolean; TRANSFER: boolean };
   announcement: string | null;
+  /** Whether the homepage hero plays video, or shows still frames only. */
+  heroVideo: boolean;
 };
 
 /** The values the site shipped with. */
@@ -85,6 +87,7 @@ export type SiteSettingsRow = Partial<{
   payOnlineTransfers: boolean;
   announcement: string | null;
   announcementOn: boolean;
+  heroVideo: boolean;
 }>;
 
 const text = (v: string | null | undefined) => (v && v.trim() ? v.trim() : null);
@@ -156,5 +159,6 @@ export function buildSite(row: SiteSettingsRow | null | undefined): SiteInfo {
       TRANSFER: r.payOnlineTransfers ?? true,
     },
     announcement: r.announcementOn ? text(r.announcement) : null,
+    heroVideo: r.heroVideo ?? true,
   };
 }

@@ -7,7 +7,7 @@ import { ReelsShowcase } from "@/components/home/reels-showcase";
 
 /* ============================================================== InMotion */
 
-export function InMotion() {
+export function InMotion({ preload = true }: { preload?: boolean }) {
   return (
     <section id="in-motion" className="on-dark relative overflow-hidden bg-forest-950 py-24 sm:py-32">
       <div aria-hidden className="contours absolute inset-0 opacity-[0.06]" />
@@ -28,7 +28,7 @@ export function InMotion() {
           }
         />
         <div className="mt-14">
-          <ReelsShowcase reels={reels} />
+          <ReelsShowcase reels={reels} preload={preload} />
         </div>
       </Container>
     </section>

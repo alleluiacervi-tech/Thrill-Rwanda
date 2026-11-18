@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { EDITABLE_SLUGS } from "@/lib/legal";
 import { requireAdmin } from "@/lib/session";
+import { logActivity } from "@/lib/activity";
 
 /**
  * Editing the legal copy.
@@ -50,5 +51,11 @@ export async function saveLegalDocument(
 
   revalidatePath(`/legal/${slug}`);
   revalidatePath("/admin/legal");
+  await logActivity(admin.id, {
+    action: "legal.save",
+    area: "Content",
+    target: String(formData.get("slug") ?? "legal page"),
+    summary: `Published version ${saved.version} of the ${String(formData.get("slug") ?? "legal")} page`,
+  });
   return { status: "saved", version: saved.version };
 }

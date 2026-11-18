@@ -13,7 +13,8 @@ import {
   runRange,
 } from "@/lib/departure-rules";
 import { todayInRwanda } from "@/lib/flight-enquiry-schema";
-import { resolveListingScope, scopeFilter } from "@/lib/session";
+import { requireUser, resolveListingScope, scopeFilter } from "@/lib/session";
+import { logActivity } from "@/lib/activity";
 
 /**
  * Scheduling the dates a fixed-departure tour runs on.
@@ -42,6 +43,7 @@ export async function addDeparture(
   formData: FormData,
 ): Promise<DepartureState> {
   const scope = await resolveListingScope();
+  const session = await requireUser();
   const parsed = departureSchema.safeParse({
     tourId: formData.get("tourId"),
     startsOn: formData.get("startsOn"),
@@ -58,6 +60,7 @@ export async function addDeparture(
     where: { id: tourId, ...scopeFilter(scope) },
     select: {
       id: true,
+      name: true,
       durationDays: true,
       maxParticipants: true,
       fixedDepartures: true,
@@ -100,6 +103,13 @@ export async function addDeparture(
 
   refresh(tour.id);
   const range = runRange(start, tour.durationDays);
+  await logActivity(session.id, {
+    action: "departure.add",
+    area: "Departures",
+    target: tour.name,
+    targetId: tour.id,
+    summary: `Added the date ${formatRun(range.start, range.lastDay)} to ${tour.name}${note ? ` (${note})` : ""}`,
+  });
   return { status: "ok", message: `Added ${formatRun(range.start, range.lastDay)}.` };
 }
 
@@ -108,11 +118,12 @@ export async function removeDeparture(
   formData: FormData,
 ): Promise<DepartureState> {
   const scope = await resolveListingScope();
+  const session = await requireUser();
   const id = String(formData.get("id") ?? "");
 
   const departure = await db.tourDeparture.findFirst({
     where: { id, tour: scopeFilter(scope) },
-    select: { id: true, startsOn: true, tourId: true, tour: { select: { durationDays: true } } },
+    select: { id: true, startsOn: true, tourId: true, tour: { select: { durationDays: true, name: true } } },
   });
   if (!departure) return fail("That date no longer exists.");
 
@@ -133,5 +144,12 @@ export async function removeDeparture(
   await db.tourDeparture.delete({ where: { id: departure.id } });
   refresh(departure.tourId);
   const range = runRange(departure.startsOn, departure.tour.durationDays);
+  await logActivity(session.id, {
+    action: "departure.remove",
+    area: "Departures",
+    target: departure.tour.name,
+    targetId: departure.tourId,
+    summary: `Removed the date ${formatRun(range.start, range.lastDay)} from ${departure.tour.name}`,
+  });
   return { status: "ok", message: `Removed ${formatRun(range.start, range.lastDay)}.` };
 }

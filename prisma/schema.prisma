@@ -86,6 +86,12 @@ model User {
   phone         String?
   role          Role     @default(CUSTOMER)
   staffRole     StaffRole? @map("staff_role")
+  /// An administrator who may also grant and remove everyone's access. Only
+  /// meaningful with role ADMIN; at least one active super admin must remain.
+  isSuperAdmin  Boolean  @default(false) @map("is_super_admin")
+  /// Two-step sign-in with an authenticator app is switched on (Better Auth two-factor plugin).
+  twoFactorEnabled Boolean @default(false) @map("two_factor_enabled")
+  twoFactors    TwoFactor[]
   isActive      Boolean  @default(true) @map("is_active")
   createdAt     DateTime @default(now()) @map("created_at") @db.Timestamptz
   updatedAt     DateTime @updatedAt @map("updated_at") @db.Timestamptz
@@ -101,6 +107,25 @@ model User {
 
   @@index([role])
   @@map("users")
+}
+
+/// Better Auth two-factor: the authenticator secret and backup codes for one
+/// account, both stored encrypted by Better Auth. Never shown or exported.
+model TwoFactor {
+  id                      String    @id @default(uuid()) @db.Uuid
+  secret                  String
+  backupCodes             String    @map("backup_codes")
+  userId                  String    @map("user_id") @db.Uuid
+  /// False until the first code from the authenticator app has been checked.
+  verified                Boolean   @default(true)
+  failedVerificationCount Int       @default(0) @map("failed_verification_count")
+  lockedUntil             DateTime? @map("locked_until") @db.Timestamptz
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([secret])
+  @@index([userId])
+  @@map("two_factors")
 }
 
 /// Better Auth session store.
@@ -262,6 +287,41 @@ model Venue {
 
   @@index([isPublished])
   @@map("venues")
+}
+
+/// Who did what, and when: one row per change made by a team member
+/// (administrators, staff and providers) and per team sign-in.
+///
+/// Append-only. A database trigger (migration activity_log) rejects any
+/// UPDATE or DELETE, so an entry cannot be altered or removed afterwards,
+/// not even by the application. The actor is copied in, not linked, so the
+/// record survives the account being deleted.
+model ActivityLog {
+  id         String   @id @default(uuid()) @db.Uuid
+  createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
+  actorId    String?  @map("actor_id") @db.Uuid
+  actorName  String   @map("actor_name")
+  actorEmail String   @map("actor_email")
+  /// The actor's access at the time: "Super admin", "Admin", "Sales", "Provider"...
+  actorRole  String   @map("actor_role")
+  /// Short machine name, e.g. "user.role", "venue.publish", "tour.update".
+  action     String
+  /// The part of the business: "Access", "Listings", "Bookings", "Finance"...
+  area       String
+  /// What was acted on, as people would name it: "Amina Uwimana", "Garden Pavilion".
+  target     String?
+  targetId   String?  @map("target_id")
+  /// One readable sentence: "Changed role from Customer to Admin".
+  summary    String
+  /// Before and after, where it helps.
+  changes    Json     @default("{}")
+  ip         String?
+
+  @@index([createdAt])
+  @@index([actorId, createdAt])
+  @@index([area, createdAt])
+  @@index([targetId])
+  @@map("activity_logs")
 }
 
 /// A dated run of a fixed-departure tour (a Tembera u Rwanda edition).
@@ -612,6 +672,11 @@ model SiteSettings {
   payOnlineTours     Boolean @default(true) @map("pay_online_tours")
   payOnlineCars      Boolean @default(true) @map("pay_online_cars")
   payOnlineTransfers Boolean @default(true) @map("pay_online_transfers")
+
+  /// Whether the homepage hero plays its silent video clips. Off shows the
+  /// still frames only: lighter on mobile data, and the brief (section 11)
+  /// asks to avoid autoplay video unless the founder chooses it.
+  heroVideo      Boolean @default(true) @map("hero_video")
 
   // A message across the top of the site.
   announcement   String?

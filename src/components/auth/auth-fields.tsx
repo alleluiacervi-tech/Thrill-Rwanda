@@ -13,6 +13,7 @@ export function Field({
   type = "text",
   error,
   hint,
+  className,
   ...rest
 }: {
   label: string;
@@ -36,8 +37,8 @@ export function Field({
         type={type}
         aria-invalid={error ? true : undefined}
         aria-describedby={error ? `${id}-err` : hint ? `${id}-hint` : undefined}
-        className={cn(fieldCls, error && "border-red-400")}
         {...rest}
+        className={cn(fieldCls, className, error && "border-red-400")}
       />
       {hint && !error ? (
         <span id={`${id}-hint`} className="text-2xs text-[var(--ink-faint)]">

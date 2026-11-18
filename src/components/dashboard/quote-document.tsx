@@ -26,7 +26,13 @@ export async function QuoteDocument({
           className="underline"
           href={`${base}/${reference}/quotes/${id}/download`}
         >
-          Download customer copy (HTML)
+          Download customer copy (PDF)
+        </Link>
+        <Link
+          className="underline"
+          href={`${base}/${reference}/quotes/${id}/download?format=html`}
+        >
+          HTML copy
         </Link>
         <PrintQuoteButton />
       </div>

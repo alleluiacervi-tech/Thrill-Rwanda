@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { requireEnquiryStaff } from "@/lib/enquiry-access";
 import { canUseEnquiries } from "@/lib/enquiry-workflow";
 import type { QuoteActionState } from "@/lib/quote-rules";
+import { logActivityAsCurrentUser } from "@/lib/activity";
 export async function retryEnquiryNotification(
   _previous: QuoteActionState,
   form: FormData,
@@ -56,6 +57,12 @@ export async function retryEnquiryNotification(
     });
     for (const base of ["/staff/enquiries", "/admin/enquiries"])
       revalidatePath(`${base}/${reference}`);
+    await logActivityAsCurrentUser({
+      action: "notification.retry",
+      area: "Enquiries",
+      target: reference,
+      summary: `Retried a failed notification for enquiry ${reference}`,
+    });
     return {
       status: "ok",
       message: "Retry queued. Delivery is not yet confirmed.",

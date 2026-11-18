@@ -17,6 +17,7 @@ import {
   vehicleSchema,
   type ListingState,
 } from "@/lib/listing-schemas";
+import { logActivityAsCurrentUser } from "@/lib/activity";
 
 /**
  * Editing existing listings (Step 12).
@@ -84,9 +85,18 @@ async function setCapacity(
 async function runUpdate(
   work: () => Promise<{ id: string; slug: string }>,
   label: string,
+  /** The listing's name, for the activity log. */
+  name?: string,
 ): Promise<ListingState> {
   try {
     const row = await work();
+    await logActivityAsCurrentUser({
+      action: "listing.update",
+      area: "Listings",
+      target: name ?? row.slug,
+      targetId: row.id,
+      summary: `Edited ${label} ${name ?? row.slug}${label === "tour" ? " (its approval is cleared until it is reviewed again)" : ""}`,
+    });
     revalidatePath("/provider/listings");
     revalidatePath("/provider/availability");
     revalidatePath("/admin/listings");
@@ -164,6 +174,7 @@ export async function updateVehicle(
         });
       }),
     "vehicle",
+    `${v.make} ${v.model}`,
   );
 }
 
@@ -238,6 +249,7 @@ export async function updateTour(
         });
       }),
     "tour",
+    t.name,
   );
 }
 
@@ -364,5 +376,6 @@ export async function updateHotel(
         });
       }),
     "property",
+    h.name,
   );
 }

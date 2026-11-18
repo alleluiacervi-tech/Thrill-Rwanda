@@ -5,6 +5,7 @@ import { refreshPublicCatalogue } from "@/lib/catalogue";
 import { z } from "zod";
 import { db } from "@/lib/db";
 import { getCurrentUser, requireAdmin } from "@/lib/session";
+import { logActivity } from "@/lib/activity";
 
 /**
  * Reviews .
@@ -121,7 +122,7 @@ export async function moderateReview(
   _prev: ModerationState,
   formData: FormData,
 ): Promise<ModerationState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = moderateSchema.safeParse({
     reviewId: formData.get("reviewId"),
@@ -145,6 +146,12 @@ export async function moderateReview(
     return { status: "error", message: "We couldn't update that review." };
   }
 
+  await logActivity(admin.id, {
+    action: `review.${action.toLowerCase()}`,
+    area: "Reviews",
+    targetId: reviewId,
+    summary: action === "DELETE" ? "Deleted a review" : `Set a review to ${action.toLowerCase()}`,
+  });
   revalidatePath("/admin/reviews");
   refreshPublicCatalogue();
   revalidatePath("/reviews");

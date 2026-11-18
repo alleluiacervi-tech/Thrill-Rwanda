@@ -687,8 +687,8 @@ function DirectBookingPanel({
       <div className="space-y-2.5 border-t border-[var(--line)] bg-[var(--paper-sunken)] px-6 py-5">
         <p className="flex items-start gap-2.5 text-xs leading-relaxed text-[var(--ink-muted)]">
           <ShieldCheck className="mt-px size-4 shrink-0 text-clay-700" />
-          Funds are held until your service is delivered. Free cancellation up
-          to 72 hours before the start date.
+          Your booking confirmation sets out what you have paid, what is still
+          due and the cancellation terms that apply to this trip.
         </p>
         <p className="text-xs text-[var(--ink-faint)]">
           Questions?{" "}

@@ -6,14 +6,19 @@ import { z } from "zod";
 import { BookingError, transitionBooking } from "@/lib/booking";
 import { db } from "@/lib/db";
 import { notifyBookingStatusChanged, notifyProviderStatus } from "@/lib/notifications";
+import { setActive, setRole } from "@/app/actions/access";
+import { accessRefusal } from "@/lib/access";
+import { logActivity } from "@/lib/activity";
 import { requireAdmin } from "@/lib/session";
 import { slugify } from "@/lib/utils";
 
 /**
  * Admin actions (Step 13).
  *
- * Every one calls `requireAdmin()` first — that guard is the whole
- * authorisation story here, because an admin is deliberately unscoped.
+ * Every one calls `requireAdmin()` first, because an admin is deliberately
+ * unscoped. Changing anyone's access is narrower: only a super admin may, and
+ * those changes go through src/app/actions/access.ts. Every action records
+ * itself in the activity log once it has succeeded.
  *
  * Two invariants worth preserving:
  *   1. An admin cannot deactivate or demote themselves. Locking the last
@@ -38,7 +43,7 @@ export async function setProviderStatus(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = providerStatusSchema.safeParse({
     providerId: formData.get("providerId"),
@@ -50,7 +55,7 @@ export async function setProviderStatus(
 
   const provider = await db.provider.findUnique({
     where: { id: providerId },
-    select: { userId: true },
+    select: { userId: true, businessName: true, status: true },
   });
   if (!provider) return fail("Provider not found.");
 
@@ -86,6 +91,16 @@ export async function setProviderStatus(
   });
 
   if (status !== "PENDING") await notifyProviderStatus(providerId, status);
+  await logActivity(admin.id, {
+    action: "provider.status",
+    area: "Providers",
+    target: provider.businessName,
+    targetId: providerId,
+    summary: `Set ${provider.businessName} from ${provider.status.toLowerCase()} to ${status.toLowerCase()}${
+      status === "SUSPENDED" || status === "REJECTED" ? " and unpublished its listings" : ""
+    }`,
+    changes: { from: provider.status, to: status },
+  });
 
   revalidatePath("/admin/providers");
   refreshPublicCatalogue();
@@ -95,78 +110,21 @@ export async function setProviderStatus(
 
 /* ------------------------------------------------------------------ users */
 
-const userActiveSchema = z.object({
-  userId: z.string().uuid(),
-  active: z.enum(["true", "false"]),
-});
-
 export async function setUserActive(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  const admin = await requireAdmin();
-
-  const parsed = userActiveSchema.safeParse({
-    userId: formData.get("userId"),
-    active: formData.get("active"),
-  });
-  if (!parsed.success) return fail("That user action isn't valid.");
-
-  const { userId } = parsed.data;
-  const isActive = parsed.data.active === "true";
-
-  // Invariant 1: no locking yourself out.
-  if (userId === admin.id && !isActive) {
-    return fail("You can't deactivate your own account.");
-  }
-
-  await db.user.update({ where: { id: userId }, data: { isActive } });
-
-  revalidatePath("/admin/users");
-  return {
-    status: "ok",
-    message: isActive ? "Account reactivated." : "Account deactivated.",
-  };
+  const form = new FormData();
+  form.set("userId", String(formData.get("userId") ?? ""));
+  form.set("on", String(formData.get("active") ?? ""));
+  return setActive({ status: "idle" }, form);
 }
-
-const roleSchema = z.object({
-  userId: z.string().uuid(),
-  role: z.enum(["CUSTOMER", "PROVIDER", "ADMIN"]),
-});
 
 export async function setUserRole(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  const admin = await requireAdmin();
-
-  const parsed = roleSchema.safeParse({
-    userId: formData.get("userId"),
-    role: formData.get("role"),
-  });
-  if (!parsed.success) return fail("That role isn't valid.");
-
-  const { userId, role } = parsed.data;
-
-  if (userId === admin.id && role !== "ADMIN") {
-    return fail("You can't remove your own admin access.");
-  }
-
-  // Promoting to PROVIDER without a provider record would land them on
-  // /provider/apply with no way forward, so say so rather than doing it.
-  if (role === "PROVIDER") {
-    const hasProvider = await db.provider.count({ where: { userId } });
-    if (hasProvider === 0) {
-      return fail(
-        "That user has no provider record yet. Create one from Providers first.",
-      );
-    }
-  }
-
-  await db.user.update({ where: { id: userId }, data: { role } });
-
-  revalidatePath("/admin/users");
-  return { status: "ok", message: `Role set to ${role.toLowerCase()}.` };
+  return setRole({ status: "idle" }, formData);
 }
 
 /* --------------------------------------------------------------- bookings */
@@ -181,7 +139,7 @@ export async function adminTransitionBooking(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = adminTransitionSchema.safeParse({
     reference: formData.get("reference"),
@@ -198,6 +156,16 @@ export async function adminTransitionBooking(
       reason: parsed.data.reason || undefined,
     });
     await notifyBookingStatusChanged(booking.id, parsed.data.to, "ADMIN");
+    await logActivity(admin.id, {
+      action: "booking.status",
+      area: "Bookings",
+      target: parsed.data.reference,
+      targetId: booking.id,
+      summary: `Set booking ${parsed.data.reference} to ${parsed.data.to.toLowerCase()}${
+        parsed.data.reason ? `: ${parsed.data.reason}` : ""
+      }`,
+      changes: { to: parsed.data.to, reason: parsed.data.reason || null },
+    });
     revalidatePath("/admin/bookings");
     revalidatePath("/admin");
     return ok;
@@ -221,7 +189,7 @@ export async function adminSetListingPublished(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = listingSchema.safeParse({
     kind: formData.get("kind"),
@@ -242,6 +210,14 @@ export async function adminSetListingPublished(
   else if (kind === "VEHICLE") await db.vehicle.update({ where: { id }, data });
   else await db.room.update({ where: { id }, data });
 
+  await logActivity(admin.id, {
+    action: isPublished ? "listing.publish" : "listing.unpublish",
+    area: "Listings",
+    target: await listingName(kind, id),
+    targetId: id,
+    summary: `${isPublished ? "Published" : "Unpublished"} ${kind.toLowerCase()} ${await listingName(kind, id)}`,
+    changes: { kind, isPublished },
+  });
   revalidatePath("/admin/listings");
   refreshPublicCatalogue();
   return ok;
@@ -268,11 +244,13 @@ export async function adminDeleteListing(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = deleteSchema.safeParse({ kind: formData.get("kind"), id: formData.get("id") });
   if (!parsed.success) return fail("That listing reference isn't valid.");
   const { kind, id } = parsed.data;
+  // Named before it is gone, for the activity log.
+  const name = await listingName(kind, id);
 
   try {
     await db.$transaction(async (tx) => {
@@ -312,6 +290,14 @@ export async function adminDeleteListing(
     return fail("We couldn't delete that listing. Nothing was removed.");
   }
 
+  await logActivity(admin.id, {
+    action: "listing.delete",
+    area: "Listings",
+    target: name,
+    targetId: id,
+    summary: `Deleted ${kind.toLowerCase()} ${name} and its calendar`,
+    changes: { kind },
+  });
   revalidatePath("/admin/listings");
   revalidatePath("/provider/listings");
   revalidatePath("/provider/availability");
@@ -332,17 +318,20 @@ export async function sendUserPasswordReset(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = userIdSchema.safeParse({ userId: formData.get("userId") });
   if (!parsed.success) return fail("That user reference isn't valid.");
 
   const user = await db.user.findUnique({
     where: { id: parsed.data.userId },
-    select: { email: true, isActive: true },
+    select: { email: true, isActive: true, fullName: true, role: true, isSuperAdmin: true },
   });
   if (!user) return fail("That user no longer exists.");
   if (!user.isActive) return fail("Reactivate the account before sending a reset.");
+  // Resetting an administrator's password is an access matter.
+  if (user.role === "ADMIN" && !(await actorIsSuper(admin.id)))
+    return fail("Only a super admin can reset an administrator's password.");
 
   try {
     const { auth } = await import("@/lib/auth");
@@ -354,6 +343,13 @@ export async function sendUserPasswordReset(
     return fail("We couldn't send that reset. Check email settings and try again.");
   }
 
+  await logActivity(admin.id, {
+    action: "user.password_reset",
+    area: "Access",
+    target: user.fullName,
+    targetId: parsed.data.userId,
+    summary: `Sent a password reset link to ${user.fullName}`,
+  });
   return { status: "ok", message: `Reset link sent to ${user.email}.` };
 }
 
@@ -376,7 +372,22 @@ export async function revokeUserSessions(
     return fail("Use your profile page to sign your own other devices out.");
   }
 
+  const person = await db.user.findUnique({
+    where: { id: parsed.data.userId },
+    select: { fullName: true, role: true },
+  });
+  if (!person) return fail("That user no longer exists.");
+  if (person.role === "ADMIN" && !(await actorIsSuper(admin.id)))
+    return fail("Only a super admin can sign an administrator out.");
+
   const { count } = await db.session.deleteMany({ where: { userId: parsed.data.userId } });
+  await logActivity(admin.id, {
+    action: "user.sign_out",
+    area: "Access",
+    target: person.fullName,
+    targetId: parsed.data.userId,
+    summary: `Signed ${person.fullName} out of ${count} session${count === 1 ? "" : "s"}`,
+  });
 
   revalidatePath("/admin/users");
   return {
@@ -405,7 +416,7 @@ export async function createProviderForUser(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = newProviderSchema.safeParse({
     userId: formData.get("userId"),
@@ -421,8 +432,21 @@ export async function createProviderForUser(
 
   const { userId, businessName, kind, city, phone, verify } = parsed.data;
 
-  const user = await db.user.findUnique({ where: { id: userId }, select: { id: true, phone: true } });
+  const user = await db.user.findUnique({
+    where: { id: userId },
+    select: { id: true, phone: true, fullName: true, role: true, staffRole: true, isSuperAdmin: true, isActive: true },
+  });
   if (!user) return fail("That user no longer exists.");
+  // Promoting someone to provider changes their access: the same rules as any role change.
+  const actor = await db.user.findUnique({
+    where: { id: admin.id },
+    select: { id: true, role: true, staffRole: true, isSuperAdmin: true },
+  });
+  const othersSuper = await db.user.count({
+    where: { role: "ADMIN", isSuperAdmin: true, isActive: true, id: { not: userId } },
+  });
+  const refusal = actor && accessRefusal(actor, user, { kind: "role", role: "PROVIDER" }, othersSuper);
+  if (!actor || refusal) return fail(refusal || "Only a super admin can change someone's access.");
 
   const existing = await db.provider.count({ where: { userId } });
   if (existing > 0) return fail("That user already has a provider record.");
@@ -449,8 +473,16 @@ export async function createProviderForUser(
       },
     }),
     // The role only works alongside a provider record, so both or neither.
-    db.user.update({ where: { id: userId }, data: { role: "PROVIDER" } }),
+    db.user.update({ where: { id: userId }, data: { role: "PROVIDER", isSuperAdmin: false } }),
   ]);
+  await logActivity(admin.id, {
+    action: "access.role",
+    area: "Access",
+    target: user.fullName,
+    targetId: userId,
+    summary: `Created provider ${businessName} for ${user.fullName} and made them a provider${verified ? " (verified)" : ""}`,
+    changes: { business: businessName, kind, verified },
+  });
 
   revalidatePath("/admin/users");
   revalidatePath("/admin/providers");
@@ -476,7 +508,7 @@ export async function setProviderCategories(
   _prev: AdminState,
   formData: FormData,
 ): Promise<AdminState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
 
   const parsed = categoriesSchema.safeParse({
     providerId: formData.get("providerId"),
@@ -488,13 +520,41 @@ export async function setProviderCategories(
 
   const { providerId, kinds } = parsed.data;
 
-  await db.provider.update({
+  const updated = await db.provider.update({
     where: { id: providerId },
     // `kind` stays as the primary label; `kinds` is what the guards read.
     data: { kinds, kind: kinds[0] },
+    select: { businessName: true },
+  });
+  await logActivity(admin.id, {
+    action: "provider.categories",
+    area: "Providers",
+    target: updated.businessName,
+    targetId: providerId,
+    summary: `Set what ${updated.businessName} may list: ${kinds.map((k) => k.toLowerCase()).join(", ")}`,
+    changes: { kinds },
   });
 
   revalidatePath("/admin/providers");
   revalidatePath("/provider/listings");
   return { status: "ok", message: "Categories updated." };
+}
+
+/* ---------------------------------------------------------------- helpers */
+
+/** A listing's name, as staff would recognise it in the activity log. */
+async function listingName(kind: string, id: string) {
+  if (kind === "TOUR") return (await db.tour.findUnique({ where: { id }, select: { name: true } }))?.name ?? id;
+  if (kind === "HOTEL") return (await db.hotel.findUnique({ where: { id }, select: { name: true } }))?.name ?? id;
+  if (kind === "VEHICLE") {
+    const v = await db.vehicle.findUnique({ where: { id }, select: { make: true, model: true } });
+    return v ? `${v.make} ${v.model}` : id;
+  }
+  const r = await db.room.findUnique({ where: { id }, select: { name: true, hotel: { select: { name: true } } } });
+  return r ? `${r.hotel.name}: ${r.name}` : id;
+}
+
+async function actorIsSuper(id: string) {
+  const u = await db.user.findUnique({ where: { id }, select: { role: true, isSuperAdmin: true, isActive: true } });
+  return !!u?.isActive && u.role === "ADMIN" && u.isSuperAdmin;
 }

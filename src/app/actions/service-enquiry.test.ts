@@ -5,6 +5,7 @@ const { save, staff } = vi.hoisted(() => ({ save: vi.fn(), staff: vi.fn() }));
 vi.mock("@/lib/flight-enquiries", () => ({ saveEnquiry: save, EnquirySubmissionError: class extends Error {} }));
 vi.mock("@/lib/enquiry-access", () => ({ requireEnquiryStaff: staff }));
 vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
+vi.mock("@/lib/activity", () => ({ logActivity: vi.fn(), logActivityAsCurrentUser: vi.fn() }));
 import { submitServiceEnquiry, captureManualEnquiry } from "./service-enquiry";
 const form = () => {
  const data = new FormData();

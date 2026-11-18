@@ -2,6 +2,8 @@ import { resetDeliveryNotice } from "@/lib/auth-notice";
 import { betterAuth } from "better-auth";
 import { prismaAdapter } from "better-auth/adapters/prisma";
 import { nextCookies } from "better-auth/next-js";
+import { twoFactor } from "better-auth/plugins";
+import { APIError, createAuthMiddleware, getSessionFromCtx } from "better-auth/api";
 import { db } from "@/lib/db";
 import { site } from "@/lib/site";
 
@@ -108,8 +110,71 @@ export const auth = betterAuth({
     database: { generateId: false },
   },
 
+  hooks: {
+    // Administrators and staff cannot switch two-step sign-in off for
+    // themselves; a super admin can reset it for them (Users & access).
+    before: createAuthMiddleware(async (ctx) => {
+      if (ctx.path !== "/two-factor/disable") return;
+      const session = await getSessionFromCtx(ctx);
+      if (!session) return;
+      const { db } = await import("@/lib/db");
+      const { twoFactorRequired } = await import("@/lib/two-factor-policy");
+      const user = await db.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, staffRole: true },
+      });
+      if (user && twoFactorRequired(user))
+        throw new APIError("FORBIDDEN", {
+          message: "Two-step sign-in is required for administrators and staff, so it can't be switched off.",
+        });
+    }),
+  },
+
   databaseHooks: {
+    // Team sign-ins go in the activity log, so access can be traced to a person and a time.
+    session: {
+      create: {
+        after: async (session, context) => {
+          const { db } = await import("@/lib/db");
+          const user = await db.user.findUnique({
+            where: { id: session.userId },
+            select: { role: true, staffRole: true, twoFactorEnabled: true },
+          });
+          if (!user || (user.role === "CUSTOMER" && !user.staffRole)) return;
+          // With two-step sign-in on, the password step opens a session that is
+          // closed again until the code is checked (unless the device is trusted),
+          // so the log says which step this was.
+          const path = context?.path ?? "";
+          const summary = path.startsWith("/two-factor/verify-backup-code")
+            ? "Signed in with a backup code"
+            : path.startsWith("/two-factor/")
+              ? "Signed in with an authenticator code"
+              : user.twoFactorEnabled
+                ? "Password accepted; signed in if this is a trusted device, otherwise asked for the authenticator code"
+                : "Signed in with a password";
+          const { logActivity } = await import("@/lib/activity");
+          await logActivity(session.userId, { action: "auth.sign_in", area: "Sign-in", summary });
+        },
+      },
+    },
     user: {
+      // Turning two-step sign-in on or off goes in the activity log.
+      update: {
+        after: async (user, context) => {
+          const path = context?.path ?? "";
+          if (!path.startsWith("/two-factor/")) return;
+          const on = (user as { twoFactorEnabled?: boolean }).twoFactorEnabled;
+          if (on === undefined) return;
+          const { logActivity } = await import("@/lib/activity");
+          await logActivity(user.id, {
+            action: on ? "auth.two_factor_on" : "auth.two_factor_off",
+            area: "Sign-in",
+            target: (user as { name?: string }).name ?? null,
+            targetId: user.id,
+            summary: on ? "Turned on two-step sign-in (authenticator app)" : "Turned off two-step sign-in",
+          });
+        },
+      },
       create: {
         // Fired after the row exists. Notifications never throw, so a mail
         // failure can't break sign-up.
@@ -121,8 +186,18 @@ export const auth = betterAuth({
     },
   },
 
-  // Must be last — writes Set-Cookie from server actions.
-  plugins: [nextCookies()],
+  plugins: [
+    // Two-step sign-in with an authenticator app (scan a QR code), backup
+    // codes, and "trust this device" for 30 days. Required for administrators
+    // and staff (see requireTeamTwoFactor in src/lib/session.ts).
+    twoFactor({
+      issuer: site.name,
+      trustDeviceMaxAge: 60 * 60 * 24 * 30,
+      backupCodeOptions: { amount: 10, length: 10 },
+    }),
+    // Must be last — writes Set-Cookie from server actions.
+    nextCookies(),
+  ],
 });
 
 export type Session = typeof auth.$Infer.Session;

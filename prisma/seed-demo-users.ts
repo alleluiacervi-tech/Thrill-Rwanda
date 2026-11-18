@@ -20,13 +20,17 @@ type Demo = {
   name: string;
   role: "CUSTOMER" | "PROVIDER" | "ADMIN";
   staffRole?: "SALES" | "OPERATIONS" | "FINANCE";
+  /** Administrators only: may grant and remove everyone's access, and read the activity log. */
+  superAdmin?: boolean;
   phone: string;
 };
 
 const DEMO: Demo[] = [
   { email: "customer@thrillrwanda.test", name: "Amina Uwimana", role: "CUSTOMER", phone: "+250788000001" },
   { email: "provider@thrillrwanda.test", name: "Jean Claude Habimana", role: "PROVIDER", phone: "+250788000002" },
-  { email: "admin@thrillrwanda.test", name: "Thrill Rwanda Admin", role: "ADMIN", phone: "+250788000003" },
+  { email: "admin@thrillrwanda.test", name: "Thrill Rwanda Admin", role: "ADMIN", superAdmin: true, phone: "+250788000003" },
+  // An ordinary administrator: runs the business, cannot change anyone's access.
+  { email: "manager@thrillrwanda.test", name: "Patrick Mugisha", role: "ADMIN", phone: "+250788000007" },
   // Staff work the enquiry desk at /staff; each role sees and does different things.
   { email: "sales@thrillrwanda.test", name: "Grace Mukamana", role: "CUSTOMER", staffRole: "SALES", phone: "+250788000004" },
   { email: "operations@thrillrwanda.test", name: "Eric Niyonzima", role: "CUSTOMER", staffRole: "OPERATIONS", phone: "+250788000005" },
@@ -106,6 +110,7 @@ async function create() {
       data: {
         role: d.role,
         staffRole: d.staffRole ?? null,
+        isSuperAdmin: d.superAdmin ?? false,
         phone: d.phone,
         emailVerified: true,
         isActive: true,
@@ -120,7 +125,7 @@ async function create() {
       });
     }
 
-    console.log(`  ${d.email.padEnd(30)} ${d.staffRole ?? d.role}`);
+    console.log(`  ${d.email.padEnd(30)} ${d.superAdmin ? "SUPER ADMIN" : (d.staffRole ?? d.role)}`);
   }
 
   /* The provider account needs a Provider record to have a dashboard. Point

@@ -14,6 +14,7 @@ import {
   FinanceError,
   type FinanceActionState,
 } from "@/lib/finance-rules";
+import { logActivity } from "@/lib/activity";
 const refresh = () => {
   for (const path of ["/staff", "/admin"]) revalidatePath(path, "layout");
 };
@@ -42,6 +43,13 @@ export async function recordFinanceAction(
     };
   try {
     await executeFinanceCommand(actor.id, parsed.data);
+    await logActivity(actor.id, {
+      action: `finance.${parsed.data.action.toLowerCase()}`,
+      area: "Finance",
+      target: parsed.data.reference,
+      summary: `${parsed.data.action.toLowerCase().replaceAll("_", " ")} on ${parsed.data.reference}${parsed.data.amount ? `: ${parsed.data.currency} ${parsed.data.amount}` : ""}`,
+      changes: { amount: parsed.data.amount || null, currency: parsed.data.currency, externalRef: parsed.data.externalRef || null } as never,
+    });
     refresh();
     return {
       status: "ok",
@@ -75,6 +83,13 @@ export async function recordSupplier(
     };
   try {
     await saveSupplier(actor.id, parsed.data);
+    await logActivity(actor.id, {
+      action: parsed.data.id ? "supplier.update" : "supplier.create",
+      area: "Suppliers",
+      target: parsed.data.name,
+      targetId: parsed.data.id || null,
+      summary: `${parsed.data.id ? "Edited" : "Added"} supplier ${parsed.data.name}`,
+    });
     refresh();
     return {
       status: "ok",
@@ -94,6 +109,12 @@ export async function recordSettlementAccount(
     await createSettlementAccount(actor.id, {
       ...Object.fromEntries(form),
       verified: form.get("verified") === "on",
+    });
+    await logActivity(actor.id, {
+      action: "finance.account_create",
+      area: "Finance",
+      target: String(form.get("label") ?? "settlement account"),
+      summary: `Registered settlement account ${String(form.get("label") ?? "")}`.trim(),
     });
     refresh();
     return {
@@ -131,6 +152,13 @@ export async function recordAccountStatus(
       parsed.data.active === "true",
       parsed.data.evidence,
     );
+    await logActivity(actor.id, {
+      action: "finance.account_status",
+      area: "Finance",
+      targetId: parsed.data.id,
+      summary: `${parsed.data.active === "true" ? "Activated" : "Deactivated"} a settlement account`,
+      changes: { evidence: parsed.data.evidence } as never,
+    });
     refresh();
     return { status: "ok", message: "Account status updated and audited." };
   } catch (error) {

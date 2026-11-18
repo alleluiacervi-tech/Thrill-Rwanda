@@ -25,7 +25,9 @@ export function TableShell({
   return (
     <div
       className={cn(
-        "overflow-x-auto rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)]",
+        // `relative`: anything absolutely positioned in a cell (screen-reader-only
+        // labels included) stays inside this scroller instead of widening the page.
+        "relative overflow-x-auto rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)]",
         className,
       )}
     >

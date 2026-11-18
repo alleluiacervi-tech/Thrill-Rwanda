@@ -71,6 +71,7 @@ export default async function HomePage() {
         subtitle={site.heroSubtitle}
         text={site.heroText}
         publications={publications}
+        video={site.heroVideo}
       />
       {trips && <Journeys />}
       {trips && (
@@ -78,7 +79,7 @@ export default async function HomePage() {
       )}
       {trips && <Destinations destinations={destinations} />}
       <FeaturedTours tours={tours} />
-      <InMotion />
+      <InMotion preload={site.heroVideo} />
       <Occasions publications={publications} />
       <HowItWorks flight={flight} />
       <Stays hotels={hotels} />
@@ -104,16 +105,19 @@ function Hero({
   subtitle,
   text,
   publications,
+  video,
 }: {
   title: string;
   subtitle: string;
   text: string;
   publications: Publications;
+  /** Admin → Settings: play the silent clips, or show still frames only. */
+  video: boolean;
 }) {
   const flight = publications.FLIGHT !== "HIDDEN";
   return (
     <section className="on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-950 lg:-mt-24">
-      <HeroSequence clips={phoneHeroSequence}>
+      <HeroSequence clips={phoneHeroSequence} video={video}>
         {/* Phone ground: the clips in sequence, framed to the first screen and faded into the ground below. */}
         <HeroSequenceBackdrop className="absolute inset-x-0 top-0 h-[100svh] max-h-full [mask-image:linear-gradient(to_bottom,#000_72%,transparent)] lg:hidden" />
         <div
@@ -195,7 +199,7 @@ function Hero({
               <HeroSequenceControls className="mt-5 lg:hidden" />
             </div>
 
-            <HeroTriptych />
+            <HeroTriptych video={video} />
           </div>
 
           <ServiceDock publications={publications} />
@@ -206,7 +210,7 @@ function Hero({
 }
 
 /** Three film panels, staggered like frames pinned to a wall. Desktop only; decorative. */
-function HeroTriptych() {
+function HeroTriptych({ video }: { video: boolean }) {
   const panels: {
     clip: HeroClip;
     frame: string;
@@ -227,6 +231,7 @@ function HeroTriptych() {
             media="(min-width: 1024px)"
             sizes="(min-width: 1024px) 18vw, 1px"
             eager={eager}
+            video={video}
             className={cn(
               "drift h-full rounded-[1.5rem] shadow-[0_30px_60px_-30px_rgb(4_14_10/0.8)] ring-1 ring-white/15",
               drift,
@@ -249,6 +254,14 @@ function HeroTriptych() {
  * hero: flights lead in gold, the rest follow in menu order (the product map
  * in src/lib/journeys.ts). A swipe rail on phones, one row on desktop.
  */
+/** One line on each service card: written quote, or bookable online where the founder has switched that on. */
+function howBought(door: string, publications: Publications) {
+  const direct = publications.TRIP === "DIRECT";
+  if (door === "tembera") return direct ? "Book a dated edition" : "Request a place";
+  if (door === "experiences") return direct ? "Quote or book online" : "Written quote";
+  return "Written quote";
+}
+
 function ServiceDock({ publications }: { publications: Publications }) {
   const shown = doors.filter((s) => publications[s.service] !== "HIDDEN");
   if (shown.length === 0) return null;
@@ -303,6 +316,16 @@ function ServiceDock({ publications }: { publications: Publications }) {
                   )}
                 >
                   {s.blurb}
+                </span>
+                {/* How it is bought, so nobody mistakes a request for a booking (brief §4.3). */}
+                <span
+                  className={cn(
+                    "mt-auto inline-flex w-fit items-center gap-1.5 pt-4 text-2xs font-semibold uppercase tracking-[0.12em]",
+                    lead ? "text-forest-950/75" : "text-sun-300",
+                  )}
+                >
+                  <span aria-hidden className={cn("size-1.5 rounded-full", lead ? "bg-forest-950/60" : "bg-sun-400")} />
+                  {howBought(s.key, publications)}
                 </span>
               </Link>
             </li>

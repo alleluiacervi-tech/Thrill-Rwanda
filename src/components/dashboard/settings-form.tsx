@@ -42,6 +42,7 @@ export type SettingsValues = {
   payOnlineTransfers: boolean;
   announcement: string | null;
   announcementOn: boolean;
+  heroVideo: boolean;
 };
 
 function Section({ title, lede, children }: { title: string; lede: string; children: React.ReactNode }) {
@@ -177,6 +178,15 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
           <Toggle name="payOnlineCars" label="Car hire" checked={values.payOnlineCars} />
           <Toggle name="payOnlineTransfers" label="Airport transfers" checked={values.payOnlineTransfers} />
         </div>
+      </Section>
+
+      <Section title="Homepage hero" lede="The opening of the homepage. With video on, silent clips of gorillas, Lake Kivu and the crater lake play in the hero. They never play for visitors who have asked their device for reduced motion or to save data, and they pause once scrolled past. With video off, the same scenes show as still photographs.">
+        <Toggle
+          name="heroVideo"
+          label="Play video in the homepage hero"
+          hint="The website brief (section 11) recommends avoiding autoplay video on mobile connections. Switch off to show still photographs instead."
+          checked={values.heroVideo}
+        />
       </Section>
 
       <Section title="Announcement" lede="A short message across the top of every public page — holiday hours, an offer, a road closure.">

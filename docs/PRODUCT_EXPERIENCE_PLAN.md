@@ -189,6 +189,62 @@ Known limits after Phase 4:
 - The date is checked by staff with the venue. There is no venue calendar, by
   design, until Thrill Rwanda holds venues' diaries.
 
+## Phase 5: Brief compliance, access control and analytics — done
+
+From a check of the build against the Version 2.0 brief (15 November 2026),
+and the owner's requests of 18 November 2026.
+
+Brief compliance
+- [x] Homepage service cards say how each service is bought (brief §4.3):
+      "Written quote", "Book a dated edition", "Quote or book online".
+- [x] Phone and WhatsApp reachable from the header on phones (brief §4.1):
+      a call button in the header, and call, WhatsApp, sign-in and flight
+      quote pinned to the bottom of the phone menu.
+- [x] Admin → Settings switch for the moving hero, so the founder can decide
+      on autoplay video without a developer (brief §11). Off also stops the
+      reels pre-downloading their clips.
+- [x] Quotations download as PDF (brief §7, §17), for staff and customers.
+      `?format=html` still gives the printable web copy.
+- [x] Sign-in and sign-up claims rewritten so the site promises only what it
+      does today (no held funds, no fixed cancellation window, no timelines).
+
+Access and accountability
+- [x] Super admin: full access, and the only role that can grant or remove
+      access (administrator, super admin, staff roles, provider, deactivation,
+      two-step reset). At least one active super admin always remains; nobody
+      can remove their own super admin access. Other administrators run the
+      business read-only on access. Rules live in `src/lib/access.ts`, tested.
+- [x] Activity log (Admin → Activity log, super admins only): every change by
+      administrators, staff and providers, and every team sign-in, with the
+      person's name, email, access and IP at the time. Append-only: a
+      database trigger refuses any edit or deletion. Filter by person, area,
+      date and text; export to CSV (the export is itself logged).
+- [x] Two-step sign-in for administrators and staff (brief §12): scan a QR
+      code with any authenticator app, ten single-use backup codes, and
+      "trust this device for 30 days". Team members are sent to
+      Account → Sign-in security until it is on, and cannot switch it off.
+      A super admin can reset it for someone who lost their phone. Set
+      `TEAM_TWO_FACTOR=optional` only for local development.
+
+Analytics and experience
+- [x] Admin → Overview is an analytics dashboard (brief §10.1): date presets
+      or a custom range compared with the period before; requests per day,
+      the request funnel, service mix, sources, open requests by owner,
+      overdue work, money recorded by currency, website buttons pressed,
+      Tembera seats and online bookings.
+- [x] Phone menu rebuilt: opens in 200 ms, scrolls only inside, fits 360 px
+      phones, actions fixed at the bottom.
+- [x] Full audit: 32 public pages and 43 dashboard pages at phone and desktop
+      widths, with no sideways scrolling, one heading per page and every
+      field labelled.
+- [x] Verified, committed, merged and deployed
+
+Demo data: `npm run db:seed:demo` adds a super admin (admin@), an ordinary
+administrator (manager@) and sales, operations and finance staff.
+`npm run db:seed:products -- --activity` adds 90 days of sample requests
+so the dashboard has something to show. Both refuse a hosted database
+unless `DEMO_DATABASE_HOST` names it.
+
 ## Photography
 
 The new pages now use real photographs of Rwanda: Thrill Rwanda's own, and
@@ -199,12 +255,12 @@ vehicles, one lodge interior) and three points to confirm with Visit Rwanda.
 ## Running it
 
 ```
-npm run db:deploy                      # applies the three new migrations
+npm run db:deploy                      # applies all migrations
 npm run db:seed:products -- --direct   # local only: sample tours, editions, venues, and booking switched on
 npm run dev
 ```
 
-Checks: `npm run typecheck`, `npm run lint`, `npm test` (261 tests), and
+Checks: `npm run typecheck`, `npm run lint`, `npm test` (280 tests), and
 `npx tsx scripts/check-departures.ts` against the local database. The last is
 also in the CI workflow.
 
@@ -241,3 +297,6 @@ What an administrator does to go live with each product:
 - **Phase 4 complete.** Wedding venues can be added, published and requested.
 - **Photography.** Sixteen Visit Rwanda photographs replace stock pictures
   across the new pages, the destinations and the sample tours.
+- **Phase 5 complete.** Super admin and an append-only activity log, two-step
+  sign-in with trusted devices, an analytics dashboard, PDF quotations, a
+  rebuilt phone menu and a full responsive and accessibility audit.
