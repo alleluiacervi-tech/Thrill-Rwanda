@@ -7,6 +7,7 @@ import { BookingError, transitionBooking } from "@/lib/booking";
 import { db } from "@/lib/db";
 import { notifyBookingStatusChanged } from "@/lib/notifications";
 import { requireProvider } from "@/lib/session";
+import { logActivityAsCurrentUser } from "@/lib/activity";
 
 
 
@@ -48,6 +49,13 @@ export async function providerTransitionBooking(
       reason: parsed.data.reason || undefined,
     });
     await notifyBookingStatusChanged(booking.id, parsed.data.to, "PROVIDER");
+    await logActivityAsCurrentUser({
+      action: "booking.status",
+      area: "Bookings",
+      target: parsed.data.reference,
+      targetId: booking.id,
+      summary: `Set booking ${parsed.data.reference} to ${parsed.data.to.toLowerCase()}${parsed.data.reason ? `: ${parsed.data.reason}` : ""}`,
+    });
     revalidatePath("/provider/bookings");
     revalidatePath("/provider");
     return ok;
@@ -116,6 +124,12 @@ export async function setListingPublished(
     await notifyListingPublished(kind, id);
   }
 
+  await logActivityAsCurrentUser({
+    action: isPublished ? "listing.publish" : "listing.unpublish",
+    area: "Listings",
+    targetId: id,
+    summary: `${isPublished ? "Published" : "Unpublished"} a ${kind.toLowerCase()} listing`,
+  });
   revalidatePath("/provider/listings");
   refreshPublicCatalogue();
   return ok;
@@ -191,6 +205,12 @@ export async function setAvailabilityWindow(
     data: { isBlocked },
   });
 
+  await logActivityAsCurrentUser({
+    action: isBlocked ? "availability.close" : "availability.reopen",
+    area: "Listings",
+    targetId: resourceId,
+    summary: `${isBlocked ? "Closed" : "Reopened"} ${count} ${count === 1 ? "day" : "days"} (${parsed.data.from} to ${parsed.data.to}) on a ${serviceType.toLowerCase()} listing`,
+  });
   revalidatePath("/provider/availability");
 
   if (isBlocked && count === 0) {
@@ -245,6 +265,13 @@ export async function updateProviderProfile(
     },
   });
 
+  await logActivityAsCurrentUser({
+    action: "provider.profile",
+    area: "Providers",
+    target: d.businessName,
+    targetId: providerId,
+    summary: `Updated the business profile of ${d.businessName}`,
+  });
   revalidatePath("/provider/profile");
   refreshPublicCatalogue();
   return { status: "ok", message: "Profile saved." };

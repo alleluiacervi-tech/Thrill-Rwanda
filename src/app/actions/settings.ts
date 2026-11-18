@@ -7,6 +7,7 @@ import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { refreshSite } from "@/lib/settings";
 import { phoneDigits } from "@/lib/site-config";
+import { logActivity } from "@/lib/activity";
 
 export type SettingsState =
   | { status: "idle" }
@@ -80,12 +81,14 @@ const schema = z.object({
 
   announcement: optionalText(200),
   announcementOn: checkbox,
+
+  heroVideo: checkbox,
 });
 
 const FIELDS = Object.keys(schema.shape) as (keyof typeof schema.shape)[];
 
 export async function updateSiteSettings(_prev: SettingsState, formData: FormData): Promise<SettingsState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   // Unticked boxes are absent from the form, so they read as undefined → false.
   const parsed = schema.safeParse(
     Object.fromEntries(FIELDS.map((k) => [k, formData.get(k) ?? undefined])),
@@ -96,6 +99,7 @@ export async function updateSiteSettings(_prev: SettingsState, formData: FormDat
     return { status: "error", message: "Write the announcement before switching it on." };
   }
 
+  const before = await db.siteSettings.findUnique({ where: { id: 1 } });
   await db.siteSettings.upsert({
     where: { id: 1 },
     update: parsed.data,
@@ -106,5 +110,20 @@ export async function updateSiteSettings(_prev: SettingsState, formData: FormDat
   refreshSite();
   refreshPublicCatalogue();
   revalidatePath("/", "layout");
+  const changed = Object.fromEntries(
+    Object.entries(parsed.data).filter(
+      ([k, v]) => JSON.stringify((before as Record<string, unknown> | null)?.[k] ?? null) !== JSON.stringify(v ?? null),
+    ),
+  );
+  if (Object.keys(changed).length)
+    await logActivity(admin.id, {
+      action: "settings.update",
+      area: "Settings",
+      target: "Site settings",
+      summary: `Changed site settings: ${Object.keys(changed).join(", ")}`,
+      changes: Object.fromEntries(
+        Object.entries(changed).map(([k, v]) => [k, { from: (before as Record<string, unknown> | null)?.[k] ?? null, to: v ?? null }]),
+      ) as never,
+    });
   return { status: "saved", depositPercent: parsed.data.depositPercent };
 }

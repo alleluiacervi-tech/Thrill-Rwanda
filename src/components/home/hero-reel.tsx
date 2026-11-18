@@ -41,6 +41,7 @@ export function HeroReel({
   media = "all",
   sizes,
   eager = false,
+  video = true,
   className,
   children,
 }: {
@@ -52,10 +53,12 @@ export function HeroReel({
   sizes: string;
   /** Load the poster ahead of the queue; for the frame that is the largest paint. */
   eager?: boolean;
+  /** Off (Admin → Settings) shows the still only, and never loads the clip. */
+  video?: boolean;
   className?: string;
   children?: React.ReactNode;
 }) {
-  const allowed = useMotionAllowed(media);
+  const allowed = useMotionAllowed(media) && video;
   const [playing, setPlaying] = React.useState(false);
   const videoRef = React.useRef<HTMLVideoElement>(null);
 

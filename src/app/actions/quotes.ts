@@ -8,6 +8,7 @@ import {
   acceptanceSchema,
   type QuoteActionState,
 } from "@/lib/quote-rules";
+import { logActivity } from "@/lib/activity";
 const refresh = (reference: string) => {
   for (const base of ["/staff/enquiries", "/admin/enquiries"]) {
     revalidatePath(base);
@@ -46,6 +47,12 @@ export async function issueWrittenQuote(
       phone: brand.contact.phone,
       address: brand.contact.address,
     });
+    await logActivity(actor.id, {
+      action: "quote.issue",
+      area: "Quotes",
+      target: parsed.data.reference,
+      summary: `Issued a written quote (${parsed.data.currency}) for enquiry ${parsed.data.reference}`,
+    });
     refresh(parsed.data.reference);
     return {
       status: "ok",
@@ -79,6 +86,13 @@ export async function recordWrittenQuoteAcceptance(
     };
   try {
     await recordQuoteAcceptance(actor.id, parsed.data);
+    await logActivity(actor.id, {
+      action: "quote.accept",
+      area: "Quotes",
+      target: parsed.data.reference,
+      targetId: parsed.data.quoteId,
+      summary: `Recorded ${parsed.data.customerName}'s acceptance of a quote for ${parsed.data.reference} (by ${parsed.data.channel.toLowerCase()})`,
+    });
     refresh(parsed.data.reference);
     return {
       status: "ok",

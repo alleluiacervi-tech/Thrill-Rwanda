@@ -1,6 +1,6 @@
 import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
-import { getSession } from "@/lib/session";
+import { getSession, requireTeamTwoFactor } from "@/lib/session";
 import { canUseEnquiries } from "@/lib/enquiry-workflow";
 
 /** Read fresh account permissions, never the cached role claim. */
@@ -19,5 +19,6 @@ export async function requireEnquiryStaff() {
   });
   if (!actor?.isActive) redirect("/suspended");
   if (!canUseEnquiries(actor)) redirect("/account?denied=1");
+  await requireTeamTwoFactor(actor.id, "/staff/enquiries");
   return actor;
 }

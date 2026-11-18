@@ -21,10 +21,11 @@ export default async function AdminLayout({
   /* Two badges, both for work that is actually waiting on the admin. Counting
      anything else here would put a number on the sidebar of every page load
      for no decision. */
-  const [pendingProviders, pendingReviews, unread] = await Promise.all([
+  const [pendingProviders, pendingReviews, unread, me] = await Promise.all([
     db.provider.count({ where: { status: "PENDING" } }),
     db.review.count({ where: { status: "PENDING" } }),
     unreadCount(user.id),
+    db.user.findUnique({ where: { id: user.id }, select: { isSuperAdmin: true } }),
   ]);
 
   const workspaces = await workspacesFor(user, "admin");
@@ -76,7 +77,9 @@ export default async function AdminLayout({
         { label: "Supplier register", href: "/admin/suppliers", icon: "providers" },
         { label: "Gateway payments", href: "/admin/payments", icon: "payments" },
         { label: "Reviews", href: "/admin/reviews", badge: pendingReviews, icon: "reviews" },
-        { label: "Users & roles", href: "/admin/users", icon: "users" },
+        { label: "Users & access", href: "/admin/users", icon: "users" },
+        // Super admins only: the permanent record of who did what.
+        ...(me?.isSuperAdmin ? [{ label: "Activity log", href: "/admin/activity", icon: "overview" }] : []),
         { label: "Email templates", href: "/admin/emails", icon: "emails" },
         { label: "Legal pages", href: "/admin/legal", icon: "legal" },
         { label: "Settings", href: "/admin/settings", icon: "settings" },

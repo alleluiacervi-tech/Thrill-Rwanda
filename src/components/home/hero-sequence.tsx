@@ -52,10 +52,19 @@ function useSequence() {
   return ctx;
 }
 
-export function HeroSequence({ clips, children }: { clips: HeroSequenceClip[]; children: React.ReactNode }) {
+export function HeroSequence({
+  clips,
+  video = true,
+  children,
+}: {
+  clips: HeroSequenceClip[];
+  /** Off (Admin → Settings) shows the first still only, and never loads a clip. */
+  video?: boolean;
+  children: React.ReactNode;
+}) {
   const allowed = useMotionAllowed(BELOW_DESKTOP);
   const [broken, setBroken] = React.useState(false);
-  const live = allowed && !broken && clips.length > 1;
+  const live = video && allowed && !broken && clips.length > 1;
 
   const [index, setIndex] = React.useState(0);
   const [paused, setPaused] = React.useState(false);

@@ -49,6 +49,7 @@ export default async function AdminSettingsPage() {
           payOnlineTransfers: row?.payOnlineTransfers ?? true,
           announcement: row?.announcement ?? null,
           announcementOn: row?.announcementOn ?? false,
+          heroVideo: row?.heroVideo ?? true,
         }}
       />
     </>

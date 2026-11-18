@@ -27,6 +27,7 @@ export default async function AccountLayout({
     { label: "My bookings", href: "/account/bookings" },
     { label: "Notifications", href: "/account/notifications", badge: unread },
     { label: "Profile", href: "/account/profile" },
+    { label: "Sign-in security", href: "/account/security" },
   ];
 
   return (

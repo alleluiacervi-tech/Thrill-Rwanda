@@ -7,6 +7,7 @@ import { imageUrls, toList } from "@/lib/listing-schemas";
 import { requireAdmin } from "@/lib/session";
 import { slugify } from "@/lib/utils";
 import { publishBlocker, venueSchema, type VenueState } from "@/lib/venue-rules";
+import { logActivity } from "@/lib/activity";
 
 /**
  * Admin-only management of the venue catalogue shown on /weddings.
@@ -52,7 +53,7 @@ async function freeSlug(name: string) {
 }
 
 export async function createVenue(_prev: VenueState, formData: FormData): Promise<VenueState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const parsed = parse(formData);
   if (!parsed.success) return invalid(parsed.error);
 
@@ -67,6 +68,13 @@ export async function createVenue(_prev: VenueState, formData: FormData): Promis
       },
       select: { id: true, slug: true },
     });
+    await logActivity(admin.id, {
+      action: "venue.create",
+      area: "Venues",
+      target: parsed.data.name,
+      targetId: venue.id,
+      summary: `Added venue ${parsed.data.name} (${parsed.data.location}) as a draft`,
+    });
     refresh();
     return { status: "success", ...venue };
   } catch (err) {
@@ -76,7 +84,7 @@ export async function createVenue(_prev: VenueState, formData: FormData): Promis
 }
 
 export async function updateVenue(_prev: VenueState, formData: FormData): Promise<VenueState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const parsed = parse(formData);
   if (!parsed.success) return invalid(parsed.error);
@@ -98,6 +106,14 @@ export async function updateVenue(_prev: VenueState, formData: FormData): Promis
       data: { ...parsed.data, features: toList(formData.get("features")), images },
       select: { id: true, slug: true },
     });
+    await logActivity(admin.id, {
+      action: "venue.update",
+      area: "Venues",
+      target: parsed.data.name,
+      targetId: venue.id,
+      summary: `Edited venue ${parsed.data.name}`,
+      changes: { ...parsed.data, images: images.length } as never,
+    });
     refresh();
     return { status: "success", ...venue };
   } catch (err) {
@@ -107,11 +123,11 @@ export async function updateVenue(_prev: VenueState, formData: FormData): Promis
 }
 
 export async function setVenuePublished(_prev: RowState, formData: FormData): Promise<RowState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = String(formData.get("id") ?? "");
   const publish = formData.get("publish") === "true";
 
-  const venue = await db.venue.findUnique({ where: { id }, select: { images: true, description: true } });
+  const venue = await db.venue.findUnique({ where: { id }, select: { images: true, description: true, name: true } });
   if (!venue) return { status: "error", message: "That venue no longer exists." };
   if (publish) {
     const blocker = publishBlocker(venue);
@@ -119,18 +135,33 @@ export async function setVenuePublished(_prev: RowState, formData: FormData): Pr
   }
 
   await db.venue.update({ where: { id }, data: { isPublished: publish } });
+  await logActivity(admin.id, {
+    action: publish ? "venue.publish" : "venue.hide",
+    area: "Venues",
+    target: venue.name,
+    targetId: id,
+    summary: `${publish ? "Published" : "Hid"} venue ${venue.name}`,
+  });
   refresh();
   return { status: "ok" };
 }
 
 export async function deleteVenue(_prev: RowState, formData: FormData): Promise<RowState> {
-  await requireAdmin();
+  const admin = await requireAdmin();
   const id = String(formData.get("id") ?? "");
+  const name = (await db.venue.findUnique({ where: { id }, select: { name: true } }))?.name ?? "a venue";
   try {
     await db.venue.delete({ where: { id } });
   } catch {
     return { status: "error", message: "That venue no longer exists." };
   }
+  await logActivity(admin.id, {
+    action: "venue.delete",
+    area: "Venues",
+    target: name,
+    targetId: id,
+    summary: `Deleted venue ${name}`,
+  });
   refresh();
   return { status: "ok" };
 }

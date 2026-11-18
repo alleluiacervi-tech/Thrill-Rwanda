@@ -166,7 +166,7 @@ export function SignUpWizard() {
         </h2>
         <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-forest-800/80">
           {providerPath
-            ? "You're signed in and your business application is with our team. We verify your licence and insurance before listings go live, usually within two weeks. You can book as a traveller in the meantime."
+            ? "You're signed in and your business application is with our team. We check your business details before any listing goes live, and we'll contact you about next steps. You can send travel requests in the meantime."
             : "You're signed in and ready to book."}
         </p>
         <Button

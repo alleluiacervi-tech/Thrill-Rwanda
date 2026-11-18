@@ -10,6 +10,7 @@ import {
 } from "@/lib/flight-enquiry-schema";
 import { requireEnquiryStaff } from "@/lib/enquiry-access";
 import { isFinance, SOURCES } from "@/lib/enquiry-workflow";
+import { logActivityAsCurrentUser } from "@/lib/activity";
 
 const TAILORED = [
   "journey",
@@ -107,6 +108,12 @@ async function capture(
       actor?.id,
     );
     if (manual) {
+      await logActivityAsCurrentUser({
+        action: "enquiry.capture",
+        area: "Enquiries",
+        target: result.reference,
+        summary: `Recorded a ${input.service.toLowerCase()} enquiry from ${name} received by ${String(source.data).toLowerCase()}`,
+      });
       revalidatePath("/staff/enquiries");
       revalidatePath("/admin/enquiries");
     }

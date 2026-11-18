@@ -5,6 +5,7 @@ import { auth } from "@/lib/auth";
 import { db } from "@/lib/db";
 import { homeForRole } from "@/lib/session-routes";
 import type { ProviderKind, Role } from "@/generated/prisma/enums";
+import { setupPath, twoFactorRequired } from "@/lib/two-factor-policy";
 
 /**
  * Server-side session + role guards.
@@ -51,7 +52,21 @@ export async function requireUser(next = "/account") {
 export async function requireRole(role: Role, next: string) {
   const user = await requireUser(next);
   if (user.role !== role) redirect("/account?denied=1");
+  if (role === "ADMIN") await requireTeamTwoFactor(user.id, next);
   return user;
+}
+
+/**
+ * Administrators and staff must have two-step sign-in on before they reach
+ * any dashboard or action (src/lib/two-factor-policy.ts). Read from the
+ * database, so turning it off elsewhere takes effect at once.
+ */
+export async function requireTeamTwoFactor(userId: string, next?: string) {
+  const u = await db.user.findUnique({
+    where: { id: userId },
+    select: { role: true, staffRole: true, twoFactorEnabled: true },
+  });
+  if (u && twoFactorRequired(u) && !u.twoFactorEnabled) redirect(setupPath(next));
 }
 
 /**
@@ -127,6 +142,18 @@ export async function requireProviderFor(
 
 export async function requireAdmin(next = "/admin") {
   return requireRole("ADMIN", next);
+}
+
+/**
+ * An administrator who may also grant and remove access, and read the
+ * activity log. Re-read from the database, so a revoked flag takes effect at
+ * once rather than when the session cookie expires.
+ */
+export async function requireSuperAdmin(next = "/admin") {
+  const user = await requireAdmin(next);
+  const fresh = await db.user.findUnique({ where: { id: user.id }, select: { isSuperAdmin: true } });
+  if (!fresh?.isSuperAdmin) redirect("/admin?denied=super");
+  return { ...user, isSuperAdmin: true as const };
 }
 
 /** Thrown when an admin submits a listing without a usable provider. */

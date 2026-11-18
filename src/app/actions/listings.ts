@@ -17,6 +17,7 @@ import {
 } from "@/lib/listing-schemas";
 import { ListingOwnerError, resolveListingOwner } from "@/lib/session";
 import { slugify } from "@/lib/utils";
+import { logActivityAsCurrentUser } from "@/lib/activity";
 
 /**
  * Provider listing management (Step 12).
@@ -147,6 +148,13 @@ export async function createVehicle(
     revalidatePath("/provider/availability");
     revalidatePath("/admin/listings");
     refreshPublicCatalogue();
+    await logActivityAsCurrentUser({
+      action: "listing.create",
+      area: "Listings",
+      target: `${v.make} ${v.model}`,
+      targetId: created.id,
+      summary: `Added vehicle ${`${v.make} ${v.model}`} as a draft`,
+    });
     return { status: "success", id: created.id, slug: created.slug };
   } catch (err) {
     console.error("[listings] vehicle create failed", err);
@@ -242,6 +250,13 @@ export async function createTour(
     revalidatePath("/provider/availability");
     revalidatePath("/admin/listings");
     refreshPublicCatalogue();
+    await logActivityAsCurrentUser({
+      action: "listing.create",
+      area: "Listings",
+      target: t.name,
+      targetId: created.id,
+      summary: `Added tour ${t.name} as a draft`,
+    });
     return { status: "success", id: created.id, slug: created.slug };
   } catch (err) {
     console.error("[listings] tour create failed", err);
@@ -370,6 +385,13 @@ export async function createHotel(
     revalidatePath("/provider/availability");
     revalidatePath("/admin/listings");
     refreshPublicCatalogue();
+    await logActivityAsCurrentUser({
+      action: "listing.create",
+      area: "Listings",
+      target: h.name,
+      targetId: created.id,
+      summary: `Added hotel ${h.name} as a draft`,
+    });
     return { status: "success", id: created.id, slug: created.slug };
   } catch (err) {
     console.error("[listings] hotel create failed", err);

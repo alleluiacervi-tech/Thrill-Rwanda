@@ -37,7 +37,14 @@ function formatDuration(s: number) {
   return `${Math.floor(s / 60)}:${String(Math.round(s % 60)).padStart(2, "0")}`;
 }
 
-export function ReelsShowcase({ reels }: { reels: Reel[] }) {
+export function ReelsShowcase({
+  reels,
+  preload = true,
+}: {
+  reels: Reel[];
+  /** Off (Admin → Settings, hero video) downloads nothing until a clip is opened. */
+  preload?: boolean;
+}) {
   /** Clips with index below this may buffer; it advances one clip at a time. */
   const [warmUpTo, setWarmUpTo] = React.useState(0);
   const [open, setOpen] = React.useState<number | null>(null);
@@ -46,7 +53,7 @@ export function ReelsShowcase({ reels }: { reels: Reel[] }) {
 
   // Start the background warm-up: in idle time after load, or when the section draws near.
   React.useEffect(() => {
-    if (!canPreload()) return;
+    if (!preload || !canPreload()) return;
     let started = false;
     const start = () => {
       if (started) return;
@@ -78,7 +85,7 @@ export function ReelsShowcase({ reels }: { reels: Reel[] }) {
       if (idle && "cancelIdleCallback" in window) window.cancelIdleCallback(idle);
       io?.disconnect();
     };
-  }, []);
+  }, [preload]);
 
   const warmed = React.useCallback(
     (i: number) => setWarmUpTo((w) => (w === i + 1 ? Math.min(reels.length, i + 2) : w)),

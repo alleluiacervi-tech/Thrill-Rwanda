@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { ArrowRight, ArrowUpRight, ChevronDown, MapPin, Menu, MessageCircle, UserRound, X } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronDown, MapPin, Menu, MessageCircle, Phone, UserRound, X } from "lucide-react";
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
@@ -284,6 +284,19 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                     className="hidden size-3.5 transition-transform duration-300 group-hover:translate-x-0.5 sm:block"
                   />
                 </Button>
+                {/* Phones: one tap to call (brief §4.1). WhatsApp is the floating button on every page. */}
+                {site.contact.phoneHref ? (
+                  <a
+                    href={site.contact.phoneHref}
+                    aria-label={`Call ${site.contact.phone}`}
+                    className={cn(
+                      "hidden size-11 place-items-center rounded-full transition-colors min-[375px]:grid sm:hidden",
+                      floating ? "text-bone-50 hover:bg-white/10" : "text-forest-800 hover:bg-forest-100/70",
+                    )}
+                  >
+                    <Phone className="size-[1.125rem]" aria-hidden />
+                  </a>
+                ) : null}
                 <button
                   type="button"
                   onClick={() => setOpen(true)}
@@ -291,7 +304,7 @@ export function SiteHeader({ overHero = false }: { overHero?: boolean }) {
                   aria-expanded={open}
                   aria-controls="site-menu"
                   className={cn(
-                    "grid size-10 place-items-center rounded-full transition-colors xl:hidden",
+                    "grid size-11 place-items-center rounded-full transition-colors active:scale-95 xl:hidden",
                     floating ? "text-bone-50 hover:bg-white/10" : "text-forest-800 hover:bg-forest-100/70",
                   )}
                 >
@@ -536,6 +549,17 @@ function PhoneMenu({
     };
   }, [open, onClose]);
 
+  const quote = site.publications.FLIGHT !== "HIDDEN";
+  const chips = [
+    ...collections.map((c) => ({ href: `/experiences/${c.slug}`, label: c.name, image: c.image })),
+    { href: "/tours", label: "Tours & safaris", image: journeyImages.safari },
+  ];
+  const extras = essentials.filter((e) => site.publications[e.service] !== "HIDDEN");
+
+  /* Three fixed parts: a top bar, a list that scrolls on its own (and never
+     sideways), and an action bar that is always on screen, however short the
+     phone. It appears in 200ms with no staggered entrances: a menu should feel
+     like it was already there. */
   return (
     <div
       id="site-menu"
@@ -546,60 +570,60 @@ function PhoneMenu({
       aria-hidden={!open}
       inert={!open}
       className={cn(
-        "on-dark fixed inset-0 z-[70] overflow-y-auto bg-forest-950 transition-[opacity,visibility] duration-400 xl:hidden",
-        open ? "visible opacity-100" : "invisible opacity-0",
+        "on-dark fixed inset-0 z-[70] flex flex-col overflow-hidden bg-forest-950 transition-[opacity,visibility,transform] duration-200 ease-out xl:hidden",
+        open ? "visible translate-y-0 opacity-100" : "pointer-events-none invisible -translate-y-2 opacity-0",
       )}
     >
       <div aria-hidden className="contours pointer-events-none absolute inset-0 opacity-[0.07]" />
       <div
         aria-hidden
-        className="pointer-events-none absolute -right-32 -top-32 size-96 rounded-full bg-forest-600/30 blur-3xl"
+        className="pointer-events-none absolute inset-0"
+        style={{ background: "radial-gradient(70% 45% at 100% 0%, rgb(47 128 96 / 0.45), transparent 70%)" }}
       />
-      <div className="relative flex min-h-full flex-col">
-        <Container className="flex h-[4.5rem] shrink-0 items-center justify-between">
-          <Link href="/" onClick={onClose} aria-label="Home">
-            <Logo tone="dark" className="h-9" />
-          </Link>
-          <button
-            type="button"
-            onClick={onClose}
-            aria-label="Close menu"
-            className="grid size-10 place-items-center rounded-full text-bone-50 ring-1 ring-white/15 transition-colors hover:bg-white/10"
-          >
-            <X className="size-5" />
-          </button>
-        </Container>
 
-        <Container className="flex flex-1 flex-col pb-[max(2rem,env(safe-area-inset-bottom))] pt-4">
+      <Container className="relative flex h-[4.5rem] shrink-0 items-center justify-between">
+        <Link href="/" onClick={onClose} aria-label="Home">
+          <Logo tone="dark" className="h-9" />
+        </Link>
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="Close menu"
+          className="grid size-11 place-items-center rounded-full text-bone-50 ring-1 ring-white/15 transition-colors hover:bg-white/10 active:bg-white/15"
+        >
+          <X className="size-5" />
+        </button>
+      </Container>
+
+      <div className="relative min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain">
+        <Container className="pb-6">
           <nav aria-label="Sections">
             <ul>
               {primaryNav.map((item, i) => {
-                const active = isActive(pathname, item.href);
+                const active = pathname.startsWith(item.href) || (item.href === PANEL_HREF && pathname.startsWith("/tours"));
                 return (
-                  <li
-                    key={item.href}
-                    style={{ animationDelay: `${60 + i * 50}ms` }}
-                    className={cn("border-b border-white/10", open && "anim-rise")}
-                  >
+                  <li key={item.href} className="border-b border-white/10">
                     <Link
                       href={item.href}
                       onClick={onClose}
                       aria-current={active ? "page" : undefined}
-                      className="group grid grid-cols-[2rem_1fr_auto] items-center gap-x-2 py-4"
+                      className="group grid min-h-16 grid-cols-[1.75rem_1fr_auto] items-center gap-x-2 py-3 transition-colors active:bg-white/[0.04]"
                     >
-                      <span className="self-start pt-2 font-display text-sm italic text-sun-400 tabular-nums">
+                      <span className="self-start pt-1.5 font-display text-sm italic text-sun-400 tabular-nums">
                         {String(i + 1).padStart(2, "0")}
                       </span>
-                      <span>
-                        <span className="flex items-center gap-2 font-display text-[1.75rem] leading-tight text-bone-50">
+                      <span className="min-w-0">
+                        <span className="flex items-center gap-2 font-display text-[1.375rem] leading-tight text-bone-50 min-[400px]:text-[1.5rem]">
                           {item.label}
-                          {active ? <span aria-hidden className="size-1.5 rounded-full bg-sun-500" /> : null}
+                          {active ? <span aria-hidden className="size-1.5 shrink-0 rounded-full bg-sun-500" /> : null}
                         </span>
-                        <span className="mt-0.5 block text-sm text-forest-200/80">{item.blurb}</span>
+                        <span className="mt-0.5 block text-[0.8125rem] leading-snug text-forest-200/80 [@media(max-height:680px)]:hidden">
+                          {item.blurb}
+                        </span>
                       </span>
                       <ArrowUpRight
                         aria-hidden
-                        className="size-5 text-bone-50/50 transition duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 group-hover:text-sun-400"
+                        className="size-5 text-bone-50/50 transition-colors group-hover:text-sun-400"
                       />
                     </Link>
                   </li>
@@ -608,70 +632,95 @@ function PhoneMenu({
             </ul>
           </nav>
 
-          {site.publications.TRIP !== "HIDDEN" && (
-            <div style={{ animationDelay: "340ms" }} className={cn("mt-8", open && "anim-rise")}>
-              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-300">Ways to travel</p>
-              <div className="-mx-5 mt-3 flex gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] sm:-mx-8 sm:px-8 [&::-webkit-scrollbar]:hidden">
-                {[
-                  ...collections.map((c) => ({ href: `/experiences/${c.slug}`, label: c.name, image: c.image })),
-                  { href: "/tours", label: "Tours & safaris", image: journeyImages.safari },
-                ].map((c) => (
+          {site.publications.TRIP !== "HIDDEN" ? (
+            <section className="mt-7">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-300">
+                Ways to travel
+              </p>
+              {/* Its own sideways rail; the menu itself never scrolls sideways. */}
+              <div className="no-bar -mx-5 mt-3 flex snap-x gap-2 overflow-x-auto px-5 pb-1 sm:-mx-8 sm:px-8">
+                {chips.map((c) => (
                   <Link
                     key={c.href}
                     href={c.href}
                     onClick={onClose}
-                    className="flex shrink-0 items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-1.5 pr-3.5 text-sm text-bone-50 ring-1 ring-white/12 transition-colors hover:bg-white/15"
+                    className="flex min-h-11 shrink-0 snap-start items-center gap-2 rounded-full bg-white/[0.07] py-1.5 pl-1.5 pr-4 text-sm text-bone-50 ring-1 ring-white/12 transition-colors hover:bg-white/15 active:bg-white/15"
                   >
-                    <span className="relative size-7 overflow-hidden rounded-full bg-forest-800">
-                      <Image src={c.image} alt="" fill sizes="28px" className="object-cover" />
+                    <span className="relative size-8 overflow-hidden rounded-full bg-forest-800">
+                      <Image src={c.image} alt="" fill sizes="32px" className="object-cover" />
                     </span>
                     {c.label}
                   </Link>
                 ))}
               </div>
-            </div>
-          )}
+            </section>
+          ) : null}
 
-          {essentials.some((e) => site.publications[e.service] !== "HIDDEN") && (
-            <div style={{ animationDelay: "370ms" }} className={cn("mt-6", open && "anim-rise")}>
-              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-300">Travel essentials</p>
+          {extras.length ? (
+            <section className="mt-6">
+              <p className="text-[0.6875rem] font-semibold uppercase tracking-[0.14em] text-forest-300">
+                Travel essentials
+              </p>
               <div className="mt-3 flex flex-wrap gap-2">
-                {essentials
-                  .filter((e) => site.publications[e.service] !== "HIDDEN")
-                  .map((e) => (
-                    <Link
-                      key={e.href}
-                      href={e.href}
-                      onClick={onClose}
-                      className="rounded-full px-3.5 py-1.5 text-sm text-forest-100 ring-1 ring-white/15 transition-colors hover:bg-white/10 hover:text-white"
-                    >
-                      {e.label}
-                    </Link>
-                  ))}
+                {extras.map((e) => (
+                  <Link
+                    key={e.href}
+                    href={e.href}
+                    onClick={onClose}
+                    className="inline-flex min-h-11 items-center rounded-full px-4 text-sm text-forest-100 ring-1 ring-white/15 transition-colors hover:bg-white/10 hover:text-white active:bg-white/10"
+                  >
+                    {e.label}
+                  </Link>
+                ))}
               </div>
-            </div>
-          )}
+            </section>
+          ) : null}
+        </Container>
+      </div>
 
-          <div
-            style={{ animationDelay: "400ms" }}
-            className={cn("mt-auto grid grid-cols-2 gap-3 pt-10", open && "anim-rise")}
-          >
-            <Button href={accountHref} variant="outline" size="lg" onClick={onClose} className="border-white/25 px-4 text-bone-50 hover:bg-bone-50 hover:text-forest-900">
+      {/* Always on screen: the two actions people open the menu for, and a way to talk to someone. */}
+      <div className="relative shrink-0 border-t border-white/10 bg-forest-950/95 pb-[max(1rem,env(safe-area-inset-bottom))] pt-4 backdrop-blur">
+        <Container>
+          <div className="grid grid-cols-2 gap-3">
+            <Button
+              href={accountHref}
+              variant="outline"
+              onClick={onClose}
+              className="h-12 border-white/25 px-4 text-bone-50 hover:bg-bone-50 hover:text-forest-900"
+            >
               {accountLabel}
             </Button>
-            <Button href={site.publications.FLIGHT !== "HIDDEN" ? "/flights" : "/enquire"} variant="accent" size="lg" onClick={onClose} className="px-4">
-              {site.publications.FLIGHT !== "HIDDEN" ? "Flight quote" : "Enquire"}
+            <Button
+              href={quote ? "/flights" : "/enquire"}
+              variant="accent"
+              onClick={onClose}
+              className="h-12 px-4"
+            >
+              {quote ? "Flight quote" : "Enquire"}
             </Button>
-            {whatsapp ? (
-              <a
-                href={whatsapp}
-                className="col-span-2 mt-1 flex items-center justify-center gap-2 text-sm text-forest-200 transition-colors hover:text-white"
-              >
-                <MessageCircle aria-hidden className="size-4" />
-                Chat with us on WhatsApp{phone ? ` · ${phone}` : ""}
-              </a>
-            ) : null}
           </div>
+          {phone || whatsapp ? (
+            <div className="mt-3 flex items-center justify-center gap-2 text-sm">
+              {phone ? (
+                <a
+                  href={site.contact.phoneHref}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-forest-200 transition-colors hover:text-white"
+                >
+                  <Phone aria-hidden className="size-4" />
+                  {phone}
+                </a>
+              ) : null}
+              {whatsapp ? (
+                <a
+                  href={whatsapp}
+                  className="inline-flex min-h-11 items-center gap-2 rounded-full px-3 text-forest-200 transition-colors hover:text-white"
+                >
+                  <MessageCircle aria-hidden className="size-4" />
+                  WhatsApp
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </Container>
       </div>
     </div>

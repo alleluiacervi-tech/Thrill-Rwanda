@@ -244,6 +244,7 @@ function UrlAdder({
           if (onAdd(value)) setValue("");
         }}
         placeholder="…or paste an image link (https://…)"
+        aria-label="Image link (https://…)"
         className="w-full rounded-[var(--radius-inset)] border border-[var(--line-strong)] bg-[var(--paper-raised)] px-4 py-2.5 text-sm outline-none transition-colors focus-visible:border-lake-600 disabled:opacity-50"
       />
       <button

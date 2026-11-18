@@ -62,7 +62,7 @@ export default async function Page({
             href={`/account/enquiries/${e.reference}/quotes/${q.id}/download`}
             className="my-4 inline-block underline"
           >
-            Download this written quotation
+            Download this written quotation (PDF)
           </a>
           <details open={q.id === latest?.id}>
             <summary>Read quotation and terms</summary>

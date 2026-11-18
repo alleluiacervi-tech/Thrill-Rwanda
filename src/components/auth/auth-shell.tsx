@@ -100,17 +100,17 @@ export async function AuthShell({
             turned the sunset olive. */}
 
         <Container className="relative flex h-full flex-col justify-end pb-16">
-          {/* What the service actually does. No invented testimonial or trip counts. */}
+          {/* What the service actually does. No invented testimonial, trip counts or unverified claims (brief §2). */}
           <p className="max-w-md font-display text-4xl leading-[1.1] text-white">
-            Safaris, stays, car hire and airport transfers, <em className="text-sun-300">on one booking</em> with
-            one team in Kigali.
+            Flights, tours, weddings and group travel, <em className="text-sun-300">planned with one team</em> in
+            Kigali.
           </p>
 
           <ul className="mt-12 grid gap-6 border-t border-white/20 pt-8 sm:grid-cols-3">
             {[
-              { t: "Verified providers", d: "Licence and insurance checked before a listing goes live." },
-              { t: "Mobile money or card", d: "Paid securely through Pesapal." },
-              { t: "Real availability", d: "Dates are held the moment you book." },
+              { t: "Everything in writing", d: "Price, fees and conditions in a written quote before you decide." },
+              { t: "One place to follow it", d: "Your requests, quotes and bookings in your account." },
+              { t: "Only what we need", d: "We never ask for passport or card details in a request." },
             ].map((s) => (
               <li key={s.t}>
                 <span className="block text-sm font-semibold text-bone-50">{s.t}</span>

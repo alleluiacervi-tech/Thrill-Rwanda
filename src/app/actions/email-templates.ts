@@ -5,6 +5,7 @@ import { z } from "zod";
 import { db } from "@/lib/db";
 import { TEMPLATE_BY_KEY } from "@/lib/email/templates";
 import { requireAdmin } from "@/lib/session";
+import { logActivity, logActivityAsCurrentUser } from "@/lib/activity";
 
 /**
  * Editing the wording of a customer email.
@@ -55,6 +56,12 @@ export async function saveEmailTemplate(
   });
 
   revalidatePath("/admin/emails");
+  await logActivity(admin.id, {
+    action: "email_template.save",
+    area: "Content",
+    target: String(formData.get("key") ?? "email template"),
+    summary: `Edited the ${String(formData.get("key") ?? "")} email template`,
+  });
   return { status: "saved" };
 }
 
@@ -71,6 +78,12 @@ export async function resetEmailTemplate(
 
   await db.emailTemplate.deleteMany({ where: { key } });
 
+  await logActivityAsCurrentUser({
+    action: "email_template.reset",
+    area: "Content",
+    target: String(formData.get("key") ?? "email template"),
+    summary: `Reset the ${String(formData.get("key") ?? "")} email template to its default`,
+  });
   revalidatePath("/admin/emails");
   return { status: "reset" };
 }

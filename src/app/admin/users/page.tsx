@@ -8,6 +8,9 @@ import {
   setUserActive,
   setUserRole,
 } from "@/app/actions/admin";
+import { setSuperAdmin } from "@/app/actions/access";
+import { resetTwoFactor } from "@/app/actions/security";
+import { roleLabel } from "@/lib/access";
 import { FilterChips } from "@/components/dashboard/filter-chips";
 import { RowMenu } from "@/components/dashboard/row-menu";
 import { SortTh } from "@/components/dashboard/sort-header";
@@ -18,7 +21,7 @@ import { paginate } from "@/lib/pagination";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 
-const ROLES = new Set(["CUSTOMER", "PROVIDER", "ADMIN"]);
+const ROLES = new Set(["CUSTOMER", "PROVIDER", "ADMIN", "STAFF"]);
 
 export default async function AdminUsersPage({
   searchParams,
@@ -26,12 +29,18 @@ export default async function AdminUsersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const admin = await requireAdmin("/admin/users");
+  // Only a super admin may change anyone's access; other administrators see the list read-only.
+  const canGrant = !!(
+    await db.user.findUnique({ where: { id: admin.id }, select: { isSuperAdmin: true } })
+  )?.isSuperAdmin;
 
   const params = await searchParams;
   const q = searchTerm(params);
 
   const roleParam = typeof params.role === "string" ? params.role : "";
-  const role = ROLES.has(roleParam) ? (roleParam as "CUSTOMER" | "PROVIDER" | "ADMIN") : "";
+  const roleFilter = ROLES.has(roleParam) ? roleParam : "";
+  // "Staff" is a permission on top of a customer account, not a role of its own.
+  const role = roleFilter === "STAFF" ? "" : (roleFilter as "CUSTOMER" | "PROVIDER" | "ADMIN" | "");
 
   const search = q
     ? {
@@ -43,7 +52,7 @@ export default async function AdminUsersPage({
       }
     : {};
 
-  const where = { ...search, ...(role ? { role } : {}) };
+  const where = { ...search, ...(role ? { role } : {}), ...(roleFilter === "STAFF" ? { staffRole: { not: null } } : {}) };
 
   const { orderBy, sort, dir } = sortOrder(
     params,
@@ -59,6 +68,7 @@ export default async function AdminUsersPage({
     db.user.groupBy({ by: ["role"], where: search, _count: { _all: true } }),
   ]);
   const countOf = (r: string) => roleCounts.find((c) => c.role === r)?._count._all ?? 0;
+  const staffCount = await db.user.count({ where: { ...search, staffRole: { not: null } } });
 
   const users = await db.user.findMany({
     where,
@@ -67,7 +77,7 @@ export default async function AdminUsersPage({
     take: page.take,
     select: {
       id: true, email: true, fullName: true, phone: true, role: true, staffRole: true,
-      isActive: true, createdAt: true,
+      isSuperAdmin: true, isActive: true, createdAt: true, twoFactorEnabled: true,
       _count: { select: { bookings: true } },
       provider: { select: { id: true } },
     },
@@ -76,8 +86,12 @@ export default async function AdminUsersPage({
   return (
     <>
       <DashboardHead
-        title="Users"
-        lede="Customers, providers and admins. Deactivating keeps their records and bookings but blocks sign-in."
+        title="Users & access"
+        lede={
+          canGrant
+            ? "As a super admin you grant and remove access: administrator, super admin, staff (sales, operations, finance) and provider. Every change is recorded in the activity log. Deactivating keeps records and bookings but signs the person out and blocks sign-in."
+            : "Only a super admin can change someone's access. Ask a super admin to make the change; it will be recorded in the activity log."
+        }
       />
 
       <TableSearch pathname="/admin/users" placeholder="Search name, email or phone" className="mb-4" />
@@ -85,12 +99,13 @@ export default async function AdminUsersPage({
       <FilterChips
         basePath="/admin/users"
         param="role"
-        current={role}
+        current={roleFilter}
         chips={[
           { value: "", label: "All", count: roleCounts.reduce((n, c) => n + c._count._all, 0) },
           { value: "CUSTOMER", label: "Customers", count: countOf("CUSTOMER") },
           { value: "PROVIDER", label: "Providers", count: countOf("PROVIDER") },
           { value: "ADMIN", label: "Admins", count: countOf("ADMIN") },
+          { value: "STAFF", label: "Staff", count: staffCount },
         ]}
         label="Filter by role"
         params={params}
@@ -132,10 +147,25 @@ export default async function AdminUsersPage({
                     </span>
                   </Td>
                   <Td>
-                    <Badge tone={u.role === "ADMIN" ? "sun" : u.role === "PROVIDER" ? "forest" : "neutral"}>
-                      {u.role}
+                    <Badge
+                      tone={
+                        u.role === "ADMIN" ? "sun" : u.role === "PROVIDER" || u.staffRole ? "forest" : "neutral"
+                      }
+                    >
+                      {roleLabel(u)}
                     </Badge>
-                    <StaffAccessForm userId={u.id} current={u.staffRole} />
+                    {u.role === "ADMIN" || !u.staffRole ? null : (
+                      <span className="mt-1 block text-2xs text-[var(--ink-faint)]">Staff</span>
+                    )}
+                    {canGrant && u.role !== "ADMIN" ? (
+                      <StaffAccessForm userId={u.id} current={u.staffRole} />
+                    ) : null}
+                    <a
+                      href={`/admin/activity?actor=${u.id}`}
+                      className="mt-2 block text-2xs text-clay-700 underline-offset-2 hover:underline"
+                    >
+                      Their activity
+                    </a>
                   </Td>
                   <Td className="tnum text-right">{u._count.bookings}</Td>
                   <Td className="tnum whitespace-nowrap text-2xs text-[var(--ink-muted)]">
@@ -145,12 +175,23 @@ export default async function AdminUsersPage({
                     <Badge tone={u.isActive ? "forest" : "outline"}>
                       {u.isActive ? "Active" : "Deactivated"}
                     </Badge>
+                    <span
+                      className={
+                        u.twoFactorEnabled
+                          ? "mt-1 block text-2xs font-medium text-forest-700"
+                          : u.role === "ADMIN" || u.staffRole
+                            ? "mt-1 block text-2xs font-medium text-clay-700"
+                            : "mt-1 block text-2xs text-[var(--ink-faint)]"
+                      }
+                    >
+                      {u.twoFactorEnabled ? "2-step on" : u.role === "ADMIN" || u.staffRole ? "2-step not set up" : "2-step off"}
+                    </span>
                   </Td>
                   <Td className="whitespace-nowrap text-right">
                     <RowMenu
                       label={`Actions for ${u.fullName}`}
                       items={[
-                        ...(isSelf
+                        ...(isSelf || !canGrant
                           ? []
                           : [
                               {
@@ -159,6 +200,17 @@ export default async function AdminUsersPage({
                                 fields: { userId: u.id, active: u.isActive ? "false" : "true" },
                                 confirm: u.isActive ? "Confirm deactivate" : undefined,
                                 danger: u.isActive,
+                              },
+                            ]),
+                        ...(isSelf || !canGrant || !u.twoFactorEnabled
+                          ? []
+                          : [
+                              {
+                                label: "Reset two-step sign-in",
+                                action: resetTwoFactor,
+                                fields: { userId: u.id },
+                                confirm: "Confirm reset",
+                                danger: true,
                               },
                             ]),
                         {
@@ -178,7 +230,25 @@ export default async function AdminUsersPage({
                               },
                             ]),
                         // Role changes last: they are the rarest and the most consequential.
-                        ...(isSelf || u.role === "PROVIDER"
+                        ...(isSelf || !canGrant || u.role !== "ADMIN" || !u.isActive
+                          ? []
+                          : [
+                              u.isSuperAdmin
+                                ? {
+                                    label: "Remove super admin",
+                                    action: setSuperAdmin,
+                                    fields: { userId: u.id, on: "false" },
+                                    confirm: "Confirm remove super admin",
+                                    danger: true,
+                                  }
+                                : {
+                                    label: "Make super admin",
+                                    action: setSuperAdmin,
+                                    fields: { userId: u.id, on: "true" },
+                                    confirm: "Confirm make super admin",
+                                  },
+                            ]),
+                        ...(isSelf || !canGrant || u.role === "PROVIDER"
                           ? []
                           : u.provider
                             ? [
@@ -190,7 +260,7 @@ export default async function AdminUsersPage({
                                 },
                               ]
                             : [{ label: "Make provider…", href: `/admin/users/${u.id}/provider` }]),
-                        ...(isSelf
+                        ...(isSelf || !canGrant
                           ? []
                           : u.role === "ADMIN"
                             ? [

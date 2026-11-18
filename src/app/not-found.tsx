@@ -5,6 +5,8 @@ import { primaryNav } from "@/lib/site";
 import { getSite } from "@/lib/settings";
 import Link from "next/link";
 
+export const metadata = { title: "Page not found", robots: { index: false, follow: true } };
+
 export default async function NotFound() {
   const site = await getSite();
   return (
