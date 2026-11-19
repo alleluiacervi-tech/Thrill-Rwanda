@@ -77,7 +77,7 @@ Phase 2 implementation: `/staff/enquiries` provides scoped triage; administrator
 - [x] Transactional outbox or equivalent durable notification jobs with per-recipient outcome, retries and safe staff alerts.
 - [x] Customer acknowledgement and staff-owner notifications through approved channels only.
 - [x] Repair existing notification `sentAt` bookkeeping so one recipient's successful send cannot mark other attempts as sent.
-- [ ] Optional automated PDF generator remains deferred; customer-ready HTML download, print/save-as-PDF preview and HTML/plain-text email copies are implemented.
+- [x] Quotations download as PDF (generated on the server with pdf-lib) for staff and customers; the HTML copy, print preview and HTML/plain-text email copies remain.
 
 Integration with prior work: reuse branded email rendering/templates and inbox UI, but do not assume best-effort booking notifications satisfy durable lead delivery. Sending a quote is not booking confirmation.
 

@@ -24,7 +24,9 @@
     "ops:preflight": "tsx scripts/operations-preflight.ts",
     "ops:backup": "tsx scripts/backup-database.ts",
     "ops:restore-check": "tsx scripts/restore-check.ts",
-    "ops:retention": "tsx scripts/maintain-documents.ts"
+    "ops:retention": "tsx scripts/maintain-documents.ts",
+    "ops:super-admin": "tsx scripts/make-super-admin.ts",
+    "ops:scheduler": "tsx scripts/vps-scheduler.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1127.0",

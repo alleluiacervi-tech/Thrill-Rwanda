@@ -1,0 +1,27 @@
+# Caddy gets and renews the HTTPS certificate for SITE_DOMAIN by itself.
+# Point the domain's A record (and www) at the server before starting.
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Scheduled-job routes are for the scheduler inside the server only.
+	@cron path /api/cron/*
+	respond @cron 404
+
+	request_body {
+		max_size 25MB
+	}
+
+	reverse_proxy app:3000 {
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

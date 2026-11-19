@@ -67,6 +67,8 @@ Database integration scripts refuse non-project-local/production targets. Run th
 | `npm run ops:retention` | Dry-run bounded expiry review; actual purge needs documented approval and `--apply` |
 | `npm run notifications:work -- --dry-run` | Inspect pending jobs without sending or changing records |
 | `npm run db:deploy` | Apply committed migrations to the intentionally selected database |
+| `npm run ops:super-admin -- EMAIL` | Make an account that has signed up the first super admin (logged as the server console) |
+| `npm run ops:scheduler` | Self-hosted scheduler for notifications, backups, maintenance and hold release |
 
 PostgreSQL client tools and a dedicated backup encryption key are required for backup/restore. Never put credentials in tickets/Git, enable live payments casually, or run production seed/reset commands. Encrypted archives and restore artifacts are ignored by Git. Schedulers, monitoring and publishing are not activated automatically.
 
@@ -80,6 +82,7 @@ PostgreSQL client tools and a dedicated backup encryption key are required for b
 - [Public launch, support and reporting](docs/PUBLIC_LAUNCH_SUPPORT_AND_REPORTING.md)
 - [Customer/company portals and channels](docs/CLIENT_PORTALS_AND_CHANNELS.md)
 - [Release, restore, rollback and handover](docs/RELEASE_AND_HANDOVER.md)
+- [Running on a VPS with Docker](docs/VPS_DEPLOYMENT.md)
 - [Environment reference](docs/ENVIRONMENT_REFERENCE.md)
 - [Product experience plan: the five front doors, phase by phase](docs/PRODUCT_EXPERIENCE_PLAN.md)
 - [Photograph sources](docs/PHOTO_SOURCES.md)

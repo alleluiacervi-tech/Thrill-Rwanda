@@ -35,6 +35,10 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  // The VPS image (Dockerfile) builds a self-contained server; Vercel builds
+  // as usual. See docs/VPS_DEPLOYMENT.md.
+  output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,
+
   async headers() {
     return [
       {

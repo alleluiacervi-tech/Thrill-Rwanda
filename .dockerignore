@@ -1,0 +1,15 @@
+.git
+.github
+.next
+.vercel
+.uploads
+.backups
+deploy/backups
+.local-postgres
+node_modules
+coverage
+deploy/.env
+.env*
+!.env.example
+*.log
+tsconfig.tsbuildinfo
