@@ -9,6 +9,9 @@ import { DashboardHead } from "@/components/dashboard/dashboard-shell";
 import { renderQuoteHtml } from "@/lib/quote-render";
 import { ClientCaseForm } from "@/components/dashboard/client-case-form";
 import type { QuoteSnapshot } from "@/lib/quote-rules";
+import { label } from "@/lib/enquiry-workflow";
+import { UrubutoPreview } from "@/components/booking/urubuto-preview";
+import { formatQuoteMoney } from "@/lib/quote-rules";
 export default async function Page({
   params,
   searchParams,
@@ -22,6 +25,9 @@ export default async function Page({
   if (!e) notFound();
   const latest = e.quoteVersions[0],
     query = await searchParams;
+  const acceptedQuote = latest && latest.id === e.quoteAcceptance?.quoteId
+    ? latest.snapshot as QuoteSnapshot
+    : null;
   const quotePage = paginate(query, e._count.quoteVersions, 10, "quotes");
   const quoteHistory = await clientQuoteHistory(
     user.id,
@@ -32,13 +38,26 @@ export default async function Page({
   return (
     <>
       <DashboardHead
-        title="Your travel request"
+        title={e.eventMilestones ? "Thrill Events & Business" : "Your travel request"}
         lede={`${e.reference} · ${e.status.replaceAll("_", " ")}`}
       />
       <p>
         Requests, acceptance, verified funds and supplier confirmation are
         separate steps. Contact the desk if any details need correction.
       </p>
+      {e.eventMilestones && (
+        <section className="my-6 rounded-xl border p-5">
+          <h2 className="text-xl">Event milestones</h2>
+          <dl className="mt-3 grid gap-3 sm:grid-cols-2">
+            {e.eventMilestones.map(({ milestone, status }) => (
+              <div key={milestone}>
+                <dt>{label(milestone)}</dt>
+                <dd>{label(status)}</dd>
+              </div>
+            ))}
+          </dl>
+        </section>
+      )}
       {e.financialCase?.instructions && (
         <section className="my-6 rounded-xl border p-5">
           <h2 className="text-xl">Approved payment instructions</h2>
@@ -110,6 +129,18 @@ export default async function Page({
           })}{" "}
           Kigali time. This is not ticket or supplier confirmation.
         </p>
+      )}
+      {e.eventMilestones && acceptedQuote?.currency === "RWF" && (
+        <details className="mt-8">
+          <summary className="cursor-pointer text-xl font-semibold">Try UrubutoPay checkout</summary>
+          <div className="mt-4">
+            <UrubutoPreview
+              amount={formatQuoteMoney(acceptedQuote.totalMinor, acceptedQuote.currency)}
+              reference={e.reference}
+              description={`Accepted proposal version ${latest.number}`}
+            />
+          </div>
+        </details>
       )}
       <h2 className="mt-10 text-2xl">Support for this request</h2>
       <ClientCaseForm

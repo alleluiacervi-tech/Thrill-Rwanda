@@ -15,6 +15,7 @@ export async function QuoteWorkspace({
   enquiry,
   actor,
   base,
+  businessEvent = false,
 }: {
   enquiry: {
     id: string;
@@ -27,6 +28,7 @@ export async function QuoteWorkspace({
   };
   actor: EnquiryActor;
   base: string;
+  businessEvent?: boolean;
 }) {
   const [quotes, acceptance, jobs] = await Promise.all([
     db.quoteVersion.findMany({
@@ -117,6 +119,7 @@ export async function QuoteWorkspace({
             reference={enquiry.reference}
             enquiryVersion={enquiry.version}
             intentKey={randomUUID()}
+            businessEvent={businessEvent}
             seed={
               latest &&
               quoteContentHash(latest.snapshot as QuoteSnapshot) ===

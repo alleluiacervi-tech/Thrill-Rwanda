@@ -49,7 +49,7 @@ export const primaryNav = [
   { label: "Flights", href: "/flights", blurb: "Request a checked written flight quote" },
   { label: "Tours & Experiences", href: "/experiences", blurb: "Private, luxury, honeymoon and city journeys" },
   { label: "Tembera u Rwanda", href: "/tembera-urwanda", blurb: "All-inclusive editions across the country" },
-  { label: "Weddings & Events", href: "/weddings", blurb: "Venues reserved, guests looked after" },
+  { label: "Thrill Events & Business", href: "/events-business", blurb: "Retreats, conferences and delegation travel" },
   { label: "Groups & Schools", href: "/groups", blurb: "School trips, teams and associations" },
 ] as const;
 
@@ -58,7 +58,7 @@ export const footerNav = {
     { label: "Request a flight quote", href: "/flights" },
     { label: "Tours & Experiences", href: "/experiences" },
     { label: "Tembera u Rwanda", href: "/tembera-urwanda" },
-    { label: "Weddings & Events", href: "/weddings" },
+    { label: "Thrill Events & Business", href: "/events-business" },
     { label: "Groups & Schools", href: "/groups" },
     { label: "All tours & safaris", href: "/tours" },
     { label: "Hotels & stays", href: "/hotels" },

@@ -1,6 +1,8 @@
 import { ClientAccessWorkspace } from "@/components/dashboard/client-access-workspace";
 import { FinancialWorkspace } from "@/components/dashboard/financial-workspace";
 import { QuoteWorkspace } from "@/components/dashboard/quote-workspace";
+import { BusinessEventForm } from "@/components/dashboard/business-event-form";
+import { businessEventSourcing, isBusinessEvent, milestoneKinds, milestoneStatuses, sourcingStatuses } from "@/lib/business-events";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
@@ -23,6 +25,7 @@ import {
 import { db } from "@/lib/db";
 import { paginate } from "@/lib/pagination";
 import { searchTerm } from "@/lib/table-query";
+import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import type { Prisma } from "@/generated/prisma/client";
 
 type Params = Record<string, string | string[] | undefined>;
@@ -252,13 +255,16 @@ export async function EnquiryDetail({
         take: 20,
       });
   const details = row.details as Record<string, unknown>;
+  const businessEvent = !finance && isBusinessEvent(details);
+  const sourcing = businessEvent ? await businessEventSourcing(row.id) : [];
+  const today = businessEvent ? todayInRwanda() : "";
   return (
     <>
       <Link href={base} className="underline">
         Back to enquiries
       </Link>
       <DashboardHead
-        title={`${label(row.service)} enquiry`}
+        title={businessEvent ? "Thrill Events & Business" : `${label(row.service)} enquiry`}
         lede={row.reference}
       />
       <p>
@@ -327,7 +333,46 @@ export async function EnquiryDetail({
           </section>
         </>
       )}
-      {!finance && <QuoteWorkspace enquiry={row} actor={actor} base={base} />}
+      {businessEvent && (
+        <section className="mt-8 space-y-4">
+          <h2 className="text-2xl">Venue sourcing and organizer milestones</h2>
+          {sourcing.length > 0 && (
+            <ul className="grid gap-3 sm:grid-cols-2">
+              {sourcing.map((entry) => {
+                const option = entry.changes as {
+                  venue: string;
+                  status: string;
+                  holdUntil: string;
+                  layout?: string;
+                  capacity?: number;
+                  facilities?: string;
+                };
+                const expired = option.status === "HELD" && option.holdUntil < today;
+                return (
+                  <li key={entry.id} className="rounded-xl border border-[var(--line)] p-4">
+                    <h3 className="text-lg">{option.venue}</h3>
+                    <p>{expired ? "Hold expired" : label(option.status)} · checked {stamp(entry.createdAt)}</p>
+                    {option.holdUntil && <p>Hold deadline · {option.holdUntil}</p>}
+                    {(option.layout || option.capacity) && (
+                      <p>{[option.layout, option.capacity && `${option.capacity} attendees`].filter(Boolean).join(" · ")}</p>
+                    )}
+                    {option.facilities && <p className="whitespace-pre-wrap break-words">{option.facilities}</p>}
+                    <p className="mt-2 whitespace-pre-wrap break-words">{entry.body}</p>
+                  </li>
+                );
+              })}
+            </ul>
+          )}
+          {!CLOSED.includes(row.status) && (actor.role === "ADMIN" || row.ownerId === actor.id) && (
+            <div className="grid gap-4 lg:grid-cols-2">
+              <BusinessEventForm key={`source-${row.version}`} reference={row.reference} version={row.version} command="SOURCE" statuses={sourcingStatuses} />
+              <BusinessEventForm key={`milestone-${row.version}`} reference={row.reference} version={row.version} command="MILESTONE" statuses={milestoneStatuses} milestones={milestoneKinds} />
+            </div>
+          )}
+          <p>For the written proposal, include supplier-checked options, layout and capacity, itemized costs, inclusions and exclusions, hold deadlines, deposit and cancellation terms.</p>
+        </section>
+      )}
+      {!finance && <QuoteWorkspace enquiry={row} actor={actor} base={base} businessEvent={businessEvent} />}
       {!finance && <ClientAccessWorkspace reference={row.reference} />}
       <FinancialWorkspace enquiry={row} actor={actor} />
       <EnquiryTriageForm

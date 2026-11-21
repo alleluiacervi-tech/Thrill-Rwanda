@@ -15,6 +15,25 @@ Taken on Thrill Rwanda trips. Also the source of the videos and posters in
 | `volcanoes-summit-mist.jpeg` | A ranger above the cloud line, Virunga mountains |
 | `volcanoes-trek.jpeg` | Trekkers walking toward the volcanoes |
 
+## Thrill Events & Business venue photographs
+
+The Kigali Convention Centre card uses Thrill Rwanda's own night photograph.
+The three external images below are sourced from the convention bureau or venue
+operator. Confirm reuse permission with the rights holders before publication.
+
+| File | Shows | Source |
+|---|---|---|
+| `intare-conference-arena.jpg` | Intare Conference Arena exterior | [Rwanda Convention Bureau](https://rcb.rw/venues/intare-conference-arena) |
+| `kigali-marriott-ballroom.jpg` | Kigali Marriott Hotel ballroom | [Marriott event gallery](https://www.marriott.com/en-us/hotels/kglmc-kigali-marriott-hotel/events/) |
+| `kigali-serena-auditorium.jpg` | Kigali Serena Hotel auditorium | [Serena auditorium gallery](https://www.serenahotels.com/meetings-events/auditorium) |
+
+## Rwanda Convention Bureau
+
+`rwandair-rcb.jpg` is the 2,560 × 1,861 RwandAir aircraft image shown on the
+[bureau's homepage Aviation card](https://rcb.rw/#priority-sectors). The
+source file is [`press27-scaled.jpg`](https://rcb.rw/images/website_photos/Priority%20Sectors/Aviation/press27-scaled.jpg).
+Confirm reuse permission with the rights holder before publishing the Flights banner.
+
 ## Visit Rwanda (visitrwanda.com)
 
 The owner confirmed on 16 November 2026 that photographs from Visit Rwanda may

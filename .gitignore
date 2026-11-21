@@ -64,3 +64,6 @@ CLAUDE.md
 .backups/
 *.trb
 *.dump
+
+# VPS backups
+deploy/backups/

@@ -3,6 +3,7 @@ import { enquiryDateSchema } from "@/lib/flight-enquiry-schema";
 import {
   ADD_ONS,
   AGE_GROUPS,
+  BUSINESS_EVENT_TYPES,
   EVENT_NEEDS,
   EVENT_TYPES,
   JOURNEY_KEYS,
@@ -43,7 +44,7 @@ export const serviceEnquirySchema = z
     startDate: enquiryDateSchema.or(z.literal("")),
     endDate: enquiryDateSchema.or(z.literal("")),
     flexible: z.boolean(),
-    partySize: z.coerce.number().int().min(1).max(500),
+    partySize: z.coerce.number().int().min(1).max(10000),
     origin: z.string().trim().max(120).default(""),
     destination: z.string().trim().max(120).default(""),
     location: z.string().trim().max(200),
@@ -60,7 +61,7 @@ export const serviceEnquirySchema = z
     // Tailored requests (src/lib/journey-requests.ts). All optional, so the
     // general form and forms opened before this was added keep working.
     journey: z.enum(JOURNEY_KEYS).or(z.literal("")).default(""),
-    eventType: choice(EVENT_TYPES),
+    eventType: choice([...EVENT_TYPES, ...BUSINESS_EVENT_TYPES]),
     venueStyle: choice(VENUE_STYLES),
     needs: z.string().trim().max(300).default(""),
     students: z.coerce.number().int().min(0).max(2000).default(0),
@@ -77,6 +78,8 @@ export const serviceEnquirySchema = z
   .superRefine((v, ctx) => {
     const issue = (field: string, message: string) =>
       ctx.addIssue({ code: "custom", path: [field], message });
+    if (v.journey !== "BUSINESS_EVENT" && v.partySize > 500)
+      issue("partySize", "Enter a group size of 500 or fewer");
     if (
       v.service === "FLIGHT" &&
       (!v.origin ||
@@ -97,8 +100,13 @@ export const serviceEnquirySchema = z
       issue("location", "Enter your destination or preferred location");
     if (v.service === "TRANSPORT" && (!v.pickup || !v.dropoff))
       issue("pickup", "Enter both pickup and drop-off locations");
-    if (v.service === "GROUP" && !v.organization)
+    if ((v.service === "GROUP" || v.journey === "BUSINESS_EVENT") && !v.organization)
       issue("organization", "Enter your organization or group name");
+    if (
+      v.journey === "BUSINESS_EVENT" &&
+      !BUSINESS_EVENT_TYPES.some((type) => type === v.eventType)
+    )
+      issue("eventType", "Choose the type of business event");
     if (v.journey && JOURNEY_SERVICE[v.journey] !== v.service)
       issue("journey", "This request does not match the selected service");
     if (!listOf(v.needs, EVENT_NEEDS))

@@ -36,6 +36,7 @@ describe("launch controls and operational boundaries", () => {
     expect(visiblePath("/groups", trips)).toBe(true);
     const events = publicationMap([{ service: "EVENT", mode: "HIDDEN" }]);
     expect(visiblePath("/weddings", events)).toBe(false);
+    expect(visiblePath("/events-business", events)).toBe(false);
     expect(visiblePath("/weddings#request", events)).toBe(false);
     expect(visiblePath("/experiences/honeymoon", events)).toBe(true);
     const groups = publicationMap([{ service: "GROUP", mode: "HIDDEN" }]);

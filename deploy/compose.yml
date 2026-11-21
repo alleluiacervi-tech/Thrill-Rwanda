@@ -1,0 +1,92 @@
+# Thrill Rwanda on one VPS: database, website, HTTPS, scheduled jobs.
+#   cd deploy && cp .env.example .env   (fill it in)
+#   docker compose up -d --build
+# Full steps: docs/VPS_DEPLOYMENT.md
+
+x-database-url: &database-url "postgresql://thrill:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}@db:5432/thrill_rwanda"
+
+x-build: &build
+  context: ..
+  args:
+    NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set NEXT_PUBLIC_SITE_URL in deploy/.env}
+
+services:
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: thrill
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: thrill_rwanda
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    # No published port: only the containers below can reach the database.
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U thrill -d thrill_rwanda"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    shm_size: 256mb
+
+  # Applies database migrations, then exits. The website waits for it.
+  migrate:
+    build: { <<: *build, target: tools }
+    image: thrill-rwanda-tools
+    env_file: .env
+    environment:
+      DATABASE_URL: *database-url
+      DIRECT_URL: *database-url
+    depends_on:
+      db: { condition: service_healthy }
+    command: ["npx", "prisma", "migrate", "deploy"]
+    restart: "no"
+
+  app:
+    build: { <<: *build, target: app }
+    image: thrill-rwanda-app
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: *database-url
+      DIRECT_URL: *database-url
+      APP_ENV: ${APP_ENV:-production}
+    depends_on:
+      migrate: { condition: service_completed_successfully }
+    expose: ["3000"]
+
+  # Runs the scheduled jobs and nightly encrypted backups (scripts/vps-scheduler.ts).
+  scheduler:
+    image: thrill-rwanda-tools
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      DATABASE_URL: *database-url
+      DIRECT_URL: *database-url
+      APP_INTERNAL_URL: http://app:3000
+    depends_on:
+      app: { condition: service_healthy }
+    volumes:
+      - ./backups:/app/.backups
+    command: ["npx", "tsx", "scripts/vps-scheduler.ts"]
+
+  # HTTPS with automatic certificates, in front of the website.
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    environment:
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in deploy/.env}
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    depends_on:
+      app: { condition: service_healthy }
+
+volumes:
+  db-data:
+  caddy-data:
+  caddy-config:

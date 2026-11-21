@@ -245,6 +245,29 @@ administrator (manager@) and sales, operations and finance staff.
 so the dashboard has something to show. Both refuse a hosted database
 unless `DEMO_DATABASE_HOST` names it.
 
+## Phase 6: Ready for the VPS — done
+
+The owner plans to move from Vercel to their own server. This phase makes that
+a set of commands rather than a project. Guide: `docs/VPS_DEPLOYMENT.md`.
+
+- [x] One Dockerfile: a small website image (standalone Next.js server,
+      non-root, with a health check) and a tools image (migrations, backups
+      with PostgreSQL 17 client tools, scripts)
+- [x] `deploy/compose.yml`: PostgreSQL not exposed to the internet,
+      migrations applied on every start before the website, Caddy for HTTPS
+      with automatic certificates, `www` redirected
+- [x] Scheduler replacing Vercel Cron: notifications every 5 minutes, nightly
+      encrypted backup with 14-day pruning, document maintenance, hold release.
+      Schedule rules in `src/lib/vps-schedule.ts`, tested
+- [x] Scheduled-job routes closed to the internet at the proxy
+- [x] `npm run ops:super-admin -- EMAIL` creates the first super admin on a
+      fresh database, recorded in the activity log
+- [x] `deploy/update.sh` for each new release
+- [x] Verified: the standalone build completes without a database, and the
+      built server answers health, pages, assets and protected routes
+- [ ] Build and start the containers on the VPS itself (Docker is not
+      installed on the development laptop)
+
 ## Photography
 
 The new pages now use real photographs of Rwanda: Thrill Rwanda's own, and
@@ -260,7 +283,7 @@ npm run db:seed:products -- --direct   # local only: sample tours, editions, ven
 npm run dev
 ```
 
-Checks: `npm run typecheck`, `npm run lint`, `npm test` (280 tests), and
+Checks: `npm run typecheck`, `npm run lint`, `npm test` (284 tests), and
 `npx tsx scripts/check-departures.ts` against the local database. The last is
 also in the CI workflow.
 
@@ -300,3 +323,5 @@ What an administrator does to go live with each product:
 - **Phase 5 complete.** Super admin and an append-only activity log, two-step
   sign-in with trusted devices, an analytics dashboard, PDF quotations, a
   rebuilt phone menu and a full responsive and accessibility audit.
+- **Phase 6 complete.** Docker, HTTPS, scheduler, backups and a first-admin
+  command for the move to a VPS; Vercel unchanged.

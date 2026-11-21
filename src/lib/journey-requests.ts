@@ -15,6 +15,7 @@ export const JOURNEY_KEYS = [
   "SAFARI",
   "TEMBERA",
   "WEDDING",
+  "BUSINESS_EVENT",
   "SCHOOL",
   "GROUP",
 ] as const;
@@ -29,6 +30,7 @@ export const JOURNEY_SERVICE: Record<JourneyKey, string> = {
   SAFARI: "TRIP",
   TEMBERA: "TRIP",
   WEDDING: "EVENT",
+  BUSINESS_EVENT: "EVENT",
   SCHOOL: "GROUP",
   GROUP: "GROUP",
 };
@@ -41,6 +43,7 @@ export const JOURNEY_LABELS: Record<JourneyKey, string> = {
   SAFARI: "Tour or safari",
   TEMBERA: "Tembera u Rwanda",
   WEDDING: "Wedding or event",
+  BUSINESS_EVENT: "Thrill Events & Business",
   SCHOOL: "School trip",
   GROUP: "Group trip",
 };
@@ -73,6 +76,12 @@ export const EVENT_TYPES = [
   "Family celebration",
   "Reception or gala dinner",
   "Something else",
+] as const;
+
+export const BUSINESS_EVENT_TYPES = [
+  "Retreat or offsite",
+  "Meeting or conference",
+  "Delegation travel",
 ] as const;
 
 export const VENUE_STYLES = [
@@ -208,6 +217,16 @@ const forms: Partial<Record<JourneyKey, JourneyForm>> = {
       placeholder: "How you picture it, alternative dates, and anything the venue must have.",
     },
     addOns: ["A honeymoon", "Flights", "Airport transfers"],
+  },
+  BUSINESS_EVENT: {
+    title: "Request an event proposal",
+    party: "Attendees expected",
+    location: { label: "Preferred location", placeholder: "Kigali, Lake Kivu, or open to ideas" },
+    message: {
+      label: "What should we plan around?",
+      placeholder: "Tell us about your agenda, room needs, meeting setup, accessibility and any other requirements.",
+    },
+    addOns: ["Flights", "Airport transfers", "Accommodation", "A private tour"],
   },
   SCHOOL: {
     title: "Plan a school trip",

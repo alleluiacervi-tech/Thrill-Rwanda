@@ -260,7 +260,7 @@ export const doors: Door[] = [
   { key: "flights", service: "FLIGHT", href: "/flights", label: "Flights", blurb: "Routes, dates and fare conditions checked before you decide.", icon: "plane" },
   { key: "experiences", service: "TRIP", href: "/experiences", label: "Tours & Experiences", blurb: "Private, luxury, honeymoon and city journeys across Rwanda.", icon: "compass" },
   { key: "tembera", service: "TRIP", href: TEMBERA.href, label: TEMBERA.name, blurb: "All-inclusive editions: transport, meals and stays in one booking.", icon: "ticket" },
-  { key: "weddings", service: "EVENT", href: "/weddings", label: "Weddings & Events", blurb: "Venues reserved and guests looked after, through to the honeymoon.", icon: "heart" },
+  { key: "weddings", service: "EVENT", href: "/events-business", label: "Thrill Events & Business", blurb: "Retreats, conferences and delegation travel coordinated in Rwanda.", icon: "heart" },
   { key: "groups", service: "GROUP", href: "/groups", label: "Groups & Schools", blurb: "School trips, teams and associations planned from one brief.", icon: "graduation" },
 ];
 

@@ -24,6 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     ...collections.map((c) => ({ path: `/experiences/${c.slug}`, priority: 0.8, changeFrequency: "weekly" as const })),
     { path: TEMBERA.href, priority: 0.9, changeFrequency: "daily" as const },
     { path: "/weddings", priority: 0.8, changeFrequency: "weekly" as const },
+    { path: "/events-business", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/groups", priority: 0.8, changeFrequency: "weekly" as const },
     { path: "/tours", priority: 0.9, changeFrequency: "daily" as const },
     { path: "/hotels", priority: 0.9, changeFrequency: "daily" as const },
