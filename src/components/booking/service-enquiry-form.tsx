@@ -14,6 +14,7 @@ import { type FlightEnquiryState } from "@/lib/flight-enquiry-schema";
 import {
   ADD_ONS,
   AGE_GROUPS,
+  BUSINESS_EVENT_TYPES,
   EVENT_NEEDS,
   EVENT_TYPES,
   JOURNEY_SERVICE,
@@ -116,6 +117,7 @@ export function ServiceEnquiryForm({
   };
 
   const school = journey === "SCHOOL";
+  const businessEvent = journey === "BUSINESS_EVENT";
   const students = Number(values.students) || 0;
   const chaperones = Number(values.chaperones) || 0;
   // A school's total is its students and staff; nobody should have to add them up.
@@ -358,8 +360,10 @@ export function ServiceEnquiryForm({
 
         {service === "EVENT" ? (
           <div className="space-y-6">
-            {choices("eventType", "What are you celebrating?", EVENT_TYPES)}
-            {choices("venueStyle", "The kind of venue you picture", VENUE_STYLES)}
+            {choices("eventType", businessEvent ? "What are you planning?" : "What are you celebrating?", businessEvent ? BUSINESS_EVENT_TYPES : EVENT_TYPES)}
+            {businessEvent ? (
+              <input type="hidden" name="venueStyle" value="" />
+            ) : choices("venueStyle", "The kind of venue you picture", VENUE_STYLES)}
             {many("needs", "What would you like us to arrange?", EVENT_NEEDS, needs, setNeeds)}
           </div>
         ) : (
@@ -403,7 +407,7 @@ export function ServiceEnquiryForm({
         </div>
 
         {/* -------------------------------------------------------- who */}
-        {service === "GROUP" ? (
+        {service === "GROUP" || businessEvent ? (
           text("organization", school ? "School or university" : "Organisation or group", {
             required: true,
             maxLength: 160,
@@ -449,7 +453,7 @@ export function ServiceEnquiryForm({
                 className={fieldCls}
                 required
                 min={1}
-                max={500}
+                max={businessEvent ? 10000 : 500}
                 inputMode="numeric"
                 value={values.partySize ?? ""}
                 onChange={(e) => change("partySize", e.target.value)}

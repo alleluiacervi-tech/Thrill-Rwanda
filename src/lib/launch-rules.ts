@@ -25,6 +25,7 @@ export function serviceFor(value: string): PublicService | null {
     "/experiences": "TRIP",
     "/tembera-urwanda": "TRIP",
     "/weddings": "EVENT",
+    "/events-business": "EVENT",
     "/groups": "GROUP",
   };
   return Object.hasOwn(routes, value)

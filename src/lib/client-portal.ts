@@ -11,6 +11,7 @@ import { quoteContentHash } from "@/lib/quote-render";
 import type { QuoteSnapshot } from "@/lib/quote-rules";
 import type { Prisma } from "@/generated/prisma/client";
 import { OperationsError } from "@/lib/launch-rules";
+import { businessEventMilestones, isBusinessEvent, milestoneActivityKinds } from "@/lib/business-events";
 export const clientScope = (userId: string): Prisma.EnquiryWhereInput => ({
   OR: [
     { clientAccess: { some: { userId, active: true } } },
@@ -56,6 +57,13 @@ export async function readClientCase(userId: string, reference: string) {
       status: true,
       version: true,
       createdAt: true,
+      details: true,
+      activities: {
+        where: { kind: { in: milestoneActivityKinds } },
+        orderBy: [{ createdAt: "desc" }, { id: "desc" }],
+        distinct: ["kind"],
+        select: { kind: true, changes: true },
+      },
       _count: { select: { quoteVersions: true } },
       quoteVersions: {
         orderBy: { number: "desc" },
@@ -91,7 +99,11 @@ export async function readClientCase(userId: string, reference: string) {
   for (const q of e.quoteVersions)
     if (quoteContentHash(q.snapshot as QuoteSnapshot) !== q.contentHash)
       throw new OperationsError("Quote integrity check failed");
-  return e;
+  const { activities, details, ...visibleCase } = e;
+  return {
+    ...visibleCase,
+    eventMilestones: isBusinessEvent(details) ? businessEventMilestones(activities) : null,
+  };
 }
 export async function clientQuoteHistory(
   userId: string,

@@ -22,12 +22,14 @@ export function QuoteEditor({
   intentKey,
   emailAllowed,
   seed,
+  businessEvent = false,
 }: {
   reference: string;
   enquiryVersion: number;
   intentKey: string;
   emailAllowed: boolean;
   seed?: QuoteSnapshot;
+  businessEvent?: boolean;
 }) {
   const [state, action, pending] = useActionState(issueWrittenQuote, {
     status: "idle",
@@ -53,7 +55,7 @@ export function QuoteEditor({
       : [
           {
             kind: "SUPPLIER",
-            description: "Supplier fare / service",
+            description: businessEvent ? "" : "Supplier fare / service",
             quantity: 1,
             unitPrice: "",
           },
@@ -80,7 +82,7 @@ export function QuoteEditor({
   return (
     <details className="mt-5 rounded-xl border border-[var(--line)] p-5">
       <summary className="cursor-pointer text-lg font-semibold">
-        Prepare a new quotation version
+        {businessEvent ? "Prepare an event proposal" : "Prepare a new quotation version"}
       </summary>
       <form
         action={action}
@@ -122,10 +124,11 @@ export function QuoteEditor({
             </select>
           </label>
           <label className="block">
-            Service description
+            {businessEvent ? "Recommended option, inclusions and exclusions" : "Service description"}
             <textarea
               name="serviceDescription"
               defaultValue={seed?.serviceDescription}
+              placeholder={businessEvent ? "Describe the recommended venue, room layout, capacity and services covered by this price." : undefined}
               required
               minLength={10}
               maxLength={2000}
@@ -133,7 +136,7 @@ export function QuoteEditor({
             />
           </label>
           <label className="block">
-            Travel dates, route or itinerary
+            {businessEvent ? "Event dates, programme and attendee movements" : "Travel dates, route or itinerary"}
             <textarea
               name="travelSummary"
               defaultValue={seed?.travelSummary}
@@ -243,10 +246,11 @@ export function QuoteEditor({
             />
           </label>
           <label className="block">
-            Supplier fare / baggage / service conditions
+            {businessEvent ? "Venue alternatives, availability and supplier conditions" : "Supplier fare / baggage / service conditions"}
             <textarea
               name="supplierConditions"
               defaultValue={seed?.supplierConditions}
+              placeholder={businessEvent ? "Summarize comparable venue options and their hold deadlines. Identify any optional prices separately." : undefined}
               required
               minLength={10}
               maxLength={4000}
@@ -254,7 +258,7 @@ export function QuoteEditor({
             />
           </label>
           <label className="block">
-            Payment instructions and change / cancellation / refund terms
+            {businessEvent ? "Deposit, payment schedule and change or cancellation terms" : "Payment instructions and change / cancellation / refund terms"}
             <textarea
               name="terms"
               defaultValue={seed?.terms}

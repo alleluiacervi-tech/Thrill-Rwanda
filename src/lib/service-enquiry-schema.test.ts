@@ -22,6 +22,24 @@ const input = {
   website: "",
 };
 describe("service-aware guest capture", () => {
+  it("requires a business event type and organization on business briefs", () => {
+    const brief = {
+      ...input,
+      service: "EVENT",
+      journey: "BUSINESS_EVENT",
+      location: "Kigali",
+      organization: "Example Company",
+      eventType: "Meeting or conference",
+    };
+    expect(serviceEnquirySchema.parse(brief)).toMatchObject({
+      journey: "BUSINESS_EVENT",
+      eventType: "Meeting or conference",
+    });
+    expect(serviceEnquirySchema.safeParse({ ...brief, organization: "" }).success).toBe(false);
+    expect(serviceEnquirySchema.safeParse({ ...brief, eventType: "Wedding" }).success).toBe(false);
+    expect(serviceEnquirySchema.parse({ ...brief, partySize: "2500" }).partySize).toBe(2500);
+    expect(serviceEnquirySchema.safeParse({ ...brief, partySize: "10001" }).success).toBe(false);
+  });
   it("accepts email-only contact and optional dates", () => {
     expect(serviceEnquirySchema.parse(input).partySize).toBe(2);
   });
