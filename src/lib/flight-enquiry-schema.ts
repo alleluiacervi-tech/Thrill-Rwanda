@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { isAirlineCode } from "./flight-airlines";
 
 export const ENQUIRY_CONSENT_VERSION = "flight-enquiry-v1";
 export const ENQUIRY_CONSENT_TEXT =
@@ -14,14 +15,17 @@ export const enquiryDateSchema = z
 
 export const MAX_FLIGHT_LEGS = 6;
 export const routeAirports = [
-  { city: "Kigali", code: "KGL" },
-  { city: "Addis Ababa", code: "ADD" },
-  { city: "Nairobi", code: "NBO" },
-  { city: "Johannesburg", code: "JNB" },
+  { city: "Kigali", code: "KGL", country: "RW" },
+  { city: "Addis Ababa", code: "ADD", country: "ET" },
+  { city: "Nairobi", code: "NBO", country: "KE" },
+  { city: "Johannesburg", code: "JNB", country: "ZA" },
 ];
-function airportKey(value: string) {
+export function featuredAirport(value: string) {
   const term = value.trim().toLowerCase();
-  return routeAirports.find(({ city, code }) => [city, code, `${city} (${code})`].some(alias => alias.toLowerCase() === term))?.code ?? term;
+  return routeAirports.find(({ city, code }) => [city, code, `${city} (${code})`].some(alias => alias.toLowerCase() === term));
+}
+function airportKey(value: string) {
+  return featuredAirport(value)?.code ?? value.trim().toLowerCase();
 }
 export const flightLegSchema = z.object({
   origin: z.string().trim().min(2, "Enter a departure city or airport").max(120),
@@ -66,6 +70,7 @@ export const flightEnquirySchema = z
     tripType: z.enum(["RETURN", "ONE_WAY", "MULTI_CITY"]),
     additionalLegs: z.array(flightLegSchema).min(1).max(MAX_FLIGHT_LEGS - 1).optional(),
     nonstopOnly: z.literal(true).optional(),
+    preferredAirline: z.string().refine(isAirlineCode, "Choose an airline from the list.").optional(),
     departureDate: enquiryDateSchema,
     returnDate: enquiryDateSchema.or(z.literal("")),
     flexible: z.boolean(),

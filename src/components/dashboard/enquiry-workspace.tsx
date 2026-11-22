@@ -1,3 +1,6 @@
+import { AirlineLogo } from "@/components/booking/flight-marks";
+import { AirportFlag } from "@/components/booking/airport-flag";
+import { isAirlineCode } from "@/lib/flight-airlines";
 import { CaseEmailForm } from "@/components/dashboard/case-email-form";
 import { ClientAccessWorkspace } from "@/components/dashboard/client-access-workspace";
 import { FinancialWorkspace } from "@/components/dashboard/financial-workspace";
@@ -307,10 +310,14 @@ export async function EnquiryDetail({
           {flightLegs.length > 0 && <section className="mt-6">
             <h2 className="text-xl">Multi-city itinerary</h2>
             <ol className="mt-2 list-decimal space-y-2 pl-6">
-              {flightLegs.map((leg, i) => <li key={i}>{leg.origin} → {leg.destination} · {leg.departureDate}</li>)}
+              {flightLegs.map((leg, i) => <li key={i}><AirportFlag value={leg.origin} /> {leg.origin} → <AirportFlag value={leg.destination} /> {leg.destination} · {leg.departureDate}</li>)}
             </ol>
           </section>}
           <dl className="mt-6 grid gap-4 sm:grid-cols-2">
+            {row.service === "FLIGHT" && isAirlineCode(details.preferredAirline) && <div className="rounded-xl border border-[var(--line)] p-4">
+              <dt className="text-sm">Preferred airline</dt>
+              <dd className="mt-2"><AirlineLogo code={details.preferredAirline} /></dd>
+            </div>}
             {[
               ["Customer", row.name],
               ["Phone / WhatsApp", row.phone || "Not supplied"],
@@ -322,7 +329,7 @@ export async function EnquiryDetail({
               ...Object.entries(details)
                 .filter(
                   ([key]) =>
-                    !["name", "phone", "email", "replyChannel", "transferPlaceId", "nonstopOnly"].includes(key)
+                    !["name", "phone", "email", "replyChannel", "transferPlaceId", "nonstopOnly", "preferredAirline"].includes(key)
                     && !(flightLegs.length && ["origin", "destination", "departureDate", "tripType", "returnDate", "additionalLegs"].includes(key)),
                 )
                 .map(([key, value]) => [

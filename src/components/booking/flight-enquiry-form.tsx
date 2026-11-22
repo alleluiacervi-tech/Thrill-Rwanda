@@ -6,6 +6,9 @@ import { ArrowLeftRight, ArrowRight, CalendarDays, Check, ChevronDown, Plane, Pl
 import { submitFlightEnquiry } from "@/app/actions/flight-enquiry";
 import { ENQUIRY_CONSENT_TEXT, flightLegSchema, MAX_FLIGHT_LEGS, routeAirports, type FlightEnquiryState, type FlightLeg } from "@/lib/flight-enquiry-schema";
 import { Button } from "@/components/ui/button";
+import { AirlineLogo } from "./flight-marks";
+import { AirportFlag, AirportInput } from "./flight-airport-input";
+import { airlines, isAirlineCode } from "@/lib/flight-airlines";
 import s from "./flight-planner.module.css";
 
 const destinations = routeAirports.slice(1);
@@ -26,6 +29,7 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
   const [tripType, setTripType] = useState("RETURN");
   const multi = tripType === "MULTI_CITY";
   const [nonstop, setNonstop] = useState(false);
+  const [preferredAirline, setPreferredAirline] = useState<keyof typeof airlines | "">("");
   const [drafts, setDrafts] = useState<LegDraft[]>([{ id: 1, destination: "", departureDate: "" }]);
   const nextLegId = useRef(2);
   const additional = multi ? drafts.map((leg, i) => ({
@@ -62,7 +66,8 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
     <section className={s.panel} role="status">
       <Check className="mb-2 text-forest-700" aria-hidden />
       <h2 ref={successTitle} tabIndex={-1} className="text-3xl">Flight request received</h2>
-      {legs.map((leg, i) => <p key={i} className="mt-2">{leg.origin} → {leg.destination} · {dateLabel(leg.departureDate)}</p>)}
+      {legs.map((leg, i) => <p key={i} className="mt-2"><AirportFlag value={leg.origin} /> {leg.origin} → <AirportFlag value={leg.destination} /> {leg.destination} · {dateLabel(leg.departureDate)}</p>)}
+      {preferredAirline && <p className="mt-3 flex items-center gap-2 text-sm">Preferred airline <AirlineLogo code={preferredAirline} /></p>}
       {tripType === "RETURN" && <p>Return · {dateLabel(route.returnDate)}</p>}
       {nonstop && <p className="mt-2">Nonstop flights requested</p>}
       <p className="mt-3">Our desk will check availability and send your written quote.</p>
@@ -104,13 +109,12 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
         {multi && <p className={s.legHeading}>Flight 1</p>}
         <div className={s.routeFields}>
           <label className={s.cell}><span><PlaneTakeoff />From</span>
-            <input ref={firstAirport} aria-label="From city or airport" required maxLength={120} list="flight-airports" value={route.origin} placeholder="City or airport" onChange={e => set("origin", e.target.value)} />
+            <AirportInput inputRef={firstAirport} label="From city or airport" value={route.origin} onChange={value => set("origin", value)} />
           </label>
           <button className={s.swap} type="button" aria-label="Swap airports" onClick={() => setRoute(old => ({ ...old, origin: old.destination, destination: old.origin }))}><ArrowLeftRight size={15} /></button>
           <label className={s.cell}><span><PlaneLanding />To</span>
-            <input aria-label="To city or airport" required maxLength={120} list="flight-airports" value={route.destination} placeholder="City or airport" onChange={e => set("destination", e.target.value)} />
+            <AirportInput label="To city or airport" value={route.destination} onChange={value => set("destination", value)} />
           </label>
-          <datalist id="flight-airports">{routeAirports.map(a => <option key={a.code} value={`${a.city} (${a.code})`} />)}</datalist>
         </div>
         <div className={s.dates}>
           <label className={s.cell}><span><CalendarDays />Departure</span><input ref={departure} type="date" required min={today} value={route.departureDate} onChange={e => set("departureDate", e.target.value)} /></label>
@@ -122,7 +126,7 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
             <div className={s.routeFields}>
               {(["origin", "destination"] as const).map(key => <label key={key} className={s.cell}>
                 <span>{key === "origin" ? <PlaneTakeoff /> : <PlaneLanding />}{key === "origin" ? "From" : "To"}</span>
-                <input required list="flight-airports" maxLength={120} placeholder="City or airport" value={leg[key]} onChange={e => changeLeg(leg.id, key, e.target.value)} />
+                <AirportInput label={key === "origin" ? "From" : "To"} value={leg[key]} onChange={value => changeLeg(leg.id, key, value)} />
               </label>)}
             </div>
             <label className={s.cell}><span><CalendarDays />Departure</span>
@@ -154,7 +158,7 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
         <button type="button" key={code} className={s.card} aria-label={`Plan Kigali to ${city}`} onClick={() => {
           setRoute(old => ({ ...old, origin: initialRoute.origin, destination: `${city} (${code})` })); setIssue(""); departure.current?.focus();
         }}>
-          <span className={s.cardBody}><span><b>KGL</b><small>Kigali</small></span><Airway /><span><b>{code}</b><small>{city}</small></span></span>
+          <span className={s.cardBody}><span><b>KGL</b><small><AirportFlag value="KGL" /> Kigali</small></span><Airway /><span><b>{code}</b><small><AirportFlag value={code} /> {city}</small></span></span>
           <span className={s.stub}><ArrowRight size={19} /></span>
         </button>
       ))}</div>
@@ -165,7 +169,7 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
     <section className={s.itinerary} aria-label="Requested itinerary">
       <div className="flex flex-wrap items-center justify-between gap-3"><h2 ref={reviewTitle} tabIndex={-1} className="flex items-center gap-2 text-lg"><Ticket size={18} />Your itinerary</h2><button type="button" onClick={editRoute} className="text-sm underline underline-offset-4">Edit journey</button></div>
       {legs.map((leg, i) => <div key={i} className="border-b border-[var(--line)] pb-3">
-        <div className={s.reviewRoute}><strong>{leg.origin}</strong><Airway /><strong>{leg.destination}</strong></div>
+        <div className={s.reviewRoute}><strong><AirportFlag value={leg.origin} /> {leg.origin}</strong><Airway /><strong><AirportFlag value={leg.destination} /> {leg.destination}</strong></div>
         <p className="text-sm">{multi && `Flight ${i + 1} · `}{dateLabel(leg.departureDate)}{tripType === "RETURN" && ` — ${dateLabel(route.returnDate)}`}</p>
       </div>)}
       <p className="mt-3 text-sm">{tripType === "RETURN" ? "Round trip" : multi ? "Multi-city" : "One way"} · {travellers} · {cabin}{nonstop && " · Nonstop only"}{flexible && " · Flexible dates"}</p>
@@ -175,6 +179,7 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
       {Object.entries({ ...route, tripType, returnDate: tripType === "RETURN" ? route.returnDate : "" }).map(([key, value]) => <input key={key} type="hidden" name={key} value={value} />)}
       {flexible && <input type="hidden" name="flexible" value="on" />}
       {nonstop && <input type="hidden" name="nonstopOnly" value="on" />}
+      {preferredAirline && <input type="hidden" name="preferredAirline" value={preferredAirline} />}
       {additional.map(leg => <div hidden key={leg.id}>
         <input type="hidden" name="legOrigin" value={leg.origin} />
         <input type="hidden" name="legDestination" value={leg.destination} />
@@ -188,6 +193,20 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
         <label>Preferred reply<select aria-label="Preferred reply" name="replyChannel" value={channel} onChange={e => setChannel(e.target.value)}><option value="WHATSAPP">WhatsApp</option><option value="EMAIL">Email</option><option value="PHONE">Phone</option></select></label>
         <label>Email{channel !== "EMAIL" && " (optional)"}<input name="email" type="email" required={channel === "EMAIL"} autoComplete="email" maxLength={254} value={contact.email} onChange={e => setContact({ ...contact, email: e.target.value })} /></label>
       </div>
+      <details>
+        <summary className="cursor-pointer text-sm font-semibold">Preferred airline · {preferredAirline ? airlines[preferredAirline] : "Any airline"}</summary>
+        <fieldset className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <legend className="sr-only">Preferred airline</legend>
+          {["", ...Object.keys(airlines)].map(code => {
+            const carrier = isAirlineCode(code) ? code : "";
+            return <label key={code} className="flex min-h-12 cursor-pointer items-center gap-2 rounded-lg border border-[var(--line)] bg-white px-2 py-1 has-checked:border-forest-700">
+              <input type="radio" name="airlineChoice" checked={preferredAirline === carrier} value={carrier}
+                onChange={() => setPreferredAirline(carrier)} />
+              {carrier ? <AirlineLogo code={carrier} /> : <span className="text-sm">Any airline</span>}
+            </label>;
+          })}
+        </fieldset>
+      </details>
       <details><summary className="cursor-pointer text-sm font-semibold">Baggage and special requests</summary>
         <div className={s.contactFields}><label>Baggage preference<input name="baggage" maxLength={500} value={contact.baggage} onChange={e => setContact({ ...contact, baggage: e.target.value })} /></label><label>Travel notes<textarea name="notes" maxLength={2000} rows={2} value={contact.notes} onChange={e => setContact({ ...contact, notes: e.target.value })} /></label></div>
       </details>
