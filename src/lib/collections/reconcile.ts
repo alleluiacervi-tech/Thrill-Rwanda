@@ -6,22 +6,18 @@ import { canFinance, referenceKey } from "@/lib/finance-rules";
 import { notifyPaymentReceived } from "@/lib/notifications";
 import { lockBooking, providerTarget } from "./checkout";
 import { CollectionError, OPEN_COLLECTIONS } from "./rules";
-import { getUrubutoProvider } from "./urubuto";
+import { configuredGateways, gatewayForAttempt } from "./registry";
 
 const delay = (milliseconds: number) => new Date(Date.now() + milliseconds);
 const monitored = OPEN_COLLECTIONS.filter((status) => status !== "DISPUTED");
 
 export async function reconcileCollection(reference: string, early = false) {
-  const gateway = getUrubutoProvider()?.provider;
-  if (!gateway) return;
   const attempt = await db.collectionAttempt.findFirst({
-    where: {
-      merchantReference: reference, environment: gateway.environment, provider: gateway.id,
-      merchantCode: gateway.merchantCode, serviceCode: gateway.serviceCode, status: { in: [...monitored, "FAILED"] },
-    },
+    where: { merchantReference: reference, status: { in: [...monitored, "FAILED"] } },
     include: { invoice: true },
   });
-  if (!attempt) return;
+  const gateway = attempt && gatewayForAttempt(attempt)?.provider;
+  if (!attempt || !gateway) return;
   const claimed = await db.collectionAttempt.updateMany({
     where: { id: attempt.id, nextCheckAt: early ? attempt.nextCheckAt : { lte: new Date() }, status: attempt.status },
     data: { nextCheckAt: delay(30_000) },
@@ -97,7 +93,7 @@ async function postBookingReceipt(tx: Prisma.TransactionClient, attempt: Collect
   await tx.payment.create({
     data: {
       bookingId, gateway: attempt.provider, idempotencyKey: attempt.merchantReference,
-      transactionId: `UPG:${attempt.merchantReference}`, amountMinor: attempt.amountMinor,
+      transactionId: `${attempt.provider === "URUBUTOPAY" ? "UPG" : attempt.provider}:${attempt.merchantReference}`, amountMinor: attempt.amountMinor,
       currency: attempt.currency, status: "SUCCEEDED", paidAt: new Date(),
       method: attempt.method === "MOMO" ? "MTN_MOMO" : attempt.method === "AIRTEL_MONEY" ? "AIRTEL_MONEY" : "CARD",
     },
@@ -116,17 +112,18 @@ async function postBookingReceipt(tx: Prisma.TransactionClient, attempt: Collect
 }
 
 export async function reconcileDueCollections() {
-  const provider = getUrubutoProvider()?.provider;
-  if (!provider) return 0;
-  const attempts = await db.collectionAttempt.findMany({
-    where: {
-      provider: provider.id, environment: provider.environment, merchantCode: provider.merchantCode,
-      serviceCode: provider.serviceCode, status: { in: monitored }, nextCheckAt: { lte: new Date() },
-    },
-    orderBy: { nextCheckAt: "asc" },
-    take: 18,
-    select: { merchantReference: true },
-  });
+  const attempts = [];
+  for (const { provider } of configuredGateways()) {
+    attempts.push(...await db.collectionAttempt.findMany({
+      where: {
+        provider: provider.id, environment: provider.environment, merchantCode: provider.merchantCode,
+        serviceCode: provider.serviceCode, status: { in: monitored }, nextCheckAt: { lte: new Date() },
+      },
+      orderBy: { nextCheckAt: "asc" },
+      take: 18,
+      select: { merchantReference: true },
+    }));
+  }
   for (let start = 0; start < attempts.length; start += 6) {
     const batch = attempts.slice(start, start + 6);
     const results = await Promise.allSettled(batch.map((attempt) => reconcileCollection(attempt.merchantReference)));
