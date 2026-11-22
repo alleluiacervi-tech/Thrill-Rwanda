@@ -24,7 +24,7 @@ export class NotificationDeliveryError extends Error {
     super(code);
   }
 }
-export type OutboxEmail = RenderedEmail & { from?: string };
+export type OutboxEmail = RenderedEmail & { from?: string; replyTo?: string };
 export type EmailTransport = (
   to: string,
   email: OutboxEmail,
@@ -47,6 +47,7 @@ export const sendOutboxEmail: EmailTransport = async (
       from: email.from ?? process.env.EMAIL_FROM,
       to,
       subject: email.subject,
+      reply_to: email.replyTo,
       html: email.html,
       text: email.text,
     }),
@@ -310,6 +311,13 @@ export async function processNotificationBatch(
           html: renderQuoteHtml(snapshot),
           text: renderQuoteText(snapshot),
         };
+      } else if (job.kind === "STAFF_EMAIL") {
+        const saved = job.message as Partial<OutboxEmail> | null;
+        if (!saved || typeof saved.subject !== "string" || typeof saved.html !== "string" || typeof saved.text !== "string") {
+          await finish("BLOCKED", "MESSAGE_CONTENT_MISSING");
+          continue;
+        }
+        email = { subject: saved.subject, html: saved.html, text: saved.text };
       } else if (job.kind === "CUSTOMER_ACK") {
         email = renderEmail(
           {

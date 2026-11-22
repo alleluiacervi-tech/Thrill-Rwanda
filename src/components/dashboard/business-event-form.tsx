@@ -31,7 +31,8 @@ export function BusinessEventForm({
       <input type="hidden" name="command" value={command} />
       {sourcing ? (
         <>
-          <label>Venue or named space<input name="venue" required minLength={2} maxLength={160} className={field} /></label>
+          <label>Hotel or venue<input name="venue" required minLength={2} maxLength={160} className={field} /></label>
+          <label>Hall or meeting room<input name="hall" maxLength={160} className={field} /></label>
           <label>Room layout<input name="layout" maxLength={120} className={field} /></label>
           <label>Capacity for this layout<input name="capacity" type="number" min={1} max={100000} className={field} /></label>
           <label>Breakout rooms, access, AV or floor plan reference<textarea name="facilities" maxLength={1000} className={field} /></label>

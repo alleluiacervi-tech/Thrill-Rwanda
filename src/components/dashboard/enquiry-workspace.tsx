@@ -1,3 +1,4 @@
+import { CaseEmailForm } from "@/components/dashboard/case-email-form";
 import { ClientAccessWorkspace } from "@/components/dashboard/client-access-workspace";
 import { FinancialWorkspace } from "@/components/dashboard/financial-workspace";
 import { QuoteWorkspace } from "@/components/dashboard/quote-workspace";
@@ -231,6 +232,14 @@ export async function EnquiryDetail({
     },
   });
   if (!row) notFound();
+  const emailJobIds = row.activities.flatMap(activity => {
+    const changes = activity.changes as { notificationId?: string } | null;
+    return activity.kind === "EMAIL_QUEUED" && changes?.notificationId ? [changes.notificationId] : [];
+  });
+  const caseEmails = emailJobIds.length ? await db.notificationJob.findMany({
+    where: { id: { in: emailJobIds }, enquiryId: row.id, kind: "STAFF_EMAIL" },
+    select: { id: true, status: true, lastError: true },
+  }) : [];
   const owners =
     actor.role === "ADMIN"
       ? await db.user.findMany({
@@ -365,6 +374,7 @@ export async function EnquiryDetail({
               {sourcing.map((entry) => {
                 const option = entry.changes as {
                   venue: string;
+                  hall?: string;
                   status: string;
                   holdUntil: string;
                   layout?: string;
@@ -374,7 +384,7 @@ export async function EnquiryDetail({
                 const expired = option.status === "HELD" && option.holdUntil < today;
                 return (
                   <li key={entry.id} className="rounded-xl border border-[var(--line)] p-4">
-                    <h3 className="text-lg">{option.venue}</h3>
+                    <h3 className="text-lg">{[option.venue, option.hall].filter(Boolean).join(" · ")}</h3>
                     <p>{expired ? "Hold expired" : label(option.status)} · checked {stamp(entry.createdAt)}</p>
                     {option.holdUntil && <p>Hold deadline · {option.holdUntil}</p>}
                     {(option.layout || option.capacity) && (
@@ -395,6 +405,9 @@ export async function EnquiryDetail({
           )}
           <p>For the written proposal, include supplier-checked options, layout and capacity, itemized costs, inclusions and exclusions, hold deadlines, deposit and cancellation terms.</p>
         </section>
+      )}
+      {!finance && row.email && row.replyChannel === "EMAIL" && (actor.role === "ADMIN" || row.ownerId === actor.id) && (
+        <CaseEmailForm reference={row.reference} version={row.version} email={row.email} />
       )}
       {!finance && <QuoteWorkspace enquiry={row} actor={actor} base={base} businessEvent={businessEvent} />}
       {!finance && <ClientAccessWorkspace reference={row.reference} />}
@@ -442,7 +455,10 @@ export async function EnquiryDetail({
           Latest 100 entries. Saved activity cannot be edited through the
           application.
         </p>
-        {row.activities.map((a) => (
+        {row.activities.map((a) => {
+          const message = a.kind === "EMAIL_QUEUED" ? a.changes as { subject: string; notificationId: string } : null;
+          const job = message && caseEmails.find(email => email.id === message.notificationId);
+          return (
           <article
             key={a.id}
             className="mt-4 rounded-xl border border-[var(--line)] p-4"
@@ -450,12 +466,17 @@ export async function EnquiryDetail({
             <h3>
               {a.actor.fullName} · {stamp(a.createdAt)} · {label(a.kind)}
             </h3>
+            {message && <p className="font-semibold">{message.subject}</p>}
+            {job && <p>{job.status === "SENT" ? "Accepted by email provider" : label(job.status)}{job.lastError && ` · ${label(job.lastError)}`}</p>}
             {a.body && <p className="whitespace-pre-wrap">{a.body}</p>}
+            {!message && (
             <pre className="mt-3 whitespace-pre-wrap break-words text-xs">
               {JSON.stringify(a.changes, null, 2)}
             </pre>
+            )}
           </article>
-        ))}
+          );
+        })}
         {!row.activities.length && <p>No staff activity recorded yet.</p>}
       </section>
     </>
