@@ -24,14 +24,27 @@ export function featuredAirport(value: string) {
   const term = value.trim().toLowerCase();
   return routeAirports.find(({ city, code }) => [city, code, `${city} (${code})`].some(alias => alias.toLowerCase() === term));
 }
-function airportKey(value: string) {
-  return featuredAirport(value)?.code ?? value.trim().toLowerCase();
+const fold = (text: string) => text.trim().normalize("NFD").replace(/\p{M}/gu, "").toLowerCase().replace(/\s+/g, " ");
+function parseAirport(value: string) {
+  const featured = featuredAirport(value);
+  if (featured) return { city: fold(featured.city), code: featured.code.toLowerCase() };
+  const text = fold(value);
+  const match = text.match(/^(.*?)\s*\(([a-z]{3})\)$/);
+  if (match) return { city: match[1], code: match[2] };
+  return { city: text, code: text.length === 3 ? text : "" };
+}
+// Same airport when codes agree; if either side lacks a code, fall back to the city name.
+export function sameAirport(a: string, b: string) {
+  const x = parseAirport(a), y = parseAirport(b);
+  if (x.code && y.code && x.code === y.code) return true;
+  if (x.code && y.code && !(x.city.length === 3 && x.city === x.code) && !(y.city.length === 3 && y.city === y.code)) return false;
+  return x.city === y.city;
 }
 export const flightLegSchema = z.object({
   origin: z.string().trim().min(2, "Enter a departure city or airport").max(120),
   destination: z.string().trim().min(2, "Enter a destination city or airport").max(120),
   departureDate: enquiryDateSchema,
-}).refine(leg => airportKey(leg.origin) !== airportKey(leg.destination), {
+}).refine(leg => !sameAirport(leg.origin, leg.destination), {
   message: "Choose two different airports for each flight.", path: ["destination"],
 });
 export type FlightLeg = z.infer<typeof flightLegSchema>;
@@ -88,10 +101,10 @@ export const flightEnquirySchema = z
   .superRefine((v, ctx) => {
     const issue = (path: string, message: string) =>
       ctx.addIssue({ code: "custom", path: [path], message });
-    if (airportKey(v.origin) === airportKey(v.destination))
+    if (sameAirport(v.origin, v.destination))
       issue("destination", "Choose a different destination");
     if (v.tripType === "MULTI_CITY" && !v.additionalLegs?.length)
-      issue("additionalLegs", "Add at least two flights for a multi-city journey.");
+      issue("additionalLegs", "Add at least one more flight for a multi-city journey.");
     if (v.tripType !== "MULTI_CITY" && v.additionalLegs)
       issue("additionalLegs", "Additional flights require a multi-city journey.");
     let previousDate = v.departureDate;
