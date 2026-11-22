@@ -19,10 +19,10 @@ export async function ClientDirectory({ params, base }: { params: Params; base: 
   if (selected) {
     const contact = await db.enquiry.findFirst({
       where: { ...scope, reference: selected },
-      select: { name: true, phone: true, email: true },
+      select: { name: true, phone: true, email: true, contactKey: true },
     });
     if (!contact) notFound();
-    const where = { ...scope, ...contact };
+    const where = { ...scope, contactKey: contact.contactKey };
     const page = paginate(params, await db.enquiry.count({ where }));
     const cases = await db.enquiry.findMany({
       where, skip: page.skip, take: page.take, orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -46,8 +46,8 @@ export async function ClientDirectory({ params, base }: { params: Params; base: 
   const where: Prisma.EnquiryWhereInput = { AND: [scope, q ? { OR: [{ name: match }, { phone: match }, { email: match }, { reference: match }] } : {}] };
   const current = Math.max(1, Math.min(1_000_000, Number.parseInt(one(params.page), 10) || 1));
   const rows = await db.enquiry.groupBy({
-    by: ["name", "email", "phone"], where, _max: { reference: true, createdAt: true },
-    orderBy: [{ _max: { createdAt: "desc" } }, { name: "asc" }, { email: "asc" }, { phone: "asc" }],
+    by: ["contactKey"], where, _max: { reference: true, createdAt: true, name: true, email: true, phone: true },
+    orderBy: [{ _max: { createdAt: "desc" } }, { contactKey: "asc" }],
     skip: (current - 1) * PAGE_SIZE, take: PAGE_SIZE + 1,
   });
   return <>
@@ -56,8 +56,8 @@ export async function ClientDirectory({ params, base }: { params: Params; base: 
     {base === "/admin" && <Link className="my-3 inline-block underline" href={`/admin/bookings?${new URLSearchParams({ q })}`}>Search direct bookings</Link>}
     <ul className="my-4 divide-y divide-[var(--line)]">{rows.slice(0, PAGE_SIZE).map(row => (
       <li key={row._max.reference} className="py-3">
-        <Link className="font-semibold underline" href={`${path}?contact=${encodeURIComponent(row._max.reference!)}`}>{row.name}</Link>
-        <p>{[row.email, row.phone].filter(Boolean).join(" · ")}</p>
+        <Link className="font-semibold underline" href={`${path}?contact=${encodeURIComponent(row._max.reference!)}`}>{row._max.name}</Link>
+        <p>{[row._max.email, row._max.phone].filter(Boolean).join(" · ")}</p>
       </li>
     ))}</ul>
     {!rows.length && <p>No matching enquiry contacts.</p>}

@@ -16,9 +16,10 @@ for (const country of new Set(byCode.values()))
 
 export function airportCountry(input: string) {
   const key = normalize(input);
-  const code = key.match(/\(([a-z]{3})\)$/)?.[1] ?? key;
   if (key === "addis") return "ET";
-  return byCode.get(code.toUpperCase()) ?? byCity.get(key) ?? byCountryName.get(key);
+  const bracketed = key.match(/\(([a-z]{3})\)$/)?.[1];
+  if (bracketed) return byCode.get(bracketed.toUpperCase());
+  return byCity.get(key) ?? byCountryName.get(key) ?? (key.length === 3 ? byCode.get(key.toUpperCase()) : undefined);
 }
 
 export function airportSuggestions(input: string) {
