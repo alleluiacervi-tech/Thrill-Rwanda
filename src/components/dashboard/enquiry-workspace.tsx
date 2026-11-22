@@ -29,7 +29,7 @@ import {
 import { db } from "@/lib/db";
 import { paginate } from "@/lib/pagination";
 import { searchTerm } from "@/lib/table-query";
-import { todayInRwanda } from "@/lib/flight-enquiry-schema";
+import { flightLegSchema, todayInRwanda } from "@/lib/flight-enquiry-schema";
 import type { Prisma } from "@/generated/prisma/client";
 
 type Params = Record<string, string | string[] | undefined>;
@@ -267,6 +267,11 @@ export async function EnquiryDetail({
         take: 20,
       });
   const details = row.details as Record<string, unknown>;
+  const flightLegs = row.service === "FLIGHT" && details.tripType === "MULTI_CITY"
+    ? [details, ...(Array.isArray(details.additionalLegs) ? details.additionalLegs : [])].flatMap(value => {
+        const parsed = flightLegSchema.safeParse(value);
+        return parsed.success ? [parsed.data] : [];
+      }) : [];
   const businessEvent = !finance && isBusinessEvent(details);
   const paymentLink = canFinance(actor)
     ? await db.quoteAcceptance.findUnique({
@@ -299,6 +304,12 @@ export async function EnquiryDetail({
       </p>
       {!finance && (
         <>
+          {flightLegs.length > 0 && <section className="mt-6">
+            <h2 className="text-xl">Multi-city itinerary</h2>
+            <ol className="mt-2 list-decimal space-y-2 pl-6">
+              {flightLegs.map((leg, i) => <li key={i}>{leg.origin} → {leg.destination} · {leg.departureDate}</li>)}
+            </ol>
+          </section>}
           <dl className="mt-6 grid gap-4 sm:grid-cols-2">
             {[
               ["Customer", row.name],
@@ -307,10 +318,12 @@ export async function EnquiryDetail({
               ["Reply channel", label(row.replyChannel)],
               ["Source", label(row.source)],
               ["Received (Kigali)", stamp(row.createdAt)],
+              ...(details.nonstopOnly === true ? [["Flight preference", "Nonstop only on every leg"]] : []),
               ...Object.entries(details)
                 .filter(
                   ([key]) =>
-                    !["name", "phone", "email", "replyChannel", "transferPlaceId"].includes(key),
+                    !["name", "phone", "email", "replyChannel", "transferPlaceId", "nonstopOnly"].includes(key)
+                    && !(flightLegs.length && ["origin", "destination", "departureDate", "tripType", "returnDate", "additionalLegs"].includes(key)),
                 )
                 .map(([key, value]) => [
                   label(key.replace(/([A-Z])/g, " $1")),

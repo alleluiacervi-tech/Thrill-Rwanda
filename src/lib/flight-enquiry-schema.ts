@@ -12,6 +12,26 @@ export const enquiryDateSchema = z
     return Number.isFinite(d.getTime()) && d.toISOString().slice(0, 10) === v;
   }, "Choose a real calendar date");
 
+export const MAX_FLIGHT_LEGS = 6;
+export const routeAirports = [
+  { city: "Kigali", code: "KGL" },
+  { city: "Addis Ababa", code: "ADD" },
+  { city: "Nairobi", code: "NBO" },
+  { city: "Johannesburg", code: "JNB" },
+];
+function airportKey(value: string) {
+  const term = value.trim().toLowerCase();
+  return routeAirports.find(({ city, code }) => [city, code, `${city} (${code})`].some(alias => alias.toLowerCase() === term))?.code ?? term;
+}
+export const flightLegSchema = z.object({
+  origin: z.string().trim().min(2, "Enter a departure city or airport").max(120),
+  destination: z.string().trim().min(2, "Enter a destination city or airport").max(120),
+  departureDate: enquiryDateSchema,
+}).refine(leg => airportKey(leg.origin) !== airportKey(leg.destination), {
+  message: "Choose two different airports for each flight.", path: ["destination"],
+});
+export type FlightLeg = z.infer<typeof flightLegSchema>;
+
 export const flightEnquirySchema = z
   .object({
     submissionKey: z.string().uuid("Reload the form before submitting"),
@@ -43,7 +63,9 @@ export const flightEnquirySchema = z
       .trim()
       .min(2, "Enter your destination city or airport")
       .max(120),
-    tripType: z.enum(["RETURN", "ONE_WAY"]),
+    tripType: z.enum(["RETURN", "ONE_WAY", "MULTI_CITY"]),
+    additionalLegs: z.array(flightLegSchema).min(1).max(MAX_FLIGHT_LEGS - 1).optional(),
+    nonstopOnly: z.literal(true).optional(),
     departureDate: enquiryDateSchema,
     returnDate: enquiryDateSchema.or(z.literal("")),
     flexible: z.boolean(),
@@ -61,8 +83,17 @@ export const flightEnquirySchema = z
   .superRefine((v, ctx) => {
     const issue = (path: string, message: string) =>
       ctx.addIssue({ code: "custom", path: [path], message });
-    if (v.origin.toLowerCase() === v.destination.toLowerCase())
+    if (airportKey(v.origin) === airportKey(v.destination))
       issue("destination", "Choose a different destination");
+    if (v.tripType === "MULTI_CITY" && !v.additionalLegs?.length)
+      issue("additionalLegs", "Add at least two flights for a multi-city journey.");
+    if (v.tripType !== "MULTI_CITY" && v.additionalLegs)
+      issue("additionalLegs", "Additional flights require a multi-city journey.");
+    let previousDate = v.departureDate;
+    for (const leg of v.additionalLegs ?? []) {
+      if (leg.departureDate < previousDate) issue("additionalLegs", "Enter the flights in departure date order.");
+      previousDate = leg.departureDate;
+    }
     if (v.tripType === "RETURN" && !v.returnDate)
       issue("returnDate", "Choose your return date");
     if (
@@ -71,8 +102,8 @@ export const flightEnquirySchema = z
       v.returnDate < v.departureDate
     )
       issue("returnDate", "Return cannot be before departure");
-    if (v.tripType === "ONE_WAY" && v.returnDate)
-      issue("returnDate", "Clear the return date for a one-way trip");
+    if (v.tripType !== "RETURN" && v.returnDate)
+      issue("returnDate", "Use a return date only for round trips.");
     if (v.replyChannel === "EMAIL" && !v.email)
       issue("email", "Enter an email for your preferred reply channel");
     if (v.adults + v.children + v.infants > 20)

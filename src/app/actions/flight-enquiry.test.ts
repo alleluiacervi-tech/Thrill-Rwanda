@@ -36,6 +36,18 @@ beforeEach(() => {
   vi.resetAllMocks(); vi.mocked(publicPreviewAllowed).mockResolvedValue(true);
   save.mockResolvedValue({ reference: "TRQ-test" });
 });
+it("passes ordered multi-city legs and the nonstop requirement to storage", async () => {
+  const data = form();
+  data.set("tripType", "MULTI_CITY");
+  data.set("nonstopOnly", "on");
+  data.append("legOrigin", "Nairobi");
+  data.append("legDestination", "London");
+  data.append("legDate", "2090-01-05");
+  expect((await submitFlightEnquiry({ status: "idle" }, data)).status).toBe("success");
+  expect(save).toHaveBeenCalledWith(expect.objectContaining({
+    nonstopOnly: true, additionalLegs: [{ origin: "Nairobi", destination: "London", departureDate: "2090-01-05" }],
+  }));
+});
 it("reports success only after saving a valid guest request", async () => {
   expect(await submitFlightEnquiry({ status: "idle" }, form())).toEqual({
     status: "success",

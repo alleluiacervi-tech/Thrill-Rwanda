@@ -23,6 +23,20 @@ const valid = {
   website: "",
 };
 describe("flight enquiries", () => {
+  const nextLeg = { origin: "Nairobi", destination: "London", departureDate: "2028-03-01" };
+  const multi = { ...valid, tripType: "MULTI_CITY", returnDate: "", additionalLegs: [nextLeg] };
+  it("accepts open-jaw and same-day multi-city legs", () => {
+    const onward = { origin: "Manchester", destination: "Kigali", departureDate: nextLeg.departureDate };
+    expect(flightEnquirySchema.safeParse({ ...multi, nonstopOnly: true, additionalLegs: [nextLeg, onward] }).success).toBe(true);
+  });
+  it.each([
+    { additionalLegs: [] }, { additionalLegs: undefined }, { returnDate: valid.returnDate },
+    { additionalLegs: [ { ...nextLeg, departureDate: "2028-02-27" } ] },
+    { additionalLegs: [ { ...nextLeg, destination: "NBO" } ] },
+    { additionalLegs: Array(6).fill(nextLeg) }, { tripType: "ONE_WAY" },
+  ])("rejects inconsistent multi-city itineraries %j", changes => {
+    expect(flightEnquirySchema.safeParse({ ...multi, ...changes }).success).toBe(false);
+  });
   it("accepts a phone-only guest request and coerces form counts", () => {
     expect(flightEnquirySchema.parse({ ...valid, adults: "2" }).adults).toBe(2);
   });

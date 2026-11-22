@@ -8,7 +8,8 @@ import { clientQuoteHistory, readClientCase } from "@/lib/client-portal";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
 import { renderQuoteHtml } from "@/lib/quote-render";
 import { ClientCaseForm } from "@/components/dashboard/client-case-form";
-import type { QuoteSnapshot } from "@/lib/quote-rules";
+import { formatQuoteMoney, type QuoteSnapshot } from "@/lib/quote-rules";
+import { PlaneTakeoff } from "lucide-react";
 import { label } from "@/lib/enquiry-workflow";
 export default async function Page({
   params,
@@ -33,7 +34,7 @@ export default async function Page({
   return (
     <>
       <DashboardHead
-        title={e.eventMilestones ? "Thrill Events & Business" : "Your travel request"}
+        title={e.service === "FLIGHT" ? "Your flight request" : e.eventMilestones ? "Thrill Events & Business" : "Your travel request"}
         lede={`${e.reference} · ${e.status.replaceAll("_", " ")}`}
       />
       <p>
@@ -62,7 +63,9 @@ export default async function Page({
         </section>
       )}
       <h2 className="mt-8 text-2xl">Issued quotations</h2>
-      {quoteHistory.map((q) => (
+      {quoteHistory.map((q) => {
+        const snapshot = q.snapshot as QuoteSnapshot;
+        return (
         <section key={q.id} className="my-6">
           <h3 className="text-xl">
             Version {q.number}{" "}
@@ -72,25 +75,40 @@ export default async function Page({
                 ? " · Historical version"
                 : ""}
           </h3>
+          {e.service === "FLIGHT" && (
+            <div className="mt-3 grid overflow-hidden rounded-2xl border border-[var(--line)] bg-[var(--paper-raised)] sm:grid-cols-[minmax(0,1fr)_auto]">
+              <div className="min-w-0 p-5">
+                <PlaneTakeoff size={23} className="mb-3 text-forest-700" aria-hidden />
+                <p className="break-words text-xl font-semibold">{snapshot.serviceDescription}</p>
+                <p className="mt-1 whitespace-pre-line break-words text-sm">{snapshot.travelSummary}</p>
+              </div>
+              <div className="flex flex-col justify-center gap-1 border-t border-dashed border-forest-300 bg-forest-100 px-6 py-4 text-forest-950 sm:border-t-0 sm:border-l">
+                <span className="text-sm">Quoted total</span>
+                <strong className="text-2xl">{formatQuoteMoney(snapshot.totalMinor, snapshot.currency)}</strong>
+                <span className="text-xs">Expires {q.expiresAt.toLocaleString("en-GB", { timeZone: "Africa/Kigali", dateStyle: "medium", timeStyle: "short" })} Kigali</span>
+              </div>
+            </div>
+          )}
           <a
             href={`/account/enquiries/${e.reference}/quotes/${q.id}/download`}
             className="my-4 inline-block underline"
           >
             Download this written quotation (PDF)
           </a>
-          <details open={q.id === latest?.id}>
+          <details open={e.service !== "FLIGHT" && q.id === latest?.id}>
             <summary>Read quotation and terms</summary>
             <div
               className="overflow-x-auto rounded-xl border bg-white p-4 text-black"
               dangerouslySetInnerHTML={{
-                __html: renderQuoteHtml(q.snapshot as QuoteSnapshot)
+                __html: renderQuoteHtml(snapshot)
                   .replace(/^[\s\S]*?<body[^>]*>/, "")
                   .replace(/<\/body>[\s\S]*$/, ""),
               }}
             />
           </details>
         </section>
-      ))}
+        );
+      })}
       <Pagination
         page={quotePage}
         pathname={`/account/enquiries/${e.reference}`}
