@@ -1,6 +1,8 @@
 import { enqueueWhatsAppStatus } from "@/lib/whatsapp";
 import { createHash, randomUUID } from "node:crypto";
 import { z } from "zod";
+import { enquiryDateSchema, flightLegSchema } from "@/lib/flight-enquiry-schema";
+import { isAirlineCode } from "@/lib/flight-airlines";
 import { db } from "@/lib/db";
 import {
   canUseEnquiries,
@@ -100,8 +102,26 @@ export async function readClientCase(userId: string, reference: string) {
     if (quoteContentHash(q.snapshot as QuoteSnapshot) !== q.contentHash)
       throw new OperationsError("Quote integrity check failed");
   const { activities, details, ...visibleCase } = e;
+  const itinerary = e.service === "FLIGHT" ? z.object({
+    tripType: z.enum(["ONE_WAY", "RETURN", "MULTI_CITY"]),
+    additionalLegs: z.array(flightLegSchema).optional(),
+    returnDate: enquiryDateSchema.or(z.literal("")).optional(),
+    preferredAirline: z.string().optional(),
+  }).safeParse(details) : null;
+  const firstLeg = itinerary?.success ? flightLegSchema.safeParse(details) : null;
+  let requestedFlight = null;
+  if (itinerary?.success && firstLeg?.success) {
+    const { tripType, additionalLegs, returnDate, preferredAirline } = itinerary.data;
+    const first = firstLeg.data;
+    const legs = [first];
+    if (tripType === "MULTI_CITY") legs.push(...additionalLegs ?? []);
+    if (tripType === "RETURN" && returnDate)
+      legs.push({ origin: first.destination, destination: first.origin, departureDate: returnDate });
+    requestedFlight = { legs, preferredAirline: isAirlineCode(preferredAirline) ? preferredAirline : null };
+  }
   return {
     ...visibleCase,
+    requestedFlight,
     eventMilestones: isBusinessEvent(details) ? businessEventMilestones(activities) : null,
   };
 }

@@ -50,7 +50,7 @@ async function main() {
     const bookingsBefore = await db.booking.count();
     const paymentsBefore = await db.payment.count();
     const first = flightEnquirySchema.parse({
-      ...input(), tripType: "MULTI_CITY", nonstopOnly: true,
+      ...input(), tripType: "MULTI_CITY", nonstopOnly: true, preferredAirline: "WB",
       additionalLegs: [{ origin: "Nairobi", destination: "Addis Ababa", departureDate: "2028-01-05" }],
     });
     const retries = await Promise.all(
@@ -83,6 +83,7 @@ async function main() {
     assert.equal(saved.email, null);
     const details = saved.details as Record<string, unknown>;
     assert.equal(details.nonstopOnly, true);
+    assert.equal(details.preferredAirline, "WB");
     assert.deepEqual(details.additionalLegs, first.additionalLegs);
     console.log(
       "PASS: concurrent retries create one lead; changed payload rejected; concurrent contact limit enforced; consent saved; no bookings/payments created.",

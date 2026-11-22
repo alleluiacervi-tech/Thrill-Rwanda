@@ -10,6 +10,8 @@ import { renderQuoteHtml } from "@/lib/quote-render";
 import { ClientCaseForm } from "@/components/dashboard/client-case-form";
 import { formatQuoteMoney, type QuoteSnapshot } from "@/lib/quote-rules";
 import { PlaneTakeoff } from "lucide-react";
+import { AirlineLogo } from "@/components/booking/flight-marks";
+import { AirportFlag } from "@/components/booking/airport-flag";
 import { label } from "@/lib/enquiry-workflow";
 export default async function Page({
   params,
@@ -41,6 +43,13 @@ export default async function Page({
         Requests, acceptance, verified funds and supplier confirmation are
         separate steps. Contact the desk if any details need correction.
       </p>
+      {e.requestedFlight && <section className="my-5 space-y-2 rounded-xl border p-5">
+        <h2 className="text-xl">Requested itinerary</h2>
+        {e.requestedFlight.legs.map((leg, i) => <p key={i}>
+          <AirportFlag value={leg.origin} /> {leg.origin} → <AirportFlag value={leg.destination} /> {leg.destination} · {leg.departureDate}
+        </p>)}
+        {e.requestedFlight.preferredAirline && <p className="flex items-center gap-3 text-sm">Preferred airline <AirlineLogo code={e.requestedFlight.preferredAirline} /></p>}
+      </section>}
       {e.eventMilestones && (
         <section className="my-6 rounded-xl border p-5">
           <h2 className="text-xl">Event milestones</h2>

@@ -4,6 +4,7 @@ import Image from "next/image";
 import { PageShell } from "@/components/layout/page-shell";
 import { Container, Eyebrow } from "@/components/ui/primitives";
 import { FlightEnquiryForm } from "@/components/booking/flight-enquiry-form";
+import { AirportDirectoryProvider } from "@/components/booking/flight-airport-input";
 import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import { requirePublicService } from "@/lib/publication";
 
@@ -31,7 +32,9 @@ export default async function FlightsPage() {
           </Container>
         </header>
         <Container id="flight-request" className="relative -mt-7 scroll-mt-28 pb-14 sm:-mt-9 sm:pb-20">
-          <FlightEnquiryForm submissionKey={randomUUID()} today={todayInRwanda()} />
+          <AirportDirectoryProvider>
+            <FlightEnquiryForm submissionKey={randomUUID()} today={todayInRwanda()} />
+          </AirportDirectoryProvider>
         </Container>
       </div>
     </PageShell>

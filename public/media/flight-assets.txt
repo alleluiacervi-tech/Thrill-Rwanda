@@ -1,0 +1,11 @@
+Country and territory flags: flag-icons 7.3.2, 4:3 SVG artwork.
+https://github.com/lipis/flag-icons/tree/v7.3.2
+License included in flags/LICENSE.
+
+Airline logos: Duffel airline artwork, full-color lockups for light backgrounds.
+https://assets.duffel.com/img/airlines/for-light-background/full-color-lockup/WB.svg
+The filename uses each airline's IATA code. Brand marks identify the respective carriers.
+
+Airport codes, municipalities and country identifiers: OurAirports public-domain data.
+https://ourairports.com/data/
+The local lookup includes open airports with IATA codes. Scheduled-service airports are listed first.
