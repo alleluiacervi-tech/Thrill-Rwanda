@@ -8,6 +8,7 @@ import {
   submitServiceEnquiry,
 } from "@/app/actions/service-enquiry";
 import { useSite } from "@/components/layout/site-context";
+import { AirportTransferEstimate } from "@/components/booking/airport-transfer-estimate";
 import { Button } from "@/components/ui/button";
 import { SOURCES, label } from "@/lib/enquiry-workflow";
 import { type FlightEnquiryState } from "@/lib/flight-enquiry-schema";
@@ -64,6 +65,8 @@ export function ServiceEnquiryForm({
   journey: initialJourney = "",
   context = "",
   initial,
+  transportOnly = false,
+  airportEstimates = false,
   manual = false,
   className = "",
 }: {
@@ -74,6 +77,8 @@ export function ServiceEnquiryForm({
   context?: string;
   /** Answers known before the customer starts, e.g. the venue they chose. */
   initial?: Record<string, string>;
+  transportOnly?: boolean;
+  airportEstimates?: boolean;
   manual?: boolean;
   className?: string;
 }) {
@@ -86,11 +91,9 @@ export function ServiceEnquiryForm({
   // A page that names a journey has already chosen the service.
   const fixed = isJourneyKey(initialJourney);
   const [service, setService] = useState(
-    fixed ? JOURNEY_SERVICE[initialJourney] : initialService,
+    transportOnly ? "TRANSPORT" : fixed ? JOURNEY_SERVICE[initialJourney] : initialService,
   );
-  const [journey, setJourney] = useState<string>(
-    fixed ? initialJourney : journeyOf(initialService),
-  );
+  const [journey, setJourney] = useState<string>(transportOnly ? "" : fixed ? initialJourney : journeyOf(initialService));
   const copy = journeyForm(journey);
 
   const [values, setValues] = useState<Record<string, string>>({
@@ -275,7 +278,7 @@ export function ServiceEnquiryForm({
       </div>
 
       <header className="flex flex-wrap items-end justify-between gap-3 border-b border-[var(--line)] px-6 py-5 sm:px-8">
-        <h2 className="text-2xl leading-tight sm:text-[1.75rem]">{copy.title}</h2>
+        <h2 className="text-2xl leading-tight sm:text-[1.75rem]">{transportOnly ? "Request a transfer quote" : copy.title}</h2>
         <p className="flex items-center gap-1.5 text-xs font-medium text-[var(--ink-faint)]">
           <ShieldCheck className="size-4 text-forest-700" aria-hidden />
           A request, not a booking
@@ -302,7 +305,7 @@ export function ServiceEnquiryForm({
         ) : null}
 
         {/* ------------------------------------------------------- what */}
-        {fixed ? (
+        {fixed || transportOnly ? (
           <input type="hidden" name="service" value={service} />
         ) : (
           <fieldset>
@@ -360,6 +363,31 @@ export function ServiceEnquiryForm({
 
         {service === "EVENT" ? (
           <div className="space-y-6">
+            {!fixed && (
+              <fieldset>
+                <legend className={labelCls}>What kind of event is it?</legend>
+                <div className="mt-2.5 flex flex-wrap gap-2">
+                  {[
+                    ["WEDDING", "Wedding or private celebration"],
+                    ["BUSINESS_EVENT", "Thrill Events & Business"],
+                  ].map(([value, textLabel]) => (
+                    <label key={value}>
+                      <input
+                        type="radio"
+                        name="eventJourney"
+                        checked={journey === value}
+                        onChange={() => {
+                          setJourney(value);
+                          setValues((previous) => ({ ...previous, eventType: "", venueStyle: "" }));
+                        }}
+                        className="peer sr-only"
+                      />
+                      <span className={chipCls}>{textLabel}</span>
+                    </label>
+                  ))}
+                </div>
+              </fieldset>
+            )}
             {choices("eventType", businessEvent ? "What are you planning?" : "What are you celebrating?", businessEvent ? BUSINESS_EVENT_TYPES : EVENT_TYPES)}
             {businessEvent ? (
               <input type="hidden" name="venueStyle" value="" />
@@ -384,11 +412,11 @@ export function ServiceEnquiryForm({
         {/* ------------------------------------------------------- when */}
         <div>
           <div className="grid gap-5 sm:grid-cols-2">
-            {text("startDate", service === "EVENT" ? "Date of the event" : "From", {
+            {text("startDate", service === "EVENT" ? "Date of the event" : transportOnly ? "Pickup date" : "From", {
               type: "date",
               min: today,
             })}
-            {text(
+            {transportOnly ? text("pickupTime", "Pickup time (Kigali)", { type: "time" }) : text(
               "endDate",
               service === "EVENT" ? "Last day, if more than one" : "To (optional)",
               { type: "date", min: values.startDate || today },
@@ -447,7 +475,7 @@ export function ServiceEnquiryForm({
             <input type="hidden" name="ageGroup" value="" />
             <input type="hidden" name="learningFocus" value="" />
             <label className="block sm:max-w-[14rem]">
-              <span className={labelCls}>{copy.party}</span>
+              <span className={labelCls}>{transportOnly ? "Passengers" : copy.party}</span>
               <input
                 type="number"
                 className={fieldCls}
@@ -468,11 +496,21 @@ export function ServiceEnquiryForm({
 
         {/* ------------------------------------------------------ where */}
         {service === "TRANSPORT" ? (
-          <div className="grid gap-5 sm:grid-cols-2">
-            {text("pickup", "Pickup location", { required: true, maxLength: 200 })}
-            {text("dropoff", "Drop-off location", { required: true, maxLength: 200 })}
+          <>
+            {airportEstimates ? (
+              <AirportTransferEstimate partySize={Number(partySize)} time={values.pickupTime ?? ""} errors={state.fieldErrors} />
+            ) : (
+              <div className="grid gap-5 sm:grid-cols-2">
+                {text("pickup", "Pickup location", { required: true, maxLength: 200 })}
+                {text("dropoff", "Drop-off location", { required: true, maxLength: 200 })}
+              </div>
+            )}
+            <div className="grid gap-5 sm:grid-cols-2">
+              {transportOnly ? null : text("pickupTime", "Pickup time (Kigali)", { type: "time" })}
+              {text("flightNumber", "Flight number (optional)", { maxLength: 40, placeholder: "WB 301" })}
+            </div>
             <input type="hidden" name="location" value="" />
-          </div>
+          </>
         ) : (
           <>
             <input type="hidden" name="pickup" value="" />
@@ -487,15 +525,15 @@ export function ServiceEnquiryForm({
 
         {/* ------------------------------------------------------- more */}
         <label className="block">
-          <span className={labelCls}>{copy.message.label}</span>
+          <span className={labelCls}>{transportOnly ? "Luggage, stops or special requests (optional)" : copy.message.label}</span>
           <textarea
             className={cn(fieldCls, "resize-y leading-relaxed")}
             name="message"
-            required
-            minLength={10}
+            required={!transportOnly}
+            minLength={transportOnly ? undefined : 10}
             maxLength={4000}
             rows={4}
-            placeholder={copy.message.placeholder}
+            placeholder={transportOnly ? "For example, two suitcases or a child seat" : copy.message.placeholder}
             value={values.message ?? ""}
             onChange={(e) => change("message", e.target.value)}
             aria-invalid={!!error("message")}

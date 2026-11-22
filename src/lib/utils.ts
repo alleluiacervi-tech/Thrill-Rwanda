@@ -22,7 +22,7 @@ export function formatMoney(
     currency,
     maximumFractionDigits: 0,
     notation: opts.compact ? "compact" : "standard",
-  }).format(amountMinor / 100);
+  }).format(amountMinor / (currency === "RWF" ? 1 : 100));
 }
 
 /**

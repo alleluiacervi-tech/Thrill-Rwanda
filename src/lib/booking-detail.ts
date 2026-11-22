@@ -13,7 +13,7 @@ export function loadBookingDetail(where: Prisma.BookingWhereInput) {
       provider: { select: { businessName: true, phone: true, user: { select: { email: true } } } },
       payments: {
         orderBy: { createdAt: "asc" },
-        select: { id: true, amountMinor: true, currency: true, method: true, status: true, transactionId: true, paidAt: true, createdAt: true },
+        select: { id: true, amountMinor: true, currency: true, method: true, gateway: true, status: true, transactionId: true, paidAt: true, createdAt: true },
       },
       agreement: true,
       documents: {

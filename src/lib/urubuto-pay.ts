@@ -6,6 +6,7 @@ export type UrubutoChannel = (typeof urubutoChannels)[number];
 export const testAmount = 125000;
 
 export function urubutoTestConfig() {
+  if (!["development", "test", "staging"].includes(process.env.APP_ENV ?? "") || process.env.VERCEL_ENV === "production") return null;
   const key = process.env.URUBUTO_PAY_TEST_KEY?.trim();
   const merchant = process.env.URUBUTO_PAY_MERCHANT_CODE?.trim();
   const service = process.env.URUBUTO_PAY_SERVICE_CODE?.trim();

@@ -6,7 +6,7 @@ export type MeetingVenue = {
   kind: "Hotel" | "Convention centre";
   name: string;
   description: string;
-  source: string;
+  source?: string;
   image?: string;
   imageAlt?: string;
 };
@@ -80,6 +80,7 @@ export type MeetingSpace = {
   type: SpaceType;
   capacities: Partial<Record<Layout, number>>;
   publishedMaximum?: number;
+  features?: string;
 };
 
 // Layout figures follow the order above. A blank means the operator did not publish a figure.
@@ -196,10 +197,10 @@ export function filterMeetingSpaces({
   type: string;
   layout: Layout | undefined;
   attendees: number;
-}) {
+}, catalog = { venues: meetingVenues, spaces: meetingSpaces }) {
   const text = query.toLowerCase().trim();
-  const names = new Map(meetingVenues.map((item) => [item.slug, item.name]));
-  return meetingSpaces.filter((space) => {
+  const names = new Map(catalog.venues.map((item) => [item.slug, item.name]));
+  return catalog.spaces.filter((space) => {
     if (venue && space.venue !== venue) return false;
     if (type && space.type !== type) return false;
     if (text && !`${names.get(space.venue)} ${space.name}`.toLowerCase().includes(text)) return false;

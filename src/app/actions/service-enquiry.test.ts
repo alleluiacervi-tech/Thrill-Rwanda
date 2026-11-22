@@ -59,3 +59,20 @@ it("keeps tailored answers and leaves unasked questions off the record", async (
  expect(save.mock.calls[1][0]).toMatchObject({ service: "EVENT", details: { journey: "WEDDING", eventType: "Wedding", venueStyle: "Lodge or hilltop", needs: "Venue reservation, Catering", addOns: "A honeymoon", partySize: 120 } });
  expect(save.mock.calls[1][0].details).not.toHaveProperty("ageGroup");
 });
+
+it("saves airport pickup details without saving an unverified price or Google route response", async () => {
+ const data = form();
+ data.delete("endDate");
+ for (const [key, value] of Object.entries({
+   service: "TRANSPORT", pickup: "Kigali International Airport (KGL)", dropoff: "My hotel",
+   pickupTime: "23:30", flightNumber: "WB 301", transferPlaceId: "ChIJ-test-place",
+   message: "", fareRwf: "1000", distanceMeters: "1",
+ })) data.set(key, value);
+ expect((await submitServiceEnquiry({ status: "idle" }, data)).status).toBe("success");
+ const details = save.mock.calls[0][0].details;
+ expect(details).toMatchObject({ pickupTime: "23:30", flightNumber: "WB 301", transferPlaceId: "ChIJ-test-place" });
+ expect(details).not.toHaveProperty("fareRwf");
+ expect(details).not.toHaveProperty("distanceMeters");
+ data.set("pickupTime", "29:15");
+ expect((await submitServiceEnquiry({ status: "idle" }, data)).fieldErrors).toHaveProperty("pickupTime");
+});

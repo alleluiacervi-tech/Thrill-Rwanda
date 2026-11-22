@@ -66,6 +66,7 @@ export function refreshSite() {
 /** Whether this kind of booking is paid online right now: hotels never, the rest as the admin set. */
 export async function paysOnline(serviceType: string) {
   if (serviceType === "ROOM") return false;
-  const { payOnline } = await getSite();
+  // Verify the current service switch when handling money; do not rely on the public site cache.
+  const { payOnline } = buildSite(await db.siteSettings.findUnique({ where: { id: 1 } }));
   return payOnline[serviceType as keyof typeof payOnline] ?? false;
 }

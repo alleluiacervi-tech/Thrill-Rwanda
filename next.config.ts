@@ -69,6 +69,14 @@ const nextConfig: NextConfig = {
         ],
       },
       {
+        source: "/:path(pay|payments)/:rest*",
+        headers: [
+          { key: "Cache-Control", value: "private, no-store, max-age=0, must-revalidate" },
+          { key: "Referrer-Policy", value: "no-referrer" },
+          { key: "X-Robots-Tag", value: "noindex, nofollow, noarchive" },
+        ],
+      },
+      {
         // Dashboards and auth screens must never be cached by a shared proxy
         // — one customer's bookings served to another is the worst possible
         // caching bug.

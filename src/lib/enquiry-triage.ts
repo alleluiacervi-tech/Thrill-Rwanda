@@ -1,6 +1,8 @@
 import { enqueueWhatsAppStatus } from "@/lib/whatsapp";
 import { enqueueOwnerNotification } from "@/lib/enquiry-outbox";
 import { db } from "@/lib/db";
+import { lockFinance } from "@/lib/finance-registry";
+import { OPEN_COLLECTIONS } from "@/lib/collections/rules";
 import {
   allowedEnquiryTransitions,
   canUseEnquiries,
@@ -14,6 +16,8 @@ export class EnquiryWorkflowError extends Error {}
 
 export async function updateEnquiry(actorId: string, input: TriageInput) {
   return db.$transaction(async (tx) => {
+    const closing = ["CANCELLED", "LOST"].includes(input.status);
+    if (closing) await lockFinance(tx);
     const actor = await tx.user.findUnique({
       where: { id: actorId },
       select: { id: true, role: true, staffRole: true, isActive: true },
@@ -32,6 +36,9 @@ export async function updateEnquiry(actorId: string, input: TriageInput) {
         "Someone updated this enquiry. Reload before saving your changes.",
       );
     const changedStatus = input.status !== row.status;
+    if (changedStatus && closing && await tx.collectionAttempt.count({
+      where: { invoice: { financialCase: { enquiryId: row.id } }, status: { in: OPEN_COLLECTIONS } },
+    })) throw new EnquiryWorkflowError("A collection is still being checked. Resolve it with Finance before closing this enquiry.");
     if (
       changedStatus &&
       ["PARTNER_PROCESSING", "CONFIRMED", "COMPLETED", "REFUNDED"].includes(

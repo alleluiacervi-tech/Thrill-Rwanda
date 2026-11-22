@@ -1,5 +1,8 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "regions": ["cdg1"],
-  "crons": [{ "path": "/api/cron/release-holds", "schedule": "0 3 * * *" }]
+  "crons": [
+    { "path": "/api/cron/release-holds", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/reconcile-payments", "schedule": "12 3 * * *" }
+  ]
 }

@@ -170,6 +170,7 @@ export async function resolveListingOwner(
   const user = await requireUser(next);
 
   if (user.role === "ADMIN") {
+    await requireTeamTwoFactor(user.id, "/admin/listings");
     const id = String(formData.get("providerId") ?? "").trim();
     if (!id) {
       throw new ListingOwnerError(
@@ -215,7 +216,10 @@ export async function resolveListingScope(
 ): Promise<ListingScope> {
   const user = await requireUser(next);
   // An admin acts across the platform: moderating a listing is the job.
-  if (user.role === "ADMIN") return { kind: "admin" };
+  if (user.role === "ADMIN") {
+    await requireTeamTwoFactor(user.id, "/admin/listings");
+    return { kind: "admin" };
+  }
 
   const { providerId } = await requireProvider(next);
   return { kind: "provider", providerId };

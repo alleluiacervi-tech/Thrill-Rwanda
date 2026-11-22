@@ -16,9 +16,9 @@ import { tourIncludes } from "@/lib/content";
 import { db } from "@/lib/db";
 import { nextCharge, quotedDepositPercent } from "@/lib/deposit";
 import { CHECKOUT_STATUSES } from "@/lib/payments";
-import { pesapalConfigured, pesapalIpnId } from "@/lib/pesapal";
+import { bookingPaymentAvailability } from "@/lib/collections/checkout";
 import { requireUser } from "@/lib/session";
-import { getSiteSettings, paysOnline } from "@/lib/settings";
+import { getSiteSettings } from "@/lib/settings";
 import { cn, formatDateRange, formatMoney } from "@/lib/utils";
 
 export const metadata: Metadata = {
@@ -85,10 +85,11 @@ export default async function CheckoutPage({
     booking.totalMinor,
     0,
     quotedDepositPercent(booking.details, settings.depositPercent),
+    booking.currency,
   );
   const amount = formatMoney(charge.amountMinor, booking.currency);
   // Online needs the gateway set up and the admin's switch on for this service.
-  const online = pesapalConfigured() && Boolean(pesapalIpnId()) && (await paysOnline(booking.serviceType));
+  const online = await bookingPaymentAvailability(booking, paid);
   // Hotels are never paid online; everything else is, once the gateway is on.
   const mode: CheckoutMode =
     booking.serviceType === "ROOM" ? "property" : online ? "online" : "phone";
@@ -163,7 +164,9 @@ export default async function CheckoutPage({
             buttonLabel={
               mode === "property"
                 ? "Confirm booking"
-                : charge.kind === "deposit"
+                : mode === "phone"
+                  ? "Confirm booking request"
+                  : charge.kind === "deposit"
                   ? `Confirm booking · pay ${amount} deposit`
                   : `Confirm booking · ${amount}`
             }

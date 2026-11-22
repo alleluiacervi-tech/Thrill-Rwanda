@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/session";
+import { twoFactorRequired } from "@/lib/two-factor-policy";
 import {
   ACCEPTED_TYPES,
   MAX_UPLOAD_BYTES,
@@ -20,10 +21,16 @@ const bad = (status: number, error: string) =>
 
 export async function POST(request: Request) {
   const session = await getSession();
-  const user = session?.user ? await db.user.findUnique({ where: { id: session.user.id }, select: { id: true, role: true, isActive: true } }) : null;
+  const user = session?.user ? await db.user.findUnique({
+    where: { id: session.user.id },
+    select: { id: true, role: true, isActive: true, twoFactorEnabled: true },
+  }) : null;
 
   if (!user) return bad(401, "Sign in to upload images.");
   if (user.isActive === false) return bad(403, "This account is suspended.");
+  if (twoFactorRequired(user) && !user.twoFactorEnabled) {
+    return bad(403, "Set up two-step verification before uploading listing images.");
+  }
 
   if (user.role !== "ADMIN") {
     if (user.role !== "PROVIDER") {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { mapMethod, mapStatus, newMerchantReference } from "@/lib/pesapal";
+import { mapMethod, mapStatus } from "@/lib/pesapal";
 
 /**
  * Reading Pesapal's answer. Misreading a code either loses a payment that
@@ -20,7 +20,6 @@ describe("mapStatus", () => {
     }
   });
 });
-
 describe("mapMethod", () => {
   it("recognises cards whatever the brand", () => {
     for (const m of ["VISA", "visa", "MasterCard", "CARD"]) {
@@ -36,16 +35,5 @@ describe("mapMethod", () => {
     for (const m of ["MPESA", "Airtel Money", "", null, undefined]) {
       expect(mapMethod(m)).toBe("MPESA");
     }
-  });
-});
-
-describe("newMerchantReference", () => {
-  it("keeps the booking reference readable inside it", () => {
-    expect(newMerchantReference("SW-GPBG5C")).toMatch(/^SW-GPBG5C-[0-9A-F]{6}$/);
-  });
-
-  it("differs every time, so a retry is a new Pesapal order", () => {
-    const refs = new Set(Array.from({ length: 50 }, () => newMerchantReference("SW-GPBG5C")));
-    expect(refs.size).toBe(50);
   });
 });

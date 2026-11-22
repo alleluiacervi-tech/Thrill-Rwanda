@@ -1,7 +1,4 @@
-import { randomUUID } from "node:crypto";
-
-// Pesapal API 3.0 client. No SDK — it is four JSON endpoints behind a
-// short-lived bearer token, and a dependency here would age badly.
+// Read-only status access for historical Pesapal payment attempts.
 
 const LIVE = "https://pay.pesapal.com/v3";
 const SANDBOX = "https://cybqa.pesapal.com/pesapalv3";
@@ -12,16 +9,6 @@ const CONSUMER_SECRET = process.env.PESAPAL_CONSUMER_SECRET;
 /** Sandbox by default; live processing requires explicit environment approval. */
 export function pesapalBase() {
   return process.env.PESAPAL_ENV === "live" ? LIVE : SANDBOX;
-}
-
-/** True once both halves of the merchant credential are present. */
-export function pesapalConfigured() {
-  return Boolean(CONSUMER_KEY && CONSUMER_SECRET) && (process.env.PESAPAL_ENV !== "live" || process.env.PESAPAL_LIVE_APPROVED === "true");
-}
-
-/** The registered IPN id. Without it Pesapal takes orders but never calls us back. */
-export function pesapalIpnId() {
-  return process.env.PESAPAL_IPN_ID || null;
 }
 
 export class PesapalError extends Error {
@@ -80,6 +67,8 @@ export async function pesapalToken(): Promise<string> {
       consumer_secret: CONSUMER_SECRET,
     }),
     cache: "no-store",
+    signal: AbortSignal.timeout(7_000),
+    redirect: "error",
   });
 
   const body = (await res.json().catch(() => null)) as
@@ -94,112 +83,34 @@ export async function pesapalToken(): Promise<string> {
   return body.token;
 }
 
-/** Authenticated JSON call. One retry with a fresh token if the cached one was rejected. */
+/** Authenticated lookup. One retry with a fresh token if the cached one was rejected. */
 async function call<T extends PesapalEnvelope>(
   path: string,
-  init: { method: "GET" | "POST"; body?: unknown },
   what: string,
   retry = true,
 ): Promise<T> {
   const token = await pesapalToken();
 
   const res = await fetch(`${pesapalBase()}${path}`, {
-    method: init.method,
+    method: "GET",
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
       Authorization: `Bearer ${token}`,
     },
-    body: init.body === undefined ? undefined : JSON.stringify(init.body),
     cache: "no-store",
+    signal: AbortSignal.timeout(7_000),
+    redirect: "error",
   });
 
   if (res.status === 401 && retry) {
     cached = null;
-    return call<T>(path, init, what, false);
+    return call<T>(path, what, false);
   }
 
   const body = (await res.json().catch(() => null)) as T | null;
   if (!body) throw new PesapalError(`Pesapal ${what} returned ${res.status} with no JSON.`);
   return assertOk(body, what);
-}
-
-export type IpnRegistration = {
-  ipn_id: string;
-  url: string;
-  ipn_notification_type_description?: string;
-};
-
-/** Registers the callback URL. Run once per environment — the id goes in PESAPAL_IPN_ID. */
-export async function registerIpn(url: string, type: "GET" | "POST" = "POST") {
-  return call<PesapalEnvelope & IpnRegistration>(
-    "/api/URLSetup/RegisterIPN",
-    { method: "POST", body: { url, ipn_notification_type: type } },
-    "IPN registration",
-  );
-}
-
-/** Every IPN URL already registered against this merchant account. */
-export async function listIpns() {
-  const body = await call<PesapalEnvelope>(
-    "/api/URLSetup/GetIpnList",
-    { method: "GET" },
-    "IPN list",
-  );
-  return body as unknown as IpnRegistration[];
-}
-
-export type SubmitOrderInput = {
-  /** Our merchant reference. Unique per attempt — this is the idempotency key. */
-  id: string;
-  amountMinor: number;
-  currency: string;
-  description: string;
-  callbackUrl: string;
-  notificationId: string;
-  email: string;
-  phone?: string | null;
-  firstName?: string;
-  lastName?: string;
-};
-
-export type SubmitOrderResult = {
-  order_tracking_id: string;
-  merchant_reference: string;
-  redirect_url: string;
-};
-
-/** Creates the order and returns the hosted page to send the customer to. */
-export async function submitOrder(input: SubmitOrderInput) {
-  // Pesapal takes major units with at most two decimals, not cents.
-  const amount = Number((input.amountMinor / 100).toFixed(2));
-
-  // A Rwandan mobile has to arrive as 2507…, no plus and no leading zero, or
-  // the hosted page drops it and the M-Pesa prompt never fires.
-  const phone = input.phone?.replace(/\D/g, "").replace(/^0/, "250") || undefined;
-
-  return call<PesapalEnvelope & SubmitOrderResult>(
-    "/api/Transactions/SubmitOrderRequest",
-    {
-      method: "POST",
-      body: {
-        id: input.id,
-        currency: input.currency,
-        amount,
-        description: input.description.slice(0, 100),
-        callback_url: input.callbackUrl,
-        notification_id: input.notificationId,
-        billing_address: {
-          email_address: input.email,
-          phone_number: phone,
-          country_code: "KE",
-          first_name: input.firstName || undefined,
-          last_name: input.lastName || undefined,
-        },
-      },
-    },
-    "order",
-  );
 }
 
 export type TransactionStatus = {
@@ -221,14 +132,8 @@ export type TransactionStatus = {
 export async function getTransactionStatus(orderTrackingId: string) {
   return call<PesapalEnvelope & TransactionStatus>(
     `/api/Transactions/GetTransactionStatus?orderTrackingId=${encodeURIComponent(orderTrackingId)}`,
-    { method: "GET" },
     "status",
   );
-}
-
-/** Merchant reference for one payment attempt, e.g. SW-8F3K2Q-4E1A9C. */
-export function newMerchantReference(bookingReference: string) {
-  return `${bookingReference}-${randomUUID().replace(/-/g, "").slice(0, 6).toUpperCase()}`;
 }
 
 /** Pesapal's numeric result mapped onto our PaymentStatus. */

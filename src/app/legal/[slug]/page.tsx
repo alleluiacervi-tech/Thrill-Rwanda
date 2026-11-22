@@ -220,6 +220,25 @@ export default async function LegalPage({
           </div>
         )}
 
+        {process.env.TRANSFER_ROUTE_ESTIMATES_ENABLED === "true" && (slug === "privacy" || slug === "terms") ? (
+          <section className="mt-10 space-y-3">
+            <h2 className="text-2xl">Google Maps for airport transfers</h2>
+            {slug === "privacy" ? (
+              <p>
+                If you use the airport estimate, the location you type and the selected place identifier are sent to Google Maps for suggestions and routing under the{" "}
+                <a className="underline" href="https://policies.google.com/privacy">Google Privacy Policy</a>.
+                Thrill uses short-lived hashed network identifiers to limit map requests. Your submitted enquiry can include the place identifier you selected.
+              </p>
+            ) : (
+              <p>
+                Map suggestions and routes are subject to the{" "}
+                <a className="underline" href="https://www.google.com/help/terms_maps/">Google Maps Additional Terms of Service</a>.
+                Thrill confirms the price and pickup terms in a written quotation.
+              </p>
+            )}
+          </section>
+        ) : null}
+
         <p className="mt-16 border-t border-[var(--line)] pt-6 text-2xs text-[var(--ink-faint)]">
           Questions about this document? Email{" "}
           <a className="underline" href={`mailto:${site.contact.email}`}>

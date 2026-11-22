@@ -23,6 +23,7 @@ export function QuoteEditor({
   emailAllowed,
   seed,
   businessEvent = false,
+  transport = false,
 }: {
   reference: string;
   enquiryVersion: number;
@@ -30,11 +31,12 @@ export function QuoteEditor({
   emailAllowed: boolean;
   seed?: QuoteSnapshot;
   businessEvent?: boolean;
+  transport?: boolean;
 }) {
   const [state, action, pending] = useActionState(issueWrittenQuote, {
     status: "idle",
   } as QuoteActionState);
-  const [currency, setCurrency] = useState(seed?.currency ?? "USD");
+  const [currency, setCurrency] = useState(seed?.currency ?? (transport ? "RWF" : "USD"));
   const [lines, setLines] = useState<
     {
       kind: (typeof LINE_KINDS)[number];

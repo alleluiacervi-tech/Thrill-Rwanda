@@ -13,10 +13,10 @@ describe("quoteZoneTrip", () => {
     expect(quoteZoneTrip({ zone: ZONE_3, vehicle: "premium", point: JKIA, fromPoint: true, time: "10:00" }).totalMinor).toBe(1_200_000);
   });
 
-  it("adds 15% at night, rounded up to the next hundred", () => {
-    const q = quoteZoneTrip({ zone: { ...ZONE_3, sedanMinor: 550_000 }, vehicle: "sedan", point: JKIA, fromPoint: true, time: "23:30" });
-    expect(q.extras).toEqual([{ label: expect.stringContaining("Night"), minor: 90_000 }]); // 825 → 900
-    expect(q.totalMinor).toBe(640_000);
+  it("adds 15% at night, rounded up to the next whole USD", () => {
+    const q = quoteZoneTrip({ zone: { ...ZONE_3, sedanMinor: 1_500 }, vehicle: "sedan", point: JKIA, fromPoint: true, time: "23:30" });
+    expect(q.extras).toEqual([{ label: expect.stringContaining("Night"), minor: 300 }]);
+    expect(q.totalMinor).toBe(1_800);
   });
 
   it("adds terminus parking only when collected at Nyabugogo", () => {

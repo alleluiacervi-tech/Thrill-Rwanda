@@ -172,7 +172,7 @@ export function SettingsForm({ values }: { values: SettingsValues }) {
         </div>
       </Section>
 
-      <Section title="Online payment" lede="Switch Pesapal off for a service and its customers are asked to pay by phone or WhatsApp instead. Hotel stays are always paid at the property.">
+      <Section title="Booking payments" lede="Control online payment by service. Provider settings and the booking currency determine the methods offered at checkout. Hotel stays are paid at the property.">
         <div className="space-y-3">
           <Toggle name="payOnlineTours" label="Safaris and tours" checked={values.payOnlineTours} />
           <Toggle name="payOnlineCars" label="Car hire" checked={values.payOnlineCars} />

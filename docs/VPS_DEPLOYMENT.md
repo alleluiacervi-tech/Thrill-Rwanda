@@ -110,7 +110,6 @@ Caddy; only the scheduler inside the server calls them.
 
 When the domain points at the VPS and the site works there:
 
-- Update the Pesapal IPN address for this domain (`npm run pesapal:ipn`), and
-  the domain in Resend.
+- Update the approved UrubutoPay callback origin and the domain in Resend. Follow the [merchant setup](URUBUTOPAY_SETUP.md).
 - Remove the Neon database, and the Vercel project or its domain, so there is
   only one live copy of the site and its data.

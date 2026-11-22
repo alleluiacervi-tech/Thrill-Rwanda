@@ -25,12 +25,25 @@ export function ImageUploader({
   const [pending, setPending] = React.useState<Pending[]>([]);
   const [error, setError] = React.useState<string | null>(null);
   const [dragging, setDragging] = React.useState(false);
+  const [uploadUnavailable, setUploadUnavailable] = React.useState(false);
   const inputRef = React.useRef<HTMLInputElement>(null);
   const seq = React.useRef(0);
 
   const room = MAX_IMAGES - urls.length - pending.length;
 
+  React.useEffect(() => {
+    const controller = new AbortController();
+    fetch("/api/uploads", { signal: controller.signal })
+      .then((response) => response.ok ? response.json() : null)
+      .then((settings) => {
+        if (settings?.driver === "none") setUploadUnavailable(true);
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, []);
+
   async function upload(files: File[]) {
+    if (uploadUnavailable) return;
     setError(null);
 
     const batch = files.slice(0, Math.max(0, room));
@@ -60,6 +73,7 @@ export function ImageUploader({
           };
 
           if (!res.ok || !data.url) {
+            if (res.status === 503) setUploadUnavailable(true);
             setError(data.error ?? `${file.name} could not be uploaded.`);
             return;
           }
@@ -97,7 +111,11 @@ export function ImageUploader({
         Photos
       </span>
 
-      <div
+      {uploadUnavailable ? (
+        <p className="rounded-[var(--radius-inset)] border border-[var(--line)] p-4 text-sm">
+          File uploads need a storage connection. Add an approved HTTPS photo link below.
+        </p>
+      ) : <div
         onDragOver={(e) => {
           e.preventDefault();
           setDragging(true);
@@ -144,7 +162,7 @@ export function ImageUploader({
             e.target.value = "";
           }}
         />
-      </div>
+      </div>}
 
       {error ? (
         <p role="alert" className="text-2xs font-medium text-red-700">

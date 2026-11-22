@@ -483,11 +483,21 @@ export async function cancelBooking(params: {
     });
 
     if (!booking) throw new BookingError("Booking not found.", "NOT_FOUND");
-    if (!isCancellable(booking.status)) {
+    try {
+      await assertNoUnresolvedBookingPayment(tx, booking.id);
+    } catch (error) {
+      if (error instanceof CollectionError) throw new BookingError(error.message, "NOT_CANCELLABLE");
+      throw error;
+    }
+    const fresh = await tx.booking.findUniqueOrThrow({ where: { id: booking.id }, select: { status: true } });
+    if (!isCancellable(fresh.status)) {
       throw new BookingError(
         "This booking can no longer be cancelled. Contact us and we'll help.",
         "NOT_CANCELLABLE",
       );
+    }
+    if (await tx.payment.count({ where: { bookingId: booking.id, status: "SUCCEEDED" } })) {
+      throw new BookingError("A payment is already recorded. Contact the desk to arrange changes or a refund.", "NOT_CANCELLABLE");
     }
 
     // Give the inventory back.
@@ -630,14 +640,23 @@ export async function transitionBooking(params: {
 
     if (!booking) throw new BookingError("Booking not found.", "NOT_FOUND");
 
-    if (!allowedTransitions(actor, booking.status).includes(to)) {
+    if (RELEASES.includes(to)) {
+      try {
+        await assertNoUnresolvedBookingPayment(tx, booking.id);
+      } catch (error) {
+        if (error instanceof CollectionError) throw new BookingError(error.message, "NOT_CANCELLABLE");
+        throw error;
+      }
+    } else await lockBooking(tx, booking.id);
+    const fresh = await tx.booking.findUniqueOrThrow({ where: { id: booking.id }, select: { status: true } });
+    if (!allowedTransitions(actor, fresh.status).includes(to)) {
       throw new BookingError(
-        `A ${STATUS_LABEL[booking.status].toLowerCase()} booking can't be moved to ${STATUS_LABEL[to].toLowerCase()}.`,
+        `A ${STATUS_LABEL[fresh.status].toLowerCase()} booking can't be moved to ${STATUS_LABEL[to].toLowerCase()}.`,
         "NOT_CANCELLABLE",
       );
     }
 
-    if (RELEASES.includes(to) && HOLDING.includes(booking.status)) {
+    if (RELEASES.includes(to) && HOLDING.includes(fresh.status)) {
       await tx.availability.updateMany({
         where: {
           serviceType: booking.serviceType,
@@ -781,3 +800,5 @@ export async function assertNotice(start: Date) {
     );
   }
 }
+import { assertNoUnresolvedBookingPayment, lockBooking } from "@/lib/collections/checkout";
+import { CollectionError } from "@/lib/collections/rules";

@@ -124,6 +124,20 @@ export default async function AdminOverviewPage({
         lede={`${longDay(range.from)} to ${longDay(range.to)}, Kigali time, compared with the ${period} before. Customer collections are pass-through money, not profit.`}
       />
 
+      <section aria-label="Common tasks" className="mb-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        {[
+          { href: "/admin/enquiries/new", title: "Record a travel request", detail: "Flights, stays, groups and events" },
+          { href: "/admin/listings/new/hotels", title: "Add a hotel", detail: "Property, room types and availability" },
+          { href: "/admin/business-venues", title: "Manage meeting venues", detail: "Properties, halls and seating layouts" },
+          { href: "/admin/readiness", title: "Review launch checklist", detail: "Hosting setup and company approvals" },
+        ].map(({ href, title, detail }) => (
+          <Link key={href} href={href} className="rounded-xl border border-[var(--line)] bg-[var(--paper-raised)] p-4 hover:border-forest-700">
+            <strong>{title}</strong>
+            <span className="mt-1 block text-sm">{detail}</span>
+          </Link>
+        ))}
+      </section>
+
       {/* One row of filters, above everything they scope. */}
       <div className="mb-6 flex flex-wrap items-end gap-3">
         <nav aria-label="Period" className="inline-flex rounded-full border border-[var(--line)] bg-[var(--paper-raised)] p-1">

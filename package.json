@@ -17,7 +17,6 @@
     "db:seed": "tsx prisma/seed.ts",
     "db:seed:demo": "tsx prisma/seed-demo-users.ts",
     "db:seed:products": "tsx scripts/seed-product-demo.ts",
-    "pesapal:ipn": "tsx scripts/pesapal-ipn.ts",
     "test": "vitest run",
     "test:watch": "vitest",
     "notifications:work": "tsx scripts/process-enquiry-notifications.ts",

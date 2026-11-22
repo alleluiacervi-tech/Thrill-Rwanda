@@ -7,6 +7,7 @@ import { bookTransfer, type TransferBookingState } from "@/app/actions/transfer-
 import { Button } from "@/components/ui/button";
 import { TypeAhead } from "@/components/search/type-ahead";
 import { useSite } from "@/components/layout/site-context";
+import { ServiceEnquiryForm } from "@/components/booking/service-enquiry-form";
 import {
   PICKUP_POINTS,
   REGION_LABEL,
@@ -70,10 +71,12 @@ export type TransferFormInitial = { point?: string; area?: string; date?: string
 export function TransferForm({
   className,
   zones,
+  submissionKey,
   initial = {},
 }: {
   className?: string;
   zones: PublicZone[];
+  submissionKey: string;
   /** A trip carried over from the home search bar. */
   initial?: TransferFormInitial;
 }) {
@@ -85,7 +88,8 @@ export function TransferForm({
     bookTransfer,
     { status: "idle" },
   );
-  const [requesting, setRequesting] = React.useState(false);
+  const [requestDetails, setRequestDetails] = React.useState<Record<string, string> | null>(null);
+  const requestRef = React.useRef<HTMLDivElement>(null);
 
   const startPoint = pickupPoint(initial.point ?? "") ?? PICKUP_POINTS[0]!;
   const [region, setRegion] = React.useState<Region>(startPoint.region);
@@ -169,24 +173,18 @@ export function TransferForm({
   function sendAsRequest() {
     const form = formRef.current;
     if (!form) return;
-    setRequesting(true);
     const data = new FormData(form);
-    const params = new URLSearchParams({
-      subject: "Airport transfer",
-      from: pickup || point.label,
-      to: dropoff,
-      date: String(data.get("date") ?? ""),
-      time,
-      guests: String(passengers),
-      flight: String(data.get("flight") ?? ""),
-      notes: [
-        quote ? `${VEHICLES.find((v) => v.key === vehicle)?.label}, quoted ${formatMoney(quote.totalMinor)}` : null,
-        String(data.get("notes") ?? "") || null,
-      ]
-        .filter(Boolean)
-        .join("\n"),
+    const terminal = point.pointToPoint ? "" : point.label;
+    setRequestDetails({
+      pickup: pickup || (fromPoint ? terminal : ""),
+      dropoff: dropoff || (!fromPoint ? terminal : ""),
+      startDate: String(data.get("date") ?? ""),
+      pickupTime: time,
+      partySize: String(passengers),
+      flightNumber: String(data.get("flight") ?? ""),
+      message: String(data.get("notes") ?? ""),
     });
-    router.push(`/contact?${params.toString()}`);
+    requestAnimationFrame(() => requestRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
   }
 
   const points = PICKUP_POINTS.filter((p) => p.region === region);
@@ -231,7 +229,8 @@ export function TransferForm({
   const destinationCell = point.pointToPoint ? areaSelect : fromPoint ? areaSelect : pointSelect;
 
   return (
-    <form ref={formRef} onSubmit={onSubmit} className={cn("scroll-mt-28", className)}>
+    <>
+    <form ref={formRef} onSubmit={onSubmit} hidden={!!requestDetails} className={cn("scroll-mt-28", className)}>
       {/* What the server needs to price it again. */}
       <input type="hidden" name="point" value={point.key} />
       <input type="hidden" name="zoneId" value={zone?.id ?? ""} />
@@ -319,8 +318,8 @@ export function TransferForm({
                   : "That trip isn't on our price list yet."}{" "}
                 Send your requirements so the desk can check options and provide a written quotation.
               </p>
-              <Button type="button" variant="accent" size="lg" className="mt-6" onClick={sendAsRequest} disabled={requesting}>
-                {requesting ? "Preparing…" : "Send as a request"}
+              <Button type="button" variant="accent" size="lg" className="mt-6" onClick={sendAsRequest}>
+                Request a written quote
               </Button>
             </div>
           ) : (
@@ -355,7 +354,7 @@ export function TransferForm({
                       <div className="min-w-0 flex-1">
                         <p className="font-semibold">{v.label}</p>
                         <p className="text-2xs text-[var(--ink-muted)]">
-                          {fits ? `${v.note} · Meet & greet · Flight tracking · 60 min free waiting` : `Seats ${v.seats} — too small for ${passengers}`}
+                          {fits ? v.note : `Seats ${v.seats} — too small for ${passengers}`}
                         </p>
                       </div>
                       <div className="flex items-center gap-4">
@@ -454,10 +453,9 @@ export function TransferForm({
                     <button
                       type="button"
                       onClick={sendAsRequest}
-                      disabled={requesting}
                       className="mt-3 text-center text-2xs text-[var(--ink-muted)] underline-offset-4 hover:underline"
                     >
-                      {requesting ? "Preparing…" : "Rather ask first? Send it as a request"}
+                      Request a written quote
                     </button>
                     <p className="mt-2 text-center text-2xs text-[var(--ink-faint)]">Nothing is charged until you confirm on the next step.</p>
                   </div>
@@ -470,5 +468,11 @@ export function TransferForm({
         </div>
       ) : null}
     </form>
+    {requestDetails ? (
+      <div ref={requestRef} className="scroll-mt-28">
+        <ServiceEnquiryForm submissionKey={submissionKey} transportOnly initial={requestDetails} />
+      </div>
+    ) : null}
+    </>
   );
 }

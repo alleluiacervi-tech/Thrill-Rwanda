@@ -39,7 +39,7 @@ function invalid(error: z.ZodError, formData: FormData): TransferZoneState {
   return { status: "error", message: "Please check the highlighted fields.", fieldErrors, values: submitted(formData), attempt: Date.now() };
 }
 
-// Shillings in the form, cents in the table; areas tidied to "A, B, C".
+// Whole USD in the form, cents in the table.
 function toRow(data: z.infer<typeof transferZoneSchema>) {
   const { sedan, van, premium, areas, distance, ...rest } = data;
   return {

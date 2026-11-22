@@ -22,6 +22,7 @@ import {
 } from "@/lib/enquiry-workflow";
 import { quoteContentHash } from "@/lib/quote-render";
 import type { QuoteSnapshot } from "@/lib/quote-rules";
+import { OPEN_COLLECTIONS } from "@/lib/collections/rules";
 
 export const financeInclude = {
   entries: true,
@@ -129,6 +130,13 @@ export async function executeFinanceCommand(
         where: { id: base.id },
         include: financeInclude,
       });
+      if (["INSTRUCTIONS", "RECORD_RECEIPT", "ALLOCATE_RECEIPT"].includes(input.action) &&
+        await tx.collectionAttempt.count({
+          where: { invoice: { caseId: data.id }, OR: [
+            { status: { in: OPEN_COLLECTIONS } },
+            { status: "SUCCESSFUL", settledAt: null },
+          ] },
+        })) throw new FinanceError("A gateway collection is being checked or awaits settlement. Reconcile it before opening an off-site payment.");
       const summary = financialSummary(data);
       const touched = new Set([row.id]);
       const op = await tx.financialOperation.create({
@@ -186,6 +194,9 @@ export async function executeFinanceCommand(
       const proof = async (kind: string, partyKey: string, value: number) => {
         const acc = await account();
         const key = referenceKey(input.externalRef);
+        if (await tx.collectionAttempt.count({ where: { settlementReference: `${acc.id}:${key}` } })) {
+          throw new FinanceError("This statement reference already reconciles a gateway collection.");
+        }
         const existing = await tx.settlementProof.findUnique({
           where: {
             accountId_referenceKey: { accountId: acc.id, referenceKey: key },

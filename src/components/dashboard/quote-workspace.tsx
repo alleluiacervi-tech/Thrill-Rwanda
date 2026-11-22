@@ -22,6 +22,7 @@ export async function QuoteWorkspace({
     reference: string;
     version: number;
     status: string;
+    service: string;
     ownerId: string | null;
     email: string | null;
     replyChannel: string;
@@ -120,6 +121,7 @@ export async function QuoteWorkspace({
             enquiryVersion={enquiry.version}
             intentKey={randomUUID()}
             businessEvent={businessEvent}
+            transport={enquiry.service === "TRANSPORT"}
             seed={
               latest &&
               quoteContentHash(latest.snapshot as QuoteSnapshot) ===

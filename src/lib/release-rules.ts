@@ -21,6 +21,7 @@ export const RELEASE_KEYS = [
   "FOUNDER_SIGNOFF",
   "WHATSAPP_CHANNEL",
 ] as const;
+export const REQUIRED_RELEASE_KEYS = RELEASE_KEYS.filter((key) => key !== "WHATSAPP_CHANNEL");
 export const releaseRecordSchema = z.object({
   key: z.enum(RELEASE_KEYS),
   version: z.coerce.number().int().min(-1),
@@ -35,7 +36,10 @@ export const releaseRecordSchema = z.object({
     .default(""),
   currency: z.enum(["USD", "EUR", "GBP", "RWF", ""]).default(""),
   renewalAt: z.string().max(30).default(""),
-});
+}).refine(
+  ({ key, state }) => key === "WHATSAPP_CHANNEL" || state !== "NOT_APPLICABLE",
+  { path: ["state"], message: "Required release items must be pending or verified." },
+);
 export function environmentName(env: NodeJS.ProcessEnv = process.env) {
   return ["development", "test", "staging", "production"].includes(
     env.APP_ENV ?? "",
@@ -138,8 +142,9 @@ export function environmentChecks(env: NodeJS.ProcessEnv = process.env) {
     },
     {
       key: "payment_mode",
-      ok: env.PESAPAL_ENV !== "live" || env.PESAPAL_LIVE_APPROVED === "true",
-      detail: "Live gateway requires explicit activation approval",
+      ok: env.URUBUTOPAY_ENABLED !== "true" || env.URUBUTOPAY_ENVIRONMENT !== "live" ||
+        (env.APP_ENV === "production" && env.URUBUTOPAY_LIVE_APPROVED === "true"),
+      detail: "UrubutoPay live collections require the production environment and explicit approval",
     },
   ];
 }
@@ -147,7 +152,7 @@ export function releaseEvidenceComplete(
   rows: { key: string; state: string; reviewAt: Date }[],
   now = new Date(),
 ) {
-  return RELEASE_KEYS.filter((k) => k !== "WHATSAPP_CHANNEL").every((key) =>
+  return REQUIRED_RELEASE_KEYS.every((key) =>
     rows.some(
       (r) => r.key === key && r.state === "VERIFIED" && r.reviewAt > now,
     ),

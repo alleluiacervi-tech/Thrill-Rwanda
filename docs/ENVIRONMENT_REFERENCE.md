@@ -7,17 +7,20 @@ Use `.env.example` for local placeholders; never commit actual `.env` files. Use
 | APP_ENV | development, test, staging, production | Explicit deployment identity; Node production without it is Undeclared |
 | NODE_ENV | Framework-controlled mode | Managed by Next/npm; do not repurpose |
 | SOFT_LAUNCH_PRIVATE | Invited preview gate | Default false; true requires active staff/client/company access for public pages/new intake |
-| NEXT_PUBLIC_SITE_URL | Public canonical/auth callback origin | Public; HTTPS for deployment |
-| BETTER_AUTH_URL | Authentication origin | Must match public origin |
+| NEXT_PUBLIC_SITE_URL | Public canonical/callback origin | Public; HTTPS for deployment; never localhost in deployment settings |
+| BETTER_AUTH_URL | Authentication origin | Must match public origin; never localhost in deployment settings |
 | BETTER_AUTH_SECRET | Sign/session protection | Secret, at least 32 characters, unique per environment |
 | DATABASE_URL | Prisma runtime database | Secret; correct branch/database and verified transport |
 | DIRECT_URL | Prisma migrations/backup connection | Secret; same database as runtime, direct connection where applicable |
 | DATABASE_POOL_MAX | Standard pg pool size | Default 5; respect hosting/database limits |
 | CRON_SECRET | Protected worker authorization | Secret, at least 32 characters; do not place in query strings |
 | RESEND_API_KEY / EMAIL_FROM | Email adapter and approved sender | API key secret; real domain/inbox validation required |
-| PESAPAL_ENV | sandbox or live | Sandbox default; never infer live from an empty value |
-| PESAPAL_LIVE_APPROVED | Explicit live processing switch | Default false; live account/settlement/refund approval still needed |
-| PESAPAL_CONSUMER_KEY / PESAPAL_CONSUMER_SECRET / PESAPAL_IPN_ID | Existing gateway integration | Credentials secret; IPN registration per environment; do not run live tests casually |
+| URUBUTOPAY_ENABLED / URUBUTOPAY_ENVIRONMENT / URUBUTOPAY_LIVE_APPROVED | UrubutoPay collection gates | Default off; live requires production identity and saved Admin routing approval |
+| URUBUTOPAY_API_KEY / URUBUTOPAY_MERCHANT_CODE / URUBUTOPAY_SERVICE_CODE | UrubutoPay merchant authentication | Server-side; separate merchant keys and services per environment |
+| URUBUTOPAY_APPROVED_METHODS / URUBUTOPAY_MIN_RWF / URUBUTOPAY_MAX_RWF | Contracted channels and limits | Record the verified scope from BK TecHouse |
+| URUBUTOPAY_WEBHOOK_USERNAME / URUBUTOPAY_WEBHOOK_PASSWORD / URUBUTOPAY_WEBHOOK_SECRET | Provider callback authentication | Give only the username and password to BK TecHouse. Keep the independent signing secret private |
+| PAYMENT_PUBLIC_ORIGIN | Public payment-link and return origin | Approved HTTPS origin for the deployment |
+| PESAPAL_LEGACY_RECONCILE / PESAPAL_ENV / PESAPAL_LIVE_APPROVED / PESAPAL_CONSUMER_KEY / PESAPAL_CONSUMER_SECRET | Historical lookup during cutover | Default off. Preserve existing credentials during reconciliation only |
 | CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET | Preferred listing-image storage driver | Secret API material; company-owned account |
 | R2_ACCOUNT_ID / R2_ACCESS_KEY_ID / R2_SECRET_ACCESS_KEY / R2_BUCKET / R2_PUBLIC_URL | Fallback image driver | Access credentials secret; bucket/public URL scope must be reviewed |
 | BACKUP_ENCRYPTION_KEY | AES-256-GCM archive and manifest authentication | Dedicated 32-byte base64 secret, stored separately from archives |
