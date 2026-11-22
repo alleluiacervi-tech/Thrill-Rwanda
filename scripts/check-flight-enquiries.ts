@@ -49,7 +49,10 @@ async function main() {
   try {
     const bookingsBefore = await db.booking.count();
     const paymentsBefore = await db.payment.count();
-    const first = input();
+    const first = flightEnquirySchema.parse({
+      ...input(), tripType: "MULTI_CITY", nonstopOnly: true,
+      additionalLegs: [{ origin: "Nairobi", destination: "Addis Ababa", departureDate: "2028-01-05" }],
+    });
     const retries = await Promise.all(
       Array.from({ length: 6 }, () => saveFlightEnquiry(first)),
     );
@@ -78,6 +81,9 @@ async function main() {
     });
     assert.equal(saved.consentVersion, "flight-enquiry-v1");
     assert.equal(saved.email, null);
+    const details = saved.details as Record<string, unknown>;
+    assert.equal(details.nonstopOnly, true);
+    assert.deepEqual(details.additionalLegs, first.additionalLegs);
     console.log(
       "PASS: concurrent retries create one lead; changed payload rejected; concurrent contact limit enforced; consent saved; no bookings/payments created.",
     );

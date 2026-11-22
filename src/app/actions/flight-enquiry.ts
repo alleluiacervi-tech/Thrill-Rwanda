@@ -15,8 +15,15 @@ export async function submitFlightEnquiry(
   _previous: FlightEnquiryState,
   form: FormData,
 ): Promise<FlightEnquiryState> {
+  const origins = form.getAll("legOrigin");
+  const destinations = form.getAll("legDestination");
+  const dates = form.getAll("legDate");
+  if (origins.length !== destinations.length || origins.length !== dates.length)
+    return { status: "error", message: "Each flight needs two airports and a departure date." };
   const parsed = flightEnquirySchema.safeParse({
     ...Object.fromEntries(form),
+    additionalLegs: origins.length ? origins.map((origin, index) => ({ origin, destination: destinations[index], departureDate: dates[index] })) : undefined,
+    nonstopOnly: form.get("nonstopOnly") === "on" ? true : undefined,
     flexible: form.get("flexible") === "on",
     consent: form.get("consent") === "on",
   });

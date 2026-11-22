@@ -5,6 +5,7 @@ import {
   ENQUIRY_CONSENT_TEXT,
   ENQUIRY_CONSENT_VERSION,
   type FlightEnquiryInput,
+  type FlightLeg,
 } from "@/lib/flight-enquiry-schema";
 
 export class EnquirySubmissionError extends Error {}
@@ -16,7 +17,7 @@ export type CapturedEnquiry = {
   phone: string;
   email: string;
   replyChannel: string;
-  details: Record<string, string | number | boolean>;
+  details: Record<string, string | number | boolean | FlightLeg[] | undefined>;
   service: string;
   source: string;
   consentVersion?: string;
