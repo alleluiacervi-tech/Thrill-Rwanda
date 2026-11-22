@@ -1,12 +1,26 @@
+import { Prisma } from "@/generated/prisma/client";
 import { db } from "@/lib/db";
 import { layouts, meetingSpaces, meetingVenues, spaceTypes, type MeetingSpace, type MeetingVenue } from "@/lib/meeting-directory";
 
+export async function readBusinessVenues(onlyPublished: boolean) {
+  try {
+    return await db.businessVenue.findMany({
+      where: onlyPublished ? { isPublished: true, spaces: { some: { isPublished: true } } } : undefined,
+      include: {
+        spaces: { where: onlyPublished ? { isPublished: true } : undefined, orderBy: { name: "asc" } },
+      },
+      orderBy: { name: "asc" },
+    });
+  } catch (error) {
+    if (!(error instanceof Prisma.PrismaClientKnownRequestError) || error.code !== "P2021") throw error;
+
+    console.warn("Business venue catalogue tables are missing. Apply the business venue migration.");
+    return null;
+  }
+}
+
 export async function publicBusinessVenueCatalogue() {
-  const properties = await db.businessVenue.findMany({
-    where: { isPublished: true, spaces: { some: { isPublished: true } } },
-    include: { spaces: { where: { isPublished: true }, orderBy: { name: "asc" } } },
-    orderBy: { name: "asc" },
-  });
+  const properties = (await readBusinessVenues(true)) ?? [];
   const venues: MeetingVenue[] = [...meetingVenues];
   const spaces: MeetingSpace[] = [...meetingSpaces];
   for (const property of properties) {

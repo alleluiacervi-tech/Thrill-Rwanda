@@ -1,14 +1,14 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
-import { businessEventMilestones, businessEventUpdate, updateBusinessEvent } from "./business-events";
+import { businessEventMilestones, businessEventSourcing, businessEventUpdate, updateBusinessEvent } from "./business-events";
 
 const tx = vi.hoisted(() => ({
   user: { findUnique: vi.fn() },
   enquiry: { findFirst: vi.fn(), updateMany: vi.fn() },
-  enquiryActivity: { create: vi.fn() },
+  enquiryActivity: { create: vi.fn(), findMany: vi.fn() },
 }));
 
 vi.mock("@/lib/db", () => ({
-  db: { $transaction: (run: (client: typeof tx) => unknown) => run(tx) },
+  db: { enquiryActivity: tx.enquiryActivity, $transaction: (run: (client: typeof tx) => unknown) => run(tx) },
 }));
 
 const milestone = businessEventUpdate.parse({
@@ -33,6 +33,16 @@ beforeEach(() => {
 });
 
 describe("business event operations", () => {
+  it("retains each hall and legacy venue-wide responses while keeping the latest revision", async () => {
+    tx.enquiryActivity.findMany.mockResolvedValue([
+      { id: "new", changes: { venue: "Hotel", hall: "Ballroom" } },
+      { id: "other", changes: { venue: "Hotel", hall: "Boardroom" } },
+      { id: "old", changes: { venue: "Hotel", hall: "ballroom" } },
+      { id: "legacy", changes: { venue: "Hotel" } },
+    ]);
+    const rows = await businessEventSourcing("enquiry");
+    expect(rows.map(row => row.id)).toEqual(["new", "other", "legacy"]);
+  });
   it("requires a valid hold deadline only for held venues", () => {
     const source = { ...milestone, command: "SOURCE", venue: "Kigali hall", status: "HELD" };
     expect(businessEventUpdate.safeParse({ ...source, holdUntil: "" }).success).toBe(false);

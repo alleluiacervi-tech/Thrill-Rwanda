@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { randomUUID } from "node:crypto";
 import { db } from "../src/lib/db";
 import { saveEnquiry } from "../src/lib/flight-enquiries";
+import { queueCaseEmail } from "../src/lib/case-email";
 import { updateEnquiry } from "../src/lib/enquiry-triage";
 import { triageSchema } from "../src/lib/enquiry-workflow";
 import { issueQuote, recordQuoteAcceptance } from "../src/lib/quotes";
@@ -125,6 +126,27 @@ async function main() {
         sendEmail: true,
         ...changes,
       });
+    const contact = await lead();
+    const message = { reference: contact.reference, version: contact.version, subject: "Meeting options", body: "Our desk checked <Hall A> for your group." };
+    const otherSales = await user("CUSTOMER", "SALES");
+    await assert.rejects(queueCaseEmail(otherSales.id, message));
+    await assert.rejects(queueCaseEmail(finance.id, message));
+    const results = await Promise.allSettled([queueCaseEmail(sales.id, message), queueCaseEmail(sales.id, message)]);
+    assert.equal(results.filter(result => result.status === "fulfilled").length, 1);
+    const emailJob = await db.notificationJob.findFirstOrThrow({ where: { enquiryId: contact.id, kind: "STAFF_EMAIL" } });
+    const outcome = await processNotificationBatch({
+      ids: [emailJob.id], send: async (to, email) => {
+        assert.equal(to, contact.email);
+        assert.ok(email.replyTo);
+        assert.ok(email.html.includes("&lt;Hall A&gt;"));
+        assert.ok(email.text.includes(contact.reference));
+        return { providerId: "mock-case-reply" };
+      },
+    });
+    assert.deepEqual(outcome, [{ id: emailJob.id, status: "SENT" }]);
+    assert.equal(await db.enquiryActivity.count({ where: { enquiryId: contact.id, kind: "EMAIL_QUEUED" } }), 1);
+    await db.enquiry.update({ where: { id: contact.id }, data: { replyChannel: "PHONE" } });
+    await assert.rejects(queueCaseEmail(admin.id, { ...message, version: contact.version + 1 }));
     const first = await lead();
     const draft = input(first);
     await assert.rejects(

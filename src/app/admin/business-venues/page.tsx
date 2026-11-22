@@ -1,15 +1,12 @@
 import Link from "next/link";
 import { BusinessVenueForm } from "@/components/dashboard/business-venue-form";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
-import { db } from "@/lib/db";
+import { readBusinessVenues } from "@/lib/business-venue-catalogue";
 import { requireAdmin } from "@/lib/session";
 
 export default async function BusinessVenuesPage() {
   await requireAdmin("/admin/business-venues");
-  const properties = await db.businessVenue.findMany({
-    orderBy: { name: "asc" },
-    include: { spaces: { orderBy: { name: "asc" } } },
-  });
+  const properties = await readBusinessVenues(false);
   return (
     <>
       <DashboardHead title="Business venues and meeting rooms" lede="Add a property, enter its rooms and layouts, then publish the property and at least one room to show it in Thrill Events & Business." />
@@ -17,8 +14,12 @@ export default async function BusinessVenuesPage() {
         <Link href="/events-business#venues" className="underline">View public directory</Link>
         <Link href="/admin/launch" className="underline">Review Events visibility</Link>
       </div>
-      <BusinessVenueForm mode="venue" />
-      {properties.length ? (
+      {properties === null ? (
+        <p role="status" className="rounded-lg border border-[var(--line)] p-4">
+          Venue editing is waiting for a database update. Ask the deployment owner to apply the business venue migration.
+        </p>
+      ) : <BusinessVenueForm mode="venue" />}
+      {properties?.length ? (
         <div className="mt-6 space-y-6">
           {properties.map(({ spaces, ...property }) => (
             <section key={property.id} className="space-y-3 rounded-2xl border border-[var(--line)] p-5">
@@ -36,7 +37,9 @@ export default async function BusinessVenuesPage() {
             </section>
           ))}
         </div>
-      ) : <p className="mt-5">No venues added here yet. The directory also includes the sourced Kigali venues.</p>}
+      ) : properties?.length === 0 && (
+        <p className="mt-5">No venues added here yet. The directory also includes the sourced Kigali venues.</p>
+      )}
     </>
   );
 }

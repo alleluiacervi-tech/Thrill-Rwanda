@@ -11,7 +11,7 @@ const providerRoutes = [
   "/provider/availability", "/provider/bookings", "/provider/notifications",
 ];
 const adminRoutes = [
-  "/admin", "/admin/profile", "/admin/enquiries", "/admin/enquiries/new",
+  "/admin", "/admin/profile", "/admin/contacts", "/admin/enquiries", "/admin/enquiries/new",
   "/admin/bookings", "/admin/listings", "/admin/listings/new/hotels",
   "/admin/listings/new/tours", "/admin/listings/new/vehicles", "/admin/transfers",
   "/admin/transfers/new", "/admin/venues", "/admin/venues/new", "/admin/business-venues",
@@ -63,6 +63,7 @@ async function main() {
   checkLocalDatabase();
   assert.equal((await request("/api/health")).status, 200, "Start the local app before running dashboard checks");
   const ids: string[] = [];
+  const contactCases: string[] = [];
   async function session(role: Role, staffRole?: StaffRole) {
     const id = randomUUID(), password = randomUUID() + randomUUID();
     const email = `dashboard-${id}@example.test`;
@@ -110,9 +111,29 @@ async function main() {
     const operations = await session("CUSTOMER", "OPERATIONS");
     const finance = await session("CUSTOMER", "FINANCE");
     const provider = await session("PROVIDER");
+    const contactName = `Directory fixture ${randomUUID()}`;
+    const contactEmail = `${randomUUID()}@example.test`;
+    for (const ownerId of [ids[1], ids[2]]) {
+      const reference = randomUUID();
+      await db.enquiry.create({ data: {
+        reference, submissionKey: randomUUID(), fingerprint: reference, contactKey: contactEmail,
+        ownerId, name: contactName, email: contactEmail, phone: "", replyChannel: "EMAIL",
+        consentVersion: "test", consentText: "test", privacyVersion: 1, details: {},
+      } });
+      contactCases.push(reference);
+    }
+    const directory = await request("/staff/contacts?q=" + encodeURIComponent(contactName), sales);
+    assert.ok(directory.body.includes(contactCases[0]) && !directory.body.includes(contactCases[1]));
+    const history = await request("/staff/contacts?contact=" + contactCases[0], sales);
+    assert.ok(history.body.includes("/staff/enquiries/" + contactCases[0]));
+    assert.ok(!history.body.includes(contactCases[1]));
+    const adminHistory = await request("/admin/contacts?contact=" + contactCases[0], admin);
+    for (const reference of contactCases) assert.ok(adminHistory.body.includes("/admin/enquiries/" + reference));
+    const detail = await request("/staff/enquiries/" + contactCases[0], sales);
+    assert.ok(detail.body.includes("Email the client"));
     await pages("Administrator", adminRoutes, admin);
-    await pages("Sales", [...staffRoutes, "/staff/enquiries/new", "/staff/support"], sales);
-    await pages("Operations", [...staffRoutes, "/staff/enquiries/new", "/staff/support"], operations);
+    await pages("Sales", [...staffRoutes, "/staff/contacts", "/staff/enquiries/new", "/staff/support"], sales);
+    await pages("Operations", [...staffRoutes, "/staff/contacts", "/staff/enquiries/new", "/staff/support"], operations);
     await pages("Finance", [...staffRoutes, "/staff/finance", "/staff/finance/collections"], finance);
     await pages("Approved hotel provider", providerRoutes, provider);
     await blocked("/staff", sales, /\/staff\/enquiries/);
@@ -120,10 +141,12 @@ async function main() {
     await blocked("/staff/finance", sales, /\/staff\/enquiries/);
     await blocked("/staff/finance/collections", sales, /\/staff\/enquiries/);
     await blocked("/staff/enquiries/new", finance, /\/staff\/enquiries/);
+    await blocked("/staff/contacts", finance, /\/staff\/enquiries/);
     await blocked("/provider/listings/vehicles/new", provider, /\/provider/);
     await blocked("/admin/listings/new/hotels", provider, /\/account\?denied=1/);
     console.log("PASS: sign-in, two-step enrollment and role/category boundaries");
   } finally {
+    await db.enquiry.deleteMany({ where: { reference: { in: contactCases } } });
     await db.user.deleteMany({ where: { id: { in: ids } } });
   }
 }

@@ -24,6 +24,7 @@ export const businessEventUpdate = z.discriminatedUnion("command", [
     ...common,
     command: z.literal("SOURCE"),
     venue: z.string().trim().min(2).max(160),
+    hall: z.string().trim().max(160).default(""),
     layout: z.string().trim().max(120).default(""),
     capacity: z.union([z.literal(""), z.coerce.number().int().min(1).max(100000)]).default(""),
     facilities: z.string().trim().max(1000).default(""),
@@ -80,6 +81,7 @@ export async function updateBusinessEvent(actorId: string, input: z.infer<typeof
         changes: input.command === "SOURCE"
           ? {
               venue: input.venue,
+              hall: input.hall,
               status: input.status,
               holdUntil: input.holdUntil,
               layout: input.layout,
@@ -102,8 +104,8 @@ export async function businessEventSourcing(enquiryId: string) {
   });
   const venues = new Set<string>();
   return checks.filter((check) => {
-    const { venue } = check.changes as { venue: string };
-    const key = venue.toLowerCase();
+    const { venue, hall } = check.changes as { venue: string; hall?: string };
+    const key = JSON.stringify([venue.toLowerCase(), hall?.toLowerCase() ?? ""]);
     if (venues.has(key)) return false;
     venues.add(key);
     return true;
