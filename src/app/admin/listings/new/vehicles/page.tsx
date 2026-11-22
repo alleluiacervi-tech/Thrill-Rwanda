@@ -10,7 +10,7 @@ export const metadata = {
 
 export default async function AdminNewVehiclePage() {
   await requireAdmin("/admin/listings");
-  const providers = await verifiedProviders();
+  const providers = await verifiedProviders("CAR");
 
   return (
     <>

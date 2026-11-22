@@ -11,10 +11,9 @@ import { DOCUMENT_LABELS, requiredDocuments } from "@/lib/booking-documents";
 import { db } from "@/lib/db";
 import { currentTermsVersion } from "@/lib/legal";
 import { notifyBookingCreated } from "@/lib/notifications";
-import { CHECKOUT_STATUSES, PaymentError, startCheckout } from "@/lib/payments";
-import { pesapalConfigured, pesapalIpnId } from "@/lib/pesapal";
+import { CHECKOUT_STATUSES } from "@/lib/payments";
+import { prepareBookingInvoice } from "@/lib/collections/checkout";
 import { getCurrentUser } from "@/lib/session";
-import { paysOnline } from "@/lib/settings";
 
 // Step two of booking: agree the terms (and sign, for car hire), then pay. Hotels skip payment.
 
@@ -131,23 +130,13 @@ export async function confirmBooking(
     return { status: "redirect", url: `/account/bookings/${reference}` };
   }
 
-  // Without a live gateway the booking stays held and the page explains how to pay.
-  if (!pesapalConfigured() || !pesapalIpnId() || !(await paysOnline(booking.serviceType))) {
-    return { status: "redirect", url: `/account/bookings/${reference}` };
-  }
-
   try {
-    await startCheckout({ bookingId: booking.id, customerId: user.id });
-    // Pesapal's form is embedded on our own payment page.
-    return { status: "redirect", url: `/checkout/${reference}/pay` };
-  } catch (err) {
-    if (err instanceof PaymentError) {
-      return { status: "error", message: err.message, retryable: err.retryable };
-    }
-    console.error("[checkout] payment failed to start", err);
+    const invoice = await prepareBookingInvoice(reference, user.id);
+    return { status: "redirect", url: invoice ? `/checkout/${reference}/pay` : `/account/bookings/${reference}` };
+  } catch {
     return {
       status: "error",
-      message: "We couldn't start that payment. Nothing has been charged — please try again.",
+      message: "We could not open checkout. Review your booking before retrying.",
       retryable: true,
     };
   }

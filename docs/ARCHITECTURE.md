@@ -288,58 +288,9 @@ tables and wrong inside a half-width column — the last columns end up in the
 horizontal scroll where nobody finds them. Pass `dense` for two- or
 three-column tables in a split layout.
 
-## Payments — Pesapal (Step 14)
+## Payments
 
-Pesapal API 3.0, no SDK: `src/lib/pesapal.ts` is four JSON endpoints behind a
-bearer token cached for four of its five minutes. `src/lib/payments.ts` is the
-only place a booking is allowed to become `PAID`.
-
-### The flow
-
-1. The customer presses Pay on their booking. `beginPayment` resolves the
-   booking from the reference **and the session user** — the id never comes
-   off the form — and `startCheckout` calls `SubmitOrderRequest`.
-2. A `payments` row is written `INITIATED`, carrying Pesapal's
-   `order_tracking_id` as `transactionId` and our per-attempt merchant
-   reference as `idempotencyKey`.
-3. The customer pays on Pesapal's hosted page. We never see a card or a PIN.
-4. Pesapal POSTs `/api/payments/pesapal/ipn`. It also bounces the browser back
-   to `/payments/return`.
-
-Both of those land in `reconcilePayment()`, which **ignores what the
-notification claims happened** and calls `GetTransactionStatus` itself. A
-forged IPN for a tracking id we never issued writes nothing.
-
-### Why the booking update is an updateMany
-
-The IPN and the return redirect race constantly — the customer's browser is
-often faster than the callback. The booking move is
-`updateMany({ where: { id, status: { in: PAYABLE } } })`, so the loser of that
-race matches zero rows instead of stamping `PAID` over a status that has since
-moved on. `notifyPaymentReceived` fires only for the writer that actually
-moved it.
-
-Partial payments fall out of the same design: the move happens when the **sum**
-of `SUCCEEDED` rows reaches `totalMinor`, not when any one payment succeeds.
-The amount recorded is the gateway's figure, not ours, so a short payment reads
-as short in the ledger rather than as paid in full.
-
-### Setup, per environment
-
-`PESAPAL_ENV` picks the endpoint — `sandbox` or `live`. Getting it backwards
-charges real cards. Then register the IPN URL once and paste the id it prints
-into `PESAPAL_IPN_ID`:
-
-```
-npm run pesapal:ipn                                            list what exists
-npm run pesapal:ipn -- https://host/api/payments/pesapal/ipn   register one
-```
-
-Pesapal must be able to reach both that URL and `NEXT_PUBLIC_SITE_URL` over
-public HTTPS — localhost registers fine and then never fires, so use a tunnel
-hostname in development. Until `PESAPAL_IPN_ID` is set the booking page hides
-the Pay button and shows the phone number instead, rather than opening
-checkouts nothing will ever confirm.
+New collections use the invoice and collection service with UrubutoPay. See [payment architecture](PAYMENT_ARCHITECTURE.md), [merchant setup](URUBUTOPAY_SETUP.md) and [reconciliation](PAYMENT_RECONCILIATION.md). The historical ledger and read-only provider verification remain available for existing Pesapal attempts during cutover.
 
 ## Notifications (Step 15)
 

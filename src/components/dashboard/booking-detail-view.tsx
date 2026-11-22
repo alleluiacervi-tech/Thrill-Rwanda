@@ -183,7 +183,7 @@ export function BookingDetailView({
                   <span>
                     <span className="tnum font-medium">{formatMoney(p.amountMinor, p.currency)}</span>
                     <span className="block text-2xs text-[var(--ink-faint)]">
-                      {when(p.paidAt ?? p.createdAt)} · Pesapal {p.transactionId ? `· ${p.transactionId.slice(0, 13)}…` : ""}
+                      {when(p.paidAt ?? p.createdAt)} · {p.gateway === "URUBUTOPAY" ? "UrubutoPay" : "Pesapal"} {p.transactionId ? `· ${p.transactionId.slice(0, 13)}…` : ""}
                     </span>
                   </span>
                   <Badge tone={p.status === "SUCCEEDED" ? "forest" : p.status === "FAILED" ? "clay" : "neutral"}>{p.status.toLowerCase()}</Badge>

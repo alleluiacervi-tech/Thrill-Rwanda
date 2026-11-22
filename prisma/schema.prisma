@@ -63,6 +63,8 @@ enum PaymentMethod {
   CARD
   BANK_TRANSFER
   CASH
+  MTN_MOMO
+  AIRTEL_MONEY
 }
 
 enum ReviewStatus {
@@ -296,6 +298,37 @@ model Venue {
 /// UPDATE or DELETE, so an entry cannot be altered or removed afterwards,
 /// not even by the application. The actor is copied in, not linked, so the
 /// record survives the account being deleted.
+model BusinessVenue {
+  id          String   @id @default(uuid()) @db.Uuid
+  slug        String   @unique
+  name        String
+  kind        String
+  description String
+  source      String?
+  image       String?
+  isPublished Boolean  @default(false) @map("is_published")
+  spaces      BusinessVenueSpace[]
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("business_venues")
+}
+
+model BusinessVenueSpace {
+  id        String        @id @default(uuid()) @db.Uuid
+  venueId   String        @map("venue_id") @db.Uuid
+  venue     BusinessVenue @relation(fields: [venueId], references: [id], onDelete: Restrict)
+  name      String
+  type      String
+  capacities Json
+  maximum   Int?
+  features  String?
+  isPublished Boolean     @default(false) @map("is_published")
+  updatedAt DateTime      @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@unique([venueId, name])
+  @@map("business_venue_spaces")
+}
+
 model ActivityLog {
   id         String   @id @default(uuid()) @db.Uuid
   createdAt  DateTime @default(now()) @map("created_at") @db.Timestamptz
@@ -478,6 +511,7 @@ model Booking {
   customer User      @relation(fields: [customerId], references: [id], onDelete: Restrict)
   provider Provider  @relation(fields: [providerId], references: [id], onDelete: Restrict)
   payments Payment[]
+  paymentInvoice PaymentInvoice?
   review   Review?
   agreement BookingAgreement?
   documents BookingDocument[]
@@ -503,6 +537,7 @@ model Payment {
   idempotencyKey  String        @unique @map("idempotency_key")
   amountMinor     Int           @map("amount_minor")
   currency        String        @default("USD")
+  gateway         String        @default("PESAPAL")
   method          PaymentMethod
   status          PaymentStatus @default(INITIATED)
   gatewayResponse Json?         @map("gateway_response")
@@ -514,6 +549,90 @@ model Payment {
   @@index([bookingId])
   @@index([status])
   @@map("payments")
+}
+
+model PaymentInvoice {
+  id           String @id @default(uuid()) @db.Uuid
+  number       String @unique
+  bookingId    String? @unique @map("booking_id") @db.Uuid
+  booking      Booking? @relation(fields: [bookingId], references: [id], onDelete: Restrict)
+  caseId       String? @unique @map("case_id") @db.Uuid
+  financialCase FinancialCase? @relation(fields: [caseId], references: [id], onDelete: Restrict)
+  currency     String
+  totalMinor   Int @map("total_minor")
+  depositMinor Int @map("deposit_minor")
+  dueAt        DateTime? @map("due_at") @db.Timestamptz
+  createdAt    DateTime @default(now()) @map("created_at") @db.Timestamptz
+  link         PaymentLink?
+  attempts     CollectionAttempt[]
+  @@map("payment_invoices")
+}
+
+model PaymentLink {
+  invoiceId String @id @map("invoice_id") @db.Uuid
+  invoice   PaymentInvoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  tokenHash String @unique @map("token_hash")
+  createdBy String @map("created_by") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+  revokedAt DateTime? @map("revoked_at") @db.Timestamptz
+  @@map("payment_links")
+}
+
+model CollectionAttempt {
+  id                 String @id @default(uuid()) @db.Uuid
+  invoiceId          String @map("invoice_id") @db.Uuid
+  invoice            PaymentInvoice @relation(fields: [invoiceId], references: [id], onDelete: Restrict)
+  provider           String
+  environment        String
+  merchantCode       String @map("merchant_code")
+  serviceCode        String @map("service_code")
+  merchantReference  String @unique @map("merchant_reference") @db.Uuid
+  providerReference  String? @map("provider_reference")
+  method             String
+  amountMinor        Int @map("amount_minor")
+  currency           String
+  status             String
+  settlementStatus   String @default("UNRECONCILED") @map("settlement_status")
+  hostedUrl          String? @map("hosted_url")
+  expiresAt          DateTime @map("expires_at") @db.Timestamptz
+  nextCheckAt        DateTime @map("next_check_at") @db.Timestamptz
+  verifiedAt         DateTime? @map("verified_at") @db.Timestamptz
+  settledAt          DateTime? @map("settled_at") @db.Timestamptz
+  settlementReference String? @unique @map("settlement_reference")
+  settlementEvidence String? @map("settlement_evidence")
+  settledById        String? @map("settled_by_id") @db.Uuid
+  feeMinor           Int? @map("fee_minor")
+  createdAt          DateTime @default(now()) @map("created_at") @db.Timestamptz
+  events             CollectionEvent[]
+  @@unique([provider, environment, merchantCode, providerReference], map: "collection_attempts_provider_ref_key")
+  @@index([invoiceId, createdAt])
+  @@index([environment, status, nextCheckAt])
+  @@map("collection_attempts")
+}
+
+model CollectionEvent {
+  id        String @id @default(uuid()) @db.Uuid
+  attemptId String @map("attempt_id") @db.Uuid
+  attempt   CollectionAttempt @relation(fields: [attemptId], references: [id], onDelete: Restrict)
+  dedupeKey String @unique @map("dedupe_key")
+  kind      String
+  result    String
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  @@map("collection_events")
+}
+
+model PaymentRoutingPolicy {
+  environment String @id
+  version     Int @default(0)
+  enabled     Boolean @default(false)
+  methods     String[]
+  minMinor    Int @map("min_minor")
+  maxMinor    Int @map("max_minor")
+  evidence    String
+  feeTerms    String @map("fee_terms")
+  updatedAt   DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("payment_routing_policies")
 }
 
 /**
@@ -606,6 +725,27 @@ model TransferZone {
 
   @@index([origin, isActive, sortOrder])
   @@map("transfer_zones")
+}
+
+/// The current airport sedan rate card. All amounts are whole Rwandan francs.
+model AirportTransferPricing {
+  key        String   @id
+  version    Int      @default(0)
+  isActive   Boolean  @default(false) @map("is_active")
+  rates      Json
+  updatedAt  DateTime @updatedAt @map("updated_at") @db.Timestamptz
+
+  @@map("airport_transfer_pricing")
+}
+
+/// Short-lived usage buckets for the public Google Maps proxy.
+model TransferMapUsage {
+  key       String   @id
+  count     Int
+  expiresAt DateTime @map("expires_at") @db.Timestamptz
+
+  @@index([expiresAt])
+  @@map("transfer_map_usage")
 }
 
 model TransferRoute {
@@ -993,6 +1133,7 @@ model FinancialCase {
   allocations ReceiptAllocation[]
   proofs SettlementProof[]
   fulfilment EnquiryFulfilment?
+  paymentInvoice PaymentInvoice?
   @@map("financial_cases")
 }
 

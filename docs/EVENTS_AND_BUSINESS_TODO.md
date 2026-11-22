@@ -10,7 +10,8 @@
 ## Venue sourcing and proposals
 
 - [x] Add a Kigali directory with property and space search, published capacities by layout, comparison, and room-specific enquiries.
-- [ ] Add staff editing for directory entries, including accessibility, AV, floor plans and verification dates. Expand coverage as additional operators provide room information.
+- [x] Allow administrators to add and publish managed properties and rooms, with capacities by layout and space notes for accessibility, AV and breakout facilities.
+- [ ] Import the original sourced listings into the managed catalogue, and add floor plans and verification dates as operators supply them.
 - [x] Give staff a case-level shortlist with supplier responses, room layouts, capacities, check dates and hold deadlines.
 - [x] Add an event-specific proposal editor using the existing versioned quote and acceptance workflow.
 
@@ -19,7 +20,7 @@
 - [x] Add UrubutoPay simulation screens and an administrator staging checkout using the provider's initiation and status APIs.
 - [ ] Verify hosted card and mobile-money flows with merchant test credentials. Configure authenticated provider callbacks and settlement reconciliation before connecting live case balances.
 
-The standalone simulation is at `/events-business/payment-preview`. It also appears on authorized cases with an accepted RWF proposal. It never writes to the finance ledger. The admin-only staging page is at `/events-business/payment-preview/staging`. Configure the three `URUBUTO_PAY_*` variables in `.env.example` and the site URL for the hosted return. Verify transactions using the provider status button after returning from checkout. See the [UrubutoPay API reference](https://developers.urubutopay.rw/reference/).
+Finance can issue a shared payment link for an accepted event proposal using the [central checkout](PAYMENT_INTEGRATION.md). The standalone simulation remains available in development and testing, and the administrator staging diagnostic uses separate test credentials. Follow the [UrubutoPay setup guide](URUBUTOPAY_SETUP.md) for eligible live collections.
 
 - [x] Show venue, rooms, transport and activities milestones on the shared case page using existing customer and company access rules.
 - [ ] Vet suppliers and pilot a Kigali meeting or delegation package and an overnight retreat.

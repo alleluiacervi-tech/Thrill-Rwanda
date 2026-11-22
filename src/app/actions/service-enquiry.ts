@@ -22,6 +22,9 @@ const TAILORED = [
   "ageGroup",
   "learningFocus",
   "addOns",
+  "pickupTime",
+  "flightNumber",
+  "transferPlaceId",
 ];
 
 async function capture(

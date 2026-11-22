@@ -15,6 +15,7 @@ export type ScheduledJob = {
 
 export const VPS_JOBS: ScheduledJob[] = [
   { name: "enquiry-notifications", path: "/api/cron/enquiry-notifications", everyMinutes: 5 },
+  { name: "reconcile-payments", path: "/api/cron/reconcile-payments", everyMinutes: 5 },
   { name: "backup", command: "backup", dailyAt: "02:30" },
   { name: "document-maintenance", path: "/api/cron/maintenance", dailyAt: "04:00" },
   // Same moment as the Vercel cron (03:00 UTC).

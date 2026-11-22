@@ -9,10 +9,11 @@ export function depositMinor(totalMinor: number, percent: number) {
 
 export type NextCharge = { amountMinor: number; kind: "full" | "deposit" | "balance" };
 
-export function nextCharge(totalMinor: number, paidMinor: number, percent: number): NextCharge {
+export function nextCharge(totalMinor: number, paidMinor: number, percent: number, currency = "USD"): NextCharge {
   const outstanding = Math.max(0, totalMinor - paidMinor);
   if (paidMinor > 0) return { amountMinor: outstanding, kind: "balance" };
-  const deposit = Math.min(outstanding, depositMinor(totalMinor, percent));
+  const target = currency === "RWF" ? Math.ceil(totalMinor * percent / 100) : depositMinor(totalMinor, percent);
+  const deposit = Math.min(outstanding, target);
   return { amountMinor: deposit, kind: deposit >= outstanding ? "full" : "deposit" };
 }
 

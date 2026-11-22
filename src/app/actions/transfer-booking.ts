@@ -5,6 +5,7 @@ import { directBookingEnabled } from "@/lib/publication";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { BookingError } from "@/lib/booking";
+import { transferTimeSchema } from "@/lib/airport-transfer-pricing";
 import { getCurrentUser } from "@/lib/session";
 import { getSite, getSiteSettings } from "@/lib/settings";
 import { createTransferBooking } from "@/lib/transfer-booking";
@@ -23,7 +24,7 @@ const schema = z.object({
   direction: z.enum(["from", "to"]),
   vehicle: z.enum(VEHICLES.map((v) => v.key) as ["sedan", "van", "premium"], { message: "Choose a vehicle" }),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose the date of the transfer"),
-  time: z.string().regex(/^\d{2}:\d{2}$/, "Choose a pickup time"),
+  time: transferTimeSchema,
   passengers: z.coerce.number().int().min(1).max(40),
   flight: z.string().trim().max(40).optional().or(z.literal("")),
   notes: z.string().trim().max(2000).optional().or(z.literal("")),

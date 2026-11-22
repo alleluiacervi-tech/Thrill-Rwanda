@@ -6,7 +6,7 @@ Phase 6 tooling and the later customer/company/supplier/channel features are imp
 
 | Workspace | Purpose |
 |---|---|
-| Admin → Readiness | Environment check results, company owners, evidence, costs, renewals, evidence review dates, delivery exceptions and observed worker activity |
+| Admin → Launch checklist | Configuration items that need attention, scheduled jobs, and company approvals with owners and review dates |
 | Admin → Launch controls | Public service modes, approved offers, support/document policy, retained-copy review and legal holds |
 | Admin → Corporate clients | Explicit company membership and named case sharing |
 | Staff enquiry detail | Identity-verified customer portal access, acceptance permission and explicit WhatsApp status-template consent |
@@ -15,6 +15,19 @@ Phase 6 tooling and the later customer/company/supplier/channel features are imp
 | Customer → Company travel | Explicitly shared company cases; membership alone never authorizes quotation acceptance |
 
 Required readiness records remain Pending until an authorized administrator records real evidence and a company owner. Marking records Verified is an audited human declaration, not an external verification or deployment. Optional WhatsApp may stay Not applicable. Required release evidence must be Verified and within its review date. The workspace never stores credentials.
+
+## Dashboard workflows
+
+| What you need to do | Workspace and access |
+|---|---|
+| Add a hotel, tour or vehicle | An administrator opens **Listings** and chooses an approved provider for that category. Approved providers can add and manage their own listings in the provider dashboard. |
+| Publish a hotel | In **Listings**, open the hotel and publish at least one room type under **Room visibility**, then publish the property. **Launch controls** determine if stays are hidden, enquiry-only, or directly bookable. |
+| Add a meeting hall | An administrator opens **Business venues**, saves the property, and enters the rooms and capacities. Publish both the property and each room that should appear in the public directory. |
+| Record a flight or event request | Administrators, Sales and Operations use **Enquiries → Capture an enquiry**. Choose **Flight** or **A wedding or event → Thrill Events & Business**. Record the customer's permission, then assign or claim the case before quoting. |
+| Review money and supplier confirmations | Finance and administrators issue invoice links and review digital collections in **Payments**. The finance ledger records verified statement credits. Operations records supplier and fulfilment updates within assigned cases. |
+| Grant access | Super admins use **Users & access**. Administrators and staff enroll in two-step verification before using staff tools. |
+
+The launch checklist records technical checks and human approvals. Daily staff work takes place in Enquiries, Listings, Bookings, Support or Finance. A missing email sender, storage connection or backup key needs action by the company owner responsible for that service. A pending approval needs a decision or evidence from the owner. Use the checklist to record these actions before public launch.
 
 ## Environment separation and accounts
 

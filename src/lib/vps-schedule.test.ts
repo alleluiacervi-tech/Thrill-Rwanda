@@ -10,8 +10,8 @@ describe("VPS schedule", () => {
     expect(kigaliMinuteOfDay(at("2026-11-19T23:15:00Z"))).toBe(75);
   });
 
-  it("runs notifications every five minutes and nothing else in between", () => {
-    expect(names(at("2026-11-19T10:05:00Z"))).toEqual(["enquiry-notifications"]);
+  it("runs notifications and payment reconciliation every five minutes", () => {
+    expect(names(at("2026-11-19T10:05:00Z"))).toEqual(["enquiry-notifications", "reconcile-payments"]);
     expect(names(at("2026-11-19T10:07:00Z"))).toEqual([]);
   });
 

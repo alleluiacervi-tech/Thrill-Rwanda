@@ -48,6 +48,7 @@ export default async function AdminLayout({
         { label: "Vehicles", href: "/admin/listings?kind=VEHICLE", icon: "vehicles" },
         { label: "Transfer zones", href: "/admin/transfers", icon: "transfers" },
         { label: "Wedding venues", href: "/admin/venues", icon: "listings" },
+        { label: "Business venues", href: "/admin/business-venues", icon: "listings" },
       ],
     },
     {
@@ -69,7 +70,7 @@ export default async function AdminLayout({
       label: "Operations",
       items: [
         { label: "Corporate clients", href: "/admin/clients", icon: "users" },
-        { label: "Release readiness", href: "/admin/readiness", icon: "settings" },
+        { label: "Launch checklist", href: "/admin/readiness", icon: "settings" },
         { label: "Launch controls", href: "/admin/launch", icon: "settings" },
         { label: "Support", href: "/admin/support", icon: "bookings" },
         { label: "Reports & exports", href: "/admin/reports", icon: "overview" },

@@ -1,4 +1,6 @@
 import { AlertTriangle } from "lucide-react";
+import { CollectionRegister } from "@/components/dashboard/collection-register";
+import { Button } from "@/components/ui/button";
 import { DashboardHead, EmptyPanel } from "@/components/dashboard/dashboard-shell";
 import { FilterChips } from "@/components/dashboard/filter-chips";
 import { SelectFilter } from "@/components/dashboard/select-filter";
@@ -41,6 +43,7 @@ export default async function AdminPaymentsPage({
   await requireAdmin("/admin/payments");
 
   const raw = await searchParams;
+  if (raw.view !== "legacy") return <CollectionRegister raw={raw} admin />;
   const statusParam = Array.isArray(raw.status) ? raw.status[0] : raw.status;
   const status =
     statusParam && STATUSES.has(statusParam) ? (statusParam as PaymentStatus) : "";
@@ -49,6 +52,7 @@ export default async function AdminPaymentsPage({
   const createdAt = dateRange(raw);
 
   const where = {
+    gateway: "PESAPAL",
     ...(status ? { status } : {}),
     ...(createdAt ? { createdAt } : {}),
     ...(q
@@ -92,9 +96,9 @@ export default async function AdminPaymentsPage({
         },
       },
     }),
-    db.payment.groupBy({ by: ["status"], _count: { _all: true } }),
-    db.payment.groupBy({ by: ["currency"], where: { status: "SUCCEEDED" }, _sum: { amountMinor: true } }),
-    db.payment.groupBy({ by: ["currency"], where: { status: "REFUNDED" }, _sum: { amountMinor: true } }),
+    db.payment.groupBy({ by: ["status"], where: { gateway: "PESAPAL" }, _count: { _all: true } }),
+    db.payment.groupBy({ by: ["currency"], where: { gateway: "PESAPAL", status: "SUCCEEDED" }, _sum: { amountMinor: true } }),
+    db.payment.groupBy({ by: ["currency"], where: { gateway: "PESAPAL", status: "REFUNDED" }, _sum: { amountMinor: true } }),
   ]);
 
   const countOf = (s: string) => counts.find((c) => c.status === s)?._count._all ?? 0;
@@ -107,8 +111,9 @@ export default async function AdminPaymentsPage({
   return (
     <>
       <DashboardHead
-        title="Payments"
-        lede="Every payment attempt Pesapal has reported, newest first. This ledger is read-only — money is moved by Pesapal, never from here."
+        title="Historical payments"
+        lede="Previous Pesapal booking payment records."
+        action={<Button href="/admin/payments" variant="outline">Current collections</Button>}
       />
 
       <dl className="mb-6 grid gap-3 sm:grid-cols-3">

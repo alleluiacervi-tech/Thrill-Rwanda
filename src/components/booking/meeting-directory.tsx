@@ -3,13 +3,17 @@ import Link from "next/link";
 import { Building2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Container, SectionHead } from "@/components/ui/primitives";
-import { filterMeetingSpaces, layouts, meetingCapacity, meetingVenues, spaceTypes } from "@/lib/meeting-directory";
+import { filterMeetingSpaces, layouts, meetingCapacity, spaceTypes, type MeetingSpace, type MeetingVenue } from "@/lib/meeting-directory";
 
 type Search = Record<string, string | string[] | undefined>;
 const single = (value: Search[string]) => typeof value === "string" ? value : "";
 const field = "mt-1.5 block w-full rounded-xl border border-[var(--line)] bg-[var(--paper-raised)] p-2.5";
 
-export function MeetingDirectory({ search }: { search: Search }) {
+export function MeetingDirectory({ search, catalogue }: {
+  search: Search;
+  catalogue: { venues: MeetingVenue[]; spaces: MeetingSpace[] };
+}) {
+  const { venues: meetingVenues } = catalogue;
   const query = single(search.q).trim().slice(0, 120);
   const venue = meetingVenues.find((item) => item.slug === search.property)?.slug ?? "";
   const type = spaceTypes.find((item) => item === search.type) ?? "";
@@ -17,7 +21,7 @@ export function MeetingDirectory({ search }: { search: Search }) {
   const count = single(search.attendees);
   const attendees = /^\d{1,5}$/.test(count) ? Math.min(Number(count), 10000) : 0;
   const filtered = Boolean(query || venue || type || layout || attendees);
-  const spaces = filterMeetingSpaces({ venue, query, type, layout, attendees });
+  const spaces = filterMeetingSpaces({ venue, query, type, layout, attendees }, catalogue);
   const compare = [search.compare].flat().filter((value): value is string => typeof value === "string");
   const matches = spaces.filter((space) => compare.includes(`${space.venue}/${space.id}`));
   const selected = matches.slice(0, 4);
@@ -138,7 +142,7 @@ export function MeetingDirectory({ search }: { search: Search }) {
             <article key={property.slug} className="self-start overflow-hidden rounded-2xl border border-[var(--line)]">
               {property.image && (
                 <div className="relative aspect-[2/1] bg-forest-950">
-                  <Image src={property.image} alt={property.imageAlt ?? property.name} fill className="object-cover"
+                  <Image src={property.image} alt={property.imageAlt ?? property.name} fill className="object-cover" unoptimized={property.image.startsWith("https://")}
                     sizes="(max-width: 1023px) calc(100vw - 40px), (max-width: 1760px) 50vw, 840px" />
                 </div>
               )}
@@ -152,9 +156,11 @@ export function MeetingDirectory({ search }: { search: Search }) {
                   <Link href={`/events-business?venue=${property.slug}#request`} aria-label={`Enquire about ${property.name}`} className="underline underline-offset-4">
                     Enquire about this property
                   </Link>
-                  <a href={property.source} aria-label={`Venue information for ${property.name}`} className="underline underline-offset-4">
-                    Venue information
-                  </a>
+                  {property.source && (
+                    <a href={property.source} aria-label={`Venue information for ${property.name}`} className="underline underline-offset-4">
+                      Venue information
+                    </a>
+                  )}
                 </div>
                 <details open={(filtered || rooms.some((space) => selected.includes(space))) || undefined} className="mt-5 border-t border-[var(--line)] pt-4">
                   <summary className="cursor-pointer font-semibold">
@@ -165,6 +171,7 @@ export function MeetingDirectory({ search }: { search: Search }) {
                       <li key={space.id} className="py-4">
                         <h4 className="font-semibold">{space.name}</h4>
                         <p className="mt-1 text-sm">{space.type}</p>
+                        {space.features && <p className="mt-2 whitespace-pre-wrap text-sm">{space.features}</p>}
                         {Object.keys(space.capacities).length ? (
                           <dl className="mt-2 flex flex-wrap gap-x-4 gap-y-2 text-sm">
                             {layouts.map((item) => space.capacities[item] && (

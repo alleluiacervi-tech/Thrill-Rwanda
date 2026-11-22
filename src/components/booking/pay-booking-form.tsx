@@ -11,7 +11,7 @@ import { useSite } from "@/components/layout/site-context";
 const initial: CheckoutState = { status: "idle" };
 
 /**
- * Sends the customer to Pesapal's hosted page.
+ * Opens the booking's payment page.
  *
  * The action returns a URL rather than redirecting so a gateway failure
  * renders here, next to the amount, instead of on a blank error screen.
@@ -32,7 +32,6 @@ export function PayBookingForm({
   const site = useSite();
   const [state, action, pending] = useActionState(beginPayment, initial);
 
-  // A full navigation to the payment page, which embeds Pesapal.
   React.useEffect(() => {
     if (state.status === "redirect") window.location.href = state.url;
   }, [state]);
@@ -88,14 +87,13 @@ export function PayBookingForm({
           <span>
             Quote your reference{" "}
             <span className="tnum font-semibold">{reference}</span> and we will
-            take payment over the phone.
+            share approved payment instructions.
           </span>
         ) : (
           <>
             <Lock className="mt-px size-3.5 shrink-0 text-forest-700" />
             <span>
-              MTN MoMo, Airtel Money and Visa or Mastercard, handled by Pesapal.
-              We never see your card or PIN.
+              Review verified payments and available payment methods in checkout.
             </span>
           </>
         )}

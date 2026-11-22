@@ -1,6 +1,6 @@
 # Thrill Rwanda — V2 travel operations
 
-A Next.js application for flights-first enquiries and checked Rwanda travel arrangements. The existing inventory booking engine is retained alongside explicit service modes; quotations, off-site finance and supplier fulfilment do not automatically create bookings or gateway payments.
+A Next.js application for flights-first enquiries and checked Rwanda travel arrangements, with inventory-backed booking where available. Finance can issue payment links for accepted quotations and reconcile independently verified collections. See [payment architecture](docs/PAYMENT_ARCHITECTURE.md) and the [production checklist](docs/PAYMENT_PRODUCTION_CHECKLIST.md).
 
 Implemented software includes guest/service enquiries, scoped staff triage, immutable quotations and exact acceptance, durable delivery, receipt reconciliation and split allocations, supplier payables/fulfilment, refunds, public launch controls, support, scoped reports/CSV, document retention/holds, customer/company portals, supplier reviews, revision assistance and an approval-gated WhatsApp status adapter.
 
@@ -52,10 +52,13 @@ npx tsx scripts/check-quotations.ts
 npx tsx scripts/check-finance.ts
 npx tsx scripts/check-launch-operations.ts
 npx tsx scripts/check-client-release.ts
+npx tsx scripts/check-dashboard-routes.ts
 npm run build
 ```
 
 Database integration scripts refuse non-project-local/production targets. Run them sequentially because they share fixture counts and policies. They remove their generated fixtures; message transports are mocked in tests. The GitHub validation workflow uses an isolated PostgreSQL 17 service, not deployment credentials. Rebuild/refresh local caches after disposable browser fixtures so preview content cannot linger.
+
+The dashboard route check also requires the local app to be running on port 3000. It creates temporary local accounts and checks page access, two-step enrollment redirects, and role boundaries.
 
 ## Operational commands
 

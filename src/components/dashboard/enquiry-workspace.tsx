@@ -1,6 +1,9 @@
 import { ClientAccessWorkspace } from "@/components/dashboard/client-access-workspace";
 import { FinancialWorkspace } from "@/components/dashboard/financial-workspace";
 import { QuoteWorkspace } from "@/components/dashboard/quote-workspace";
+import { PaymentLinkForm } from "@/components/dashboard/payment-link-form";
+import { canFinance } from "@/lib/finance-rules";
+import { AIRPORT_TRANSFER_LABEL } from "@/lib/airport-transfer-pricing";
 import { BusinessEventForm } from "@/components/dashboard/business-event-form";
 import { businessEventSourcing, isBusinessEvent, milestoneKinds, milestoneStatuses, sourcingStatuses } from "@/lib/business-events";
 import Link from "next/link";
@@ -256,6 +259,19 @@ export async function EnquiryDetail({
       });
   const details = row.details as Record<string, unknown>;
   const businessEvent = !finance && isBusinessEvent(details);
+  const paymentLink = canFinance(actor)
+    ? await db.quoteAcceptance.findUnique({
+        where: { enquiryId: row.id },
+        select: { quote: { select: { currency: true, financialCase: { select: { paymentInvoice: { select: { link: true } } } } } } },
+      })
+    : null;
+  const placeUrl = row.service === "TRANSPORT" && typeof details.transferPlaceId === "string"
+    ? `https://www.google.com/maps/search/?${new URLSearchParams({
+        api: "1",
+        query: String(details.pickup === AIRPORT_TRANSFER_LABEL ? details.dropoff : details.pickup),
+        query_place_id: details.transferPlaceId,
+      })}`
+    : undefined;
   const sourcing = businessEvent ? await businessEventSourcing(row.id) : [];
   const today = businessEvent ? todayInRwanda() : "";
   return (
@@ -285,7 +301,7 @@ export async function EnquiryDetail({
               ...Object.entries(details)
                 .filter(
                   ([key]) =>
-                    !["name", "phone", "email", "replyChannel"].includes(key),
+                    !["name", "phone", "email", "replyChannel", "transferPlaceId"].includes(key),
                 )
                 .map(([key, value]) => [
                   label(key.replace(/([A-Z])/g, " $1")),
@@ -304,6 +320,14 @@ export async function EnquiryDetail({
                 </dd>
               </div>
             ))}
+            {placeUrl ? (
+              <div className="rounded-xl border border-[var(--line)] p-4">
+                <dt className="text-sm">Map location selected by customer</dt>
+                <dd className="mt-2">
+                  <a href={placeUrl} target="_blank" rel="noreferrer" className="underline">Open in Google Maps</a>
+                </dd>
+              </div>
+            ) : null}
           </dl>
           <section className="mt-6">
             <h2 className="text-xl">Consent evidence</h2>
@@ -375,6 +399,14 @@ export async function EnquiryDetail({
       {!finance && <QuoteWorkspace enquiry={row} actor={actor} base={base} businessEvent={businessEvent} />}
       {!finance && <ClientAccessWorkspace reference={row.reference} />}
       <FinancialWorkspace enquiry={row} actor={actor} />
+      {paymentLink ? (
+        <PaymentLinkForm
+          reference={row.reference}
+          currency={paymentLink.quote.currency}
+          expires={paymentLink.quote.financialCase?.paymentInvoice?.link?.expiresAt?.toLocaleString("en-GB", { timeZone: "Africa/Kigali" })}
+          revoked={!!paymentLink.quote.financialCase?.paymentInvoice?.link?.revokedAt}
+        />
+      ) : null}
       <EnquiryTriageForm
         key={row.version}
         reference={row.reference}

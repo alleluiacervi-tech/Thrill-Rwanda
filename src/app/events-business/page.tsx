@@ -7,7 +7,8 @@ import { ServiceEnquiryForm } from "@/components/booking/service-enquiry-form";
 import { PageHero, PageShell } from "@/components/layout/page-shell";
 import { Button } from "@/components/ui/button";
 import { Container, SectionHead } from "@/components/ui/primitives";
-import { meetingVenues, meetingSpaces, layouts } from "@/lib/meeting-directory";
+import { layouts } from "@/lib/meeting-directory";
+import { publicBusinessVenueCatalogue } from "@/lib/business-venue-catalogue";
 import { getPublications, requirePublicService } from "@/lib/publication";
 
 export const dynamic = "force-dynamic";
@@ -41,10 +42,10 @@ export default async function EventsBusinessPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   await requirePublicService("EVENT");
-  const publications = await getPublications();
+  const [publications, catalogue] = await Promise.all([getPublications(), publicBusinessVenueCatalogue()]);
   const search = await searchParams;
-  const selectedVenue = meetingVenues.find(({ slug }) => slug === search.venue);
-  const selectedRoom = meetingSpaces.find(({ venue, id }) => venue === selectedVenue?.slug && id === search.room);
+  const selectedVenue = catalogue.venues.find(({ slug }) => slug === search.venue);
+  const selectedRoom = catalogue.spaces.find(({ venue, id }) => venue === selectedVenue?.slug && id === search.room);
   const layout = layouts.find((value) => value === search.layout);
   const attendees = typeof search.attendees === "string" && /^\d{1,5}$/.test(search.attendees)
     ? Number(search.attendees)
@@ -66,7 +67,6 @@ export default async function EventsBusinessPage({
         <div className="flex flex-wrap gap-3">
           <Button href="#venues">Explore Kigali venues</Button>
           <Button href="#request" variant="outline">Request an event proposal</Button>
-          <Button href="/events-business/payment-preview" variant="ghost">Try payment preview</Button>
         </div>
         <ul className="mt-8 grid gap-5 md:grid-cols-3">
           {services.map(({ title, description, icon: Icon }) => (
@@ -84,7 +84,7 @@ export default async function EventsBusinessPage({
           )}
         </div>
       </Container>
-      <MeetingDirectory search={search} />
+      <MeetingDirectory search={search} catalogue={catalogue} />
       <Container wide id="request" className="grid scroll-mt-28 gap-10 pb-16 lg:grid-cols-2">
         <div>
           <SectionHead title="Tell us what you’re planning" />

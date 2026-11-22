@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { isTeam, setupPath, twoFactorRequired } from "./two-factor-policy";
 
 describe("who must use two-step sign-in", () => {
@@ -16,6 +16,14 @@ describe("who must use two-step sign-in", () => {
     expect(twoFactorRequired({ role: "ADMIN" }, "optional")).toBe(false);
     expect(twoFactorRequired({ role: "ADMIN" }, "required")).toBe(true);
     expect(twoFactorRequired({ role: "ADMIN" }, "")).toBe(true);
+  });
+  it("keeps the requirement in a deployed build even with the optional switch", () => {
+    vi.stubEnv("NODE_ENV", "production");
+    try {
+      expect(twoFactorRequired({ role: "ADMIN" }, "optional")).toBe(true);
+    } finally {
+      vi.unstubAllEnvs();
+    }
   });
   it("sends people to set it up and back to where they were going, never off-site", () => {
     expect(setupPath("/admin/users")).toBe("/account/security?setup=required&next=%2Fadmin%2Fusers");

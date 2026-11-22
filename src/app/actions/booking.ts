@@ -14,6 +14,7 @@ import {
 import { db } from "@/lib/db";
 import { getCurrentUser } from "@/lib/session";
 import { CHECKOUT_STATUSES } from "@/lib/payments";
+import { lockBooking } from "@/lib/collections/checkout";
 import { RESIDENCIES } from "@/lib/residency";
 import { getSiteSettings } from "@/lib/settings";
 import type { ServiceType } from "@/generated/prisma/enums";
@@ -339,20 +340,26 @@ export async function requestDriver(
   const days = dayCount(booking.startDate, booking.endDate);
   const extra = vehicle.driverPerDayMinor * days;
 
-  await db.booking.update({
-    where: { id: booking.id },
-    data: {
-      subtotalMinor: booking.subtotalMinor + extra,
-      totalMinor: booking.totalMinor + extra,
-      details: {
-        ...(booking.details as Record<string, unknown>),
-        withDriver: true,
-        driverPerDayMinor: vehicle.driverPerDayMinor,
-        driverTotalMinor: extra,
-        driverAddedAt: new Date().toISOString(),
+  const changed = await db.$transaction(async (tx) => {
+    await lockBooking(tx, booking.id);
+    if (await tx.paymentInvoice.count({ where: { bookingId: booking.id } })) return false;
+    const updated = await tx.booking.updateMany({
+      where: { id: booking.id, totalMinor: booking.totalMinor, status: booking.status },
+      data: {
+        subtotalMinor: booking.subtotalMinor + extra,
+        totalMinor: booking.totalMinor + extra,
+        details: {
+          ...(booking.details as Record<string, unknown>),
+          withDriver: true,
+          driverPerDayMinor: vehicle.driverPerDayMinor,
+          driverTotalMinor: extra,
+          driverAddedAt: new Date().toISOString(),
+        },
       },
-    },
+    });
+    return updated.count > 0;
   });
+  if (!changed) return { status: "error", message: "The booking or its payment details changed. Contact the desk to add a driver." };
 
   revalidatePath(`/account/bookings/${parsed.data.reference}`);
   revalidatePath("/account/bookings");

@@ -34,4 +34,6 @@ export const previewExemptPath = (path: string) =>
     "/staff",
     "/provider",
     "/checkout",
+    "/pay",
+    "/payments/status",
   ].some((p) => path === p || path.startsWith(p + "/"));

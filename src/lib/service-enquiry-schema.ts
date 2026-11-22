@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { enquiryDateSchema } from "@/lib/flight-enquiry-schema";
+import { AIRPORT_TRANSFER_LABEL, transferTimeSchema } from "@/lib/airport-transfer-pricing";
 import {
   ADD_ONS,
   AGE_GROUPS,
@@ -42,7 +43,7 @@ export const serviceEnquirySchema = z
     email: z.string().trim().toLowerCase().max(254).email().or(z.literal("")),
     replyChannel: z.enum(["WHATSAPP", "PHONE", "EMAIL"]),
     startDate: enquiryDateSchema.or(z.literal("")),
-    endDate: enquiryDateSchema.or(z.literal("")),
+    endDate: enquiryDateSchema.or(z.literal("")).default(""),
     flexible: z.boolean(),
     partySize: z.coerce.number().int().min(1).max(10000),
     origin: z.string().trim().max(120).default(""),
@@ -50,12 +51,14 @@ export const serviceEnquirySchema = z
     location: z.string().trim().max(200),
     pickup: z.string().trim().max(200),
     dropoff: z.string().trim().max(200),
+    pickupTime: transferTimeSchema.or(z.literal("")).default(""),
+    flightNumber: z.string().trim().max(40).default(""),
+    transferPlaceId: z.string().regex(/^[\w-]{5,300}$/).or(z.literal("")).default(""),
     organization: z.string().trim().max(160),
     budget: z.string().trim().max(100),
     message: z
       .string()
       .trim()
-      .min(10, "Please tell us more (at least 10 characters)")
       .max(4000),
     context: z.string().trim().max(1000),
     // Tailored requests (src/lib/journey-requests.ts). All optional, so the
@@ -100,6 +103,12 @@ export const serviceEnquirySchema = z
       issue("location", "Enter your destination or preferred location");
     if (v.service === "TRANSPORT" && (!v.pickup || !v.dropoff))
       issue("pickup", "Enter both pickup and drop-off locations");
+    if (v.service !== "TRANSPORT" && v.message.length < 10)
+      issue("message", "Please tell us more (at least 10 characters)");
+    if (
+      v.transferPlaceId &&
+      (v.service !== "TRANSPORT" || ![v.pickup, v.dropoff].includes(AIRPORT_TRANSFER_LABEL))
+    ) issue("pickup", "Choose an airport pickup or drop-off for the selected map place.");
     if ((v.service === "GROUP" || v.journey === "BUSINESS_EVENT") && !v.organization)
       issue("organization", "Enter your organization or group name");
     if (

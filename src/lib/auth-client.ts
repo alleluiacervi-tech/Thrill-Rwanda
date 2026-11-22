@@ -7,8 +7,8 @@ import { inferAdditionalFields, twoFactorClient } from "better-auth/client/plugi
 import type { auth } from "@/lib/auth";
 
 export const authClient = createAuthClient({
-  // Blank or unset means "the site I am on", which also keeps Vercel preview URLs working.
-  baseURL: process.env.NEXT_PUBLIC_SITE_URL?.trim() || undefined,
+  // Use the active origin so auth requests stay on the deployed site, even if a
+  // stale build-time NEXT_PUBLIC_SITE_URL value is present.
   plugins: [
     inferAdditionalFields<typeof auth>(),
     // The sign-in form handles the second step itself (see sign-in-form.tsx).

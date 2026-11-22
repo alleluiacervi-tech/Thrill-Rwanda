@@ -201,6 +201,7 @@ export async function adminSetListingPublished(
   const { kind, id } = parsed.data;
   const isPublished = parsed.data.publish === "true";
   const data = { isPublished };
+  let hotelId: string | undefined;
 
   if (kind === "TOUR") {
     if (isPublished && !(await db.tour.findFirst({ where: { id, offerApproval: { not: null } } }))) return fail("Review and approve this offer under Launch controls first.");
@@ -208,7 +209,13 @@ export async function adminSetListingPublished(
   }
   else if (kind === "HOTEL") await db.hotel.update({ where: { id }, data });
   else if (kind === "VEHICLE") await db.vehicle.update({ where: { id }, data });
-  else await db.room.update({ where: { id }, data });
+  else {
+    const room = await db.room.findUnique({ where: { id }, select: { hotelId: true } });
+    if (!room) return fail("That room no longer exists. Reload the property.");
+    const updated = await db.room.updateMany({ where: { id }, data });
+    if (!updated.count) return fail("That room no longer exists. Reload the property.");
+    hotelId = room.hotelId;
+  }
 
   await logActivity(admin.id, {
     action: isPublished ? "listing.publish" : "listing.unpublish",
@@ -219,6 +226,7 @@ export async function adminSetListingPublished(
     changes: { kind, isPublished },
   });
   revalidatePath("/admin/listings");
+  if (hotelId) revalidatePath(`/admin/listings/hotels/${hotelId}/edit`);
   refreshPublicCatalogue();
   return ok;
 }

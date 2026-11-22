@@ -30,9 +30,9 @@ import { DOCUMENT_ACCEPT, DOCUMENT_LABELS, requiredDocuments } from "@/lib/booki
 import { db } from "@/lib/db";
 import { nextCharge, quotedDepositPercent } from "@/lib/deposit";
 import { CHECKOUT_STATUSES } from "@/lib/payments";
-import { pesapalConfigured, pesapalIpnId } from "@/lib/pesapal";
+import { bookingPaymentAvailability } from "@/lib/collections/checkout";
 import { requireUser } from "@/lib/session";
-import { getSiteSettings, paysOnline } from "@/lib/settings";
+import { getSiteSettings } from "@/lib/settings";
 import { getSite } from "@/lib/settings";
 import { formatDateRange, formatMoney } from "@/lib/utils";
 
@@ -41,25 +41,20 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-// What the return redirect from Pesapal puts in ?payment=.
+// Historical gateway redirects only provide a hint. Verified totals come from the ledger.
 const RETURN_NOTE: Record<
   string,
   { tone: "ok" | "warn" | "bad"; title: string; body: string }
 > = {
-  succeeded: {
-    tone: "ok",
-    title: "Payment received",
-    body: "Thank you — Pesapal has confirmed it. Your booking moves to confirmed once the operator has accepted the dates.",
-  },
   pending: {
     tone: "warn",
     title: "Payment still processing",
-    body: "Pesapal hasn't settled it yet. If you approved a mobile money prompt this page will catch up on its own within a minute or two.",
+    body: "Check the verified totals below or contact the desk to trace a previous payment.",
   },
   failed: {
     tone: "bad",
     title: "That payment didn't go through",
-    body: "Nothing has been charged. You can try again below, or pay another way.",
+    body: "Contact the desk if funds left your account.",
   },
   unknown: {
     tone: "warn",
@@ -104,6 +99,7 @@ export default async function BookingDetailPage({
     include: {
       provider: { select: { businessName: true, phone: true } },
       payments: { orderBy: { createdAt: "desc" } },
+      paymentInvoice: { select: { id: true } },
       review: { select: { rating: true, status: true } },
       agreement: { select: { signedName: true, signedAt: true } },
       documents: { select: { id: true, kind: true, fileName: true } },
@@ -117,7 +113,7 @@ export default async function BookingDetailPage({
   );
 
   const paid = booking.payments
-    .filter((p) => p.status === "SUCCEEDED")
+    .filter((p) => p.status === "SUCCEEDED" && p.currency === booking.currency)
     .reduce((sum, p) => sum + p.amountMinor, 0);
   const outstanding = Math.max(0, booking.totalMinor - paid);
 
@@ -127,9 +123,9 @@ export default async function BookingDetailPage({
     booking.totalMinor,
     paid,
     quotedDepositPercent(booking.details, (await getSiteSettings()).depositPercent),
+    booking.currency,
   );
-  const onlinePayments =
-    pesapalConfigured() && Boolean(pesapalIpnId()) && (await paysOnline(booking.serviceType));
+  const onlinePayments = Boolean(booking.paymentInvoice) || await bookingPaymentAvailability(booking, paid);
 
   // Car hire only: a driver can still be added while the booking is live.
   const details = booking.details as { withDriver?: boolean; terms?: unknown } | null;
@@ -138,7 +134,7 @@ export default async function BookingDetailPage({
   // Hotel stays are settled at the property, never online.
   const payAtProperty = booking.serviceType === "ROOM";
   const vehicle =
-    booking.serviceType === "VEHICLE" && payable && !details?.withDriver
+    booking.serviceType === "VEHICLE" && payable && !details?.withDriver && !booking.paymentInvoice
       ? await db.vehicle.findUnique({
           where: { id: booking.resourceId },
           select: { driverPerDayMinor: true },
@@ -277,6 +273,9 @@ export default async function BookingDetailPage({
               </div>
             </dl>
 
+            {booking.paymentInvoice && (!payable || !outstanding) ? (
+              <Button href={`/checkout/${booking.reference}/pay`} variant="outline" className="mt-5 w-full">View payment receipts</Button>
+            ) : null}
             {outstanding > 0 && payable ? (
               // Held but never taken through checkout: finish there, where the terms are agreed.
               !termsAgreed ? (
@@ -301,8 +300,7 @@ export default async function BookingDetailPage({
                 />
               ) : (
                 <p className="mt-5 rounded-[var(--radius-inset)] border border-clay-300 bg-clay-100 p-4 text-2xs leading-relaxed text-clay-900">
-                  Online payment is being switched on. To settle this booking,
-                  call or WhatsApp {site.contact.phone} quoting{" "}
+                  Contact {site.contact.phone} for payment instructions. Quote{" "}
                   <span className="tnum font-semibold">{booking.reference}</span>.
                 </p>
               )

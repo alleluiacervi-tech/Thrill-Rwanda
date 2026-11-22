@@ -4,6 +4,7 @@ import { PageShell, PageHero } from "@/components/layout/page-shell";
 import { ServiceEnquiryForm } from "@/components/booking/service-enquiry-form";
 import { TransferForm } from "@/components/booking/transfer-form";
 import { Container } from "@/components/ui/primitives";
+import { activeAirportRates, airportMapConfig } from "@/lib/airport-transfer-maps";
 import { requirePublicService } from "@/lib/publication";
 import { listActiveZones } from "@/lib/transfers";
 export const dynamic = "force-dynamic";
@@ -15,6 +16,7 @@ export const metadata: Metadata = {
 };
 export default async function Page() {
   const mode = await requirePublicService("TRANSPORT");
+  const airportEstimates = mode === "ENQUIRY" && !!airportMapConfig() && !!(await activeAirportRates().catch(() => null));
   return (
     <PageShell>
       <PageHero
@@ -25,12 +27,12 @@ export default async function Page() {
       />
       <Container className="max-w-3xl py-14">
         {mode === "DIRECT" ? (
-          <TransferForm zones={await listActiveZones()} />
+          <TransferForm zones={await listActiveZones()} submissionKey={randomUUID()} />
         ) : (
           <ServiceEnquiryForm
             submissionKey={randomUUID()}
-            initialService="TRANSPORT"
-            context="Airport transfer enquiry"
+            transportOnly
+            airportEstimates={airportEstimates}
           />
         )}
         <p className="mt-8">

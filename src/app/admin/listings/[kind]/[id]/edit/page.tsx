@@ -1,5 +1,7 @@
 import { notFound } from "next/navigation";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
+import { ActionButton } from "@/components/dashboard/action-button";
+import { adminSetListingPublished } from "@/app/actions/admin";
 import { HotelForm } from "@/components/dashboard/hotel-form";
 import { TourDepartures } from "@/components/dashboard/tour-departures";
 import { TourForm } from "@/components/dashboard/tour-form";
@@ -92,7 +94,7 @@ export default async function AdminEditListingPage({
         orderBy: [{ name: "asc" }, { id: "asc" }],
         select: {
           id: true, name: true, capacity: true, quantity: true,
-          pricePerNightMinor: true,
+          pricePerNightMinor: true, isPublished: true,
         },
       },
     },
@@ -101,6 +103,20 @@ export default async function AdminEditListingPage({
 
   return (
     <Frame title={`Edit ${hotel.name}`} owner={hotel.provider.businessName}>
+      <section className="mb-6 rounded-xl border border-[var(--line)] p-5">
+        <h2 className="text-xl">Room visibility</h2>
+        <p className="mt-2 text-sm">Publish at least one room type here, then publish the property from Listings. Launch controls determine whether customers can request or book a stay.</p>
+        <ul className="mt-3 divide-y divide-[var(--line)]">
+          {hotel.rooms.map((room) => (
+            <li key={room.id} className="flex flex-wrap items-center justify-between gap-3 py-3">
+              <span>{room.name} · {room.isPublished ? "Published" : "Hidden"}</span>
+              <ActionButton action={adminSetListingPublished} fields={{ kind: "ROOM", id: room.id, publish: String(!room.isPublished) }}>
+                {room.isPublished ? "Unpublish room" : "Publish room"}
+              </ActionButton>
+            </li>
+          ))}
+        </ul>
+      </section>
       <HotelForm existing={hotel} basePath="/admin/listings" />
     </Frame>
   );

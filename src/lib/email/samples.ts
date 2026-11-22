@@ -36,7 +36,7 @@ export const emailSamples: { id: string; label: string; audience: string; email:
       paragraphs: ["We have your Ksh 25,200 deposit. The balance of Ksh 58,800 can be paid from your booking page before your trip."],
       details: [...booking, ["Paid now", "Ksh 25,200"], ["Paid so far", "Ksh 25,200"], ["Balance due", "Ksh 58,800"]],
       cta: { label: "View booking and balance", href: "/account/bookings/SW-GPBG5C" },
-      note: "Keep this email as your receipt. Payments are processed securely by Pesapal.",
+      note: "Keep this payment confirmation with your booking records.",
     }),
   },
   {

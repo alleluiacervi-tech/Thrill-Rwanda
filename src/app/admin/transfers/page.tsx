@@ -28,19 +28,22 @@ export default async function AdminTransfersPage() {
     <>
       <DashboardHead
         title="Transfer zones"
-        lede={`Fixed prices per vehicle, by area. ${live} of ${zones.length} bookable. Night trips (9pm–5am) add ${NIGHT_PERCENT}%, automatically.`}
+        lede={`Fixed area prices for direct booking. ${live} of ${zones.length} zones active. Night trips (21:00–05:00) add ${NIGHT_PERCENT}%, rounded up to one USD.`}
         action={
-          <Button href="/admin/transfers/new" variant="accent">
-            <Plus className="size-4" />
-            Add zone
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button href="/admin/transfers/pricing" variant="outline">Airport pricing</Button>
+            <Button href="/admin/transfers/new" variant="accent">
+              <Plus className="size-4" />
+              Add zone
+            </Button>
+          </div>
         }
       />
 
       {zones.length === 0 ? (
         <EmptyPanel
           title="No transfer zones yet"
-          body="Add the areas you serve and what each vehicle costs. Customers can book them as soon as they are saved."
+          body="Add the areas you serve and what each vehicle costs. Active zones appear when transport is set to direct booking."
           action={
             <Button href="/admin/transfers/new" variant="accent">
               <Plus className="size-4" />

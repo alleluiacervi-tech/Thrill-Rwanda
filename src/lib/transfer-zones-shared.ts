@@ -103,7 +103,7 @@ export type ZoneQuote = {
 
 /**
  * The price of one trip. The fee for collecting at a terminus only applies
- * when the trip starts there; the night fee is rounded up to whole hundreds.
+ * when the trip starts there; the night fee is rounded up to a whole USD.
  */
 export function quoteZoneTrip(input: {
   zone: Pick<PublicZone, "sedanMinor" | "vanMinor" | "premiumMinor">;
@@ -120,7 +120,7 @@ export function quoteZoneTrip(input: {
   }
   if (isNight(input.time)) {
     const raw = (fareMinor * NIGHT_PERCENT) / 100;
-    extras.push({ label: `Night fee (9pm–5am, +${NIGHT_PERCENT}%)`, minor: Math.ceil(raw / 10_000) * 10_000 });
+    extras.push({ label: "Night fee (9pm–5am)", minor: Math.ceil(raw / 100) * 100 });
   }
   return { fareMinor, extras, totalMinor: fareMinor + extras.reduce((s, e) => s + e.minor, 0) };
 }
@@ -160,10 +160,10 @@ export const transferZoneSchema = z.object({
     .max(2000)
     .refine((a) => splitAreas(a).length > 0, "List at least one area"),
   distance: z.string().trim().max(40).optional().or(z.literal("")),
-  // Whole shillings in the form, stored as cents.
-  sedan: z.coerce.number().int("Whole shillings only.").min(1, "Enter a price.").max(1_000_000, "That price looks too high."),
-  van: z.coerce.number().int("Whole shillings only.").min(1, "Enter a price.").max(1_000_000, "That price looks too high."),
-  premium: z.coerce.number().int("Whole shillings only.").min(1, "Enter a price.").max(1_000_000, "That price looks too high."),
+  // Whole USD in the form, stored as cents.
+  sedan: z.coerce.number().int("Enter a whole USD amount.").min(1, "Enter a price.").max(1_000_000, "That price looks too high."),
+  van: z.coerce.number().int("Enter a whole USD amount.").min(1, "Enter a price.").max(1_000_000, "That price looks too high."),
+  premium: z.coerce.number().int("Enter a whole USD amount.").min(1, "Enter a price.").max(1_000_000, "That price looks too high."),
   sortOrder: z.coerce.number().int().min(0).max(9999).default(0),
   isActive: z.boolean(),
 });

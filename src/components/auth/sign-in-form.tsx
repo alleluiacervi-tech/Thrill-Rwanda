@@ -46,11 +46,17 @@ export function SignInForm() {
     setPending(true);
 
     const data = new FormData(e.currentTarget);
-    const { data: signedIn, error } = await signIn.email({
+    const result = await signIn.email({
       email: String(data.get("email") ?? ""),
       password: String(data.get("password") ?? ""),
       rememberMe: data.get("remember") === "on",
-    });
+    }).catch(() => null);
+    if (!result) {
+      setError("Could not reach sign-in. Check your connection and try again.");
+      setPending(false);
+      return;
+    }
+    const { data: signedIn, error } = result;
 
     if (error) {
       // Deliberately generic: distinguishing "no such user" from "wrong
@@ -82,9 +88,15 @@ export function SignInForm() {
     const data = new FormData(e.currentTarget);
     const code = String(data.get("code") ?? "").replace(/\s+/g, "");
     const trustDevice = data.get("trust") === "on";
-    const { error } = useBackup
-      ? await twoFactor.verifyBackupCode({ code, trustDevice })
-      : await twoFactor.verifyTotp({ code, trustDevice });
+    const result = await (useBackup
+      ? twoFactor.verifyBackupCode({ code, trustDevice })
+      : twoFactor.verifyTotp({ code, trustDevice })).catch(() => null);
+    if (!result) {
+      setError("Could not verify the code. Check your connection and try again.");
+      setPending(false);
+      return;
+    }
+    const { error } = result;
 
     if (error) {
       setError(

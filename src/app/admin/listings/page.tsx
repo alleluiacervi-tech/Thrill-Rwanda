@@ -20,13 +20,13 @@ type Row = {
   kind: "TOUR" | "HOTEL" | "VEHICLE";
   id: string;
   name: string;
-  href: string;
   provider: string;
   detail: string;
   price: string;
   isPublished: boolean;
   bookings: number;
   roomTypes?: number;
+  publishedRooms?: number;
 };
 
 const KINDS = new Set(["TOUR", "HOTEL", "VEHICLE"]);
@@ -51,7 +51,7 @@ export default async function AdminListingsPage({
       include: {
         provider: { select: { businessName: true } },
         _count: { select: { rooms: true } },
-        rooms: { select: { id: true } },
+        rooms: { select: { id: true, isPublished: true } },
       },
       orderBy: { name: "asc" },
     }),
@@ -65,19 +65,20 @@ export default async function AdminListingsPage({
 
   const all: Row[] = [
     ...tours.map((t) => ({
-      kind: "TOUR" as const, id: t.id, name: t.name, href: `/tours/${t.slug}`,
+      kind: "TOUR" as const, id: t.id, name: t.name,
       provider: t.provider.businessName, detail: t.destination,
       price: formatMoney(t.priceMinor, t.currency), isPublished: t.isPublished,
       bookings: bookingsOf([t.id]),
     })),
     ...hotels.map((h) => ({
-      kind: "HOTEL" as const, id: h.id, name: h.name, href: `/hotels/${h.slug}`,
+      kind: "HOTEL" as const, id: h.id, name: h.name,
       provider: h.provider.businessName, detail: `${h.location} · ${h._count.rooms} room types`,
       price: "—", isPublished: h.isPublished,
       bookings: bookingsOf(h.rooms.map((r) => r.id)), roomTypes: h._count.rooms,
+      publishedRooms: h.rooms.filter((room) => room.isPublished).length,
     })),
     ...vehicles.map((v) => ({
-      kind: "VEHICLE" as const, id: v.id, name: `${v.make} ${v.model}`, href: `/cars/${v.slug}`,
+      kind: "VEHICLE" as const, id: v.id, name: `${v.make} ${v.model}`,
       provider: v.provider.businessName, detail: `${v.category} · ${v.year}`,
       price: formatMoney(v.pricePerDayMinor, v.currency), isPublished: v.isPublished,
       bookings: bookingsOf([v.id]),
@@ -112,7 +113,7 @@ export default async function AdminListingsPage({
     <>
       <DashboardHead
         title={TITLE[kind]}
-        lede="Every tour, property and vehicle on the platform. Unpublishing hides a listing from search without touching existing bookings."
+        lede="Edit or publish tours, properties and vehicles. Hotels need a published room type. Launch controls determine which services are visible and which can be booked online."
         action={
           <div className="flex flex-wrap gap-2">
             <Button href="/admin/listings/new/tours" variant="quiet">
@@ -151,7 +152,7 @@ export default async function AdminListingsPage({
           body={
             kind
               ? "Try another type, or wait for a provider to add one."
-              : "Run npm run db:seed, or wait for providers to add theirs."
+              : "Choose Tour, Property or Vehicle above to add a listing for an approved provider."
           }
         />
       ) : (
@@ -163,15 +164,16 @@ export default async function AdminListingsPage({
             {rows.map((r) => (
               <Tr key={`${r.kind}:${r.id}`}>
                 <Td>
-                  <Link href={r.href} className="link-draw block max-w-[16rem] truncate font-medium">{r.name}</Link>
+                  <Link href={`/admin/listings/${SEGMENT[r.kind]}/${r.id}/edit`} className="link-draw block max-w-[16rem] truncate font-medium">{r.name}</Link>
                   <span className="block max-w-[16rem] truncate text-2xs text-[var(--ink-faint)]">{r.detail}</span>
+                  {r.kind === "HOTEL" && <span className="block text-2xs">{r.publishedRooms} published room types</span>}
                 </Td>
                 <Td className="text-2xs uppercase tracking-[0.12em] text-[var(--ink-muted)]">{r.kind}</Td>
                 <Td className="max-w-[12rem] truncate">{r.provider}</Td>
                 <Td className="tnum whitespace-nowrap text-right">{r.price}</Td>
                 <Td>
                   <Badge tone={r.isPublished ? "forest" : "outline"}>
-                    {r.isPublished ? "Live" : "Hidden"}
+                    {r.isPublished ? r.kind === "HOTEL" && !r.publishedRooms ? "Needs a published room" : "Published" : "Hidden"}
                   </Badge>
                 </Td>
                 <Td>

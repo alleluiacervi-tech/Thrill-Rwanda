@@ -299,7 +299,7 @@ const CUSTOMER_COPY: Partial<
   }),
 };
 
-/** Fired when Pesapal confirms money landed. Customer + provider + admin. */
+/** Fired after independent payment verification. */
 export async function notifyPaymentReceived(
   bookingId: string,
   amountMinor: number,
@@ -336,7 +336,7 @@ export async function notifyPaymentReceived(
           preheader: `Receipt for ${amount} on ${booking.reference}`,
           details: [...summary, ...money],
           cta: owed > 0 ? "View booking and balance" : "View your booking",
-          note: "Keep this email as your receipt. Payments are processed securely by Pesapal.",
+          note: "Keep this payment confirmation with your booking records.",
         },
           },
           owed > 0 ? "payment.deposit" : "payment.full",
@@ -363,7 +363,7 @@ export async function notifyPaymentReceived(
         to: admins,
         type: "payment.received.admin",
         title: `Payment ${amount} — ${booking.reference}`,
-        body: `Settled through Pesapal for ${booking.provider.businessName}.`,
+        body: `Provider verified the payment for ${booking.provider.businessName}.`,
         href: "/admin/payments",
         emailToo: false,
       }),

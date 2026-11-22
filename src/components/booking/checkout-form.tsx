@@ -23,16 +23,14 @@ const METHOD_COPY: Record<
   { title: string; logos?: PaymentMark[]; chips: string[]; note: string }
 > = {
   online: {
-    title: "Pesapal — mobile money and cards",
-    logos: ["mpesa", "airtel", "visa", "mastercard"],
+    title: "Online checkout",
     chips: [],
-    note: "You'll complete payment securely on Pesapal's page next. We never see your card or PIN.",
+    note: "Review the exact amount and available methods at secure checkout.",
   },
   phone: {
     title: "Pay by phone or WhatsApp",
-    logos: ["mpesa"],
-    chips: ["Bank transfer"],
-    note: `Online payment is being switched on. Once you confirm, we'll call or WhatsApp you from {phone} to take payment.`,
+    chips: [],
+    note: "Contact the desk at {phone} for approved payment instructions.",
   },
   property: {
     title: "Pay at the property",
@@ -68,7 +66,7 @@ export function CheckoutForm({
   const site = useSite();
   const [state, action, pending] = useActionState(confirmBooking, initial);
 
-  // A full navigation to the payment page, which embeds Pesapal.
+  // Open the booking or payment page after saving the terms.
   React.useEffect(() => {
     if (state.status === "redirect") window.location.href = state.url;
   }, [state]);

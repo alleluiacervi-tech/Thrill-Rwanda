@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { notFound } from "next/navigation";
 import { ArrowLeft } from "lucide-react";
 import { PageShell } from "@/components/layout/page-shell";
 import { UrubutoPreview } from "@/components/booking/urubuto-preview";
@@ -12,6 +13,7 @@ export const metadata: Metadata = {
 };
 
 export default async function PaymentPreviewPage() {
+  if (!["development", "test"].includes(process.env.APP_ENV ?? "") || process.env.VERCEL_ENV === "production") notFound();
   await requirePublicService("EVENT");
   return (
     <PageShell>
