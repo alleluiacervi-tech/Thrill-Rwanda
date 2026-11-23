@@ -1,22 +1,13 @@
 "use client";
 
 import { useCallback, useState } from "react";
+import Image from "next/image";
 import { ArrowRight } from "lucide-react";
 import { allDestinations, destinationRegions, PICK_DESTINATION_EVENT, placeLabel, type Destination } from "@/lib/flight-destinations";
 import { FlightGlobe } from "./flight-globe";
-import { CountryFlag } from "./flight-marks";
 import s from "./flight-departures-board.module.css";
 
 const regionNames = new Intl.DisplayNames(["en"], { type: "region" });
-
-/** Letters on split-flap tiles, as on an airport board. */
-function Flaps({ text, className }: { text: string; className?: string }) {
-  return (
-    <span className={className} aria-hidden>
-      {[...text].map((letter, i) => <span key={i} className={s.flap} style={{ animationDelay: `${i * 70}ms` }}>{letter}</span>)}
-    </span>
-  );
-}
 
 const routed = allDestinations.filter((place): place is Destination & { lat: number; lon: number } => place.lat !== undefined && place.lon !== undefined);
 
@@ -86,7 +77,6 @@ export function DeparturesBoard({ region, onRegionChange, onFocus, onChoose }: {
       </div>
 
       <div className={s.head} aria-hidden>
-        <span>To</span>
         <span className={s.headCity}>Destination</span>
         <span className={s.headAction}>Fares</span>
       </div>
@@ -99,10 +89,12 @@ export function DeparturesBoard({ region, onRegionChange, onFocus, onChoose }: {
               <button type="button" className={s.row} onClick={() => choose(place)} aria-label={`Plan Kigali to ${place.city}, ${country}`}
                 onMouseEnter={() => onFocus(place.code)} onMouseLeave={() => onFocus(null)}
                 onFocus={() => onFocus(place.code)} onBlur={() => onFocus(null)}>
-                <Flaps text={place.code} className={s.code} />
+                <span className={s.flag} aria-hidden>
+                  <Image src={`/media/flags/${place.country.toLowerCase()}.svg`} alt="" width={40} height={40} unoptimized />
+                </span>
                 <span className={s.place}>
                   <span className={s.city}>{place.city}</span>
-                  <span className={s.country}><CountryFlag country={place.country} /> <span>{country}</span></span>
+                  <span className={s.country}>{country} <i aria-hidden>·</i> <span className={s.iata}>{place.code}</span></span>
                 </span>
                 <span className={s.action}>Plan route <ArrowRight size={16} aria-hidden /></span>
               </button>

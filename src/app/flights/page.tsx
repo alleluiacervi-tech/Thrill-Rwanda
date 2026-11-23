@@ -2,7 +2,7 @@ import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Image from "next/image";
 import { Headset, Plane, ReceiptText, ShieldCheck } from "lucide-react";
-import { Breadcrumbs, HillsEdge, PageShell } from "@/components/layout/page-shell";
+import { Breadcrumbs, PageShell } from "@/components/layout/page-shell";
 import { Container, Eyebrow } from "@/components/ui/primitives";
 import { FaqSection, PairWith, Story } from "@/components/journey/sections";
 import { FlightEnquiryForm } from "@/components/booking/flight-enquiry-form";
@@ -54,7 +54,7 @@ export default async function FlightsPage() {
   return (
     <PageShell overHero>
       {/* ------------------------------------------------------------ hero */}
-      <section className="on-dark relative -mt-[4.5rem] bg-[#061a13] pb-20 pt-[7.5rem] sm:pb-24 lg:-mt-24 lg:pb-28 lg:pt-44">
+      <section className="on-dark relative -mt-[4.5rem] bg-[#061a13] pb-16 pt-[7.5rem] sm:pb-20 lg:-mt-24 lg:pb-20 lg:pt-44">
         {/* On narrow screens the photograph stays in the top band, so it is not blown up behind the whole form. */}
         <div aria-hidden className="absolute inset-x-0 top-0 h-[34rem] overflow-hidden sm:h-[42rem] lg:inset-0 lg:h-auto">
           <Image
@@ -92,7 +92,7 @@ export default async function FlightsPage() {
             </AirportDirectoryProvider>
           </div>
 
-          <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-4">
+          <ul className="mt-8 grid gap-x-6 gap-y-4 sm:grid-cols-2 sm:gap-y-5 lg:grid-cols-4">
             {assurances.map(({ icon: Icon, title, body }) => (
               <li key={title} className="flex items-start gap-3">
                 <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/10 text-sun-400 ring-1 ring-white/15 backdrop-blur-md">
@@ -106,11 +106,10 @@ export default async function FlightsPage() {
             ))}
           </ul>
         </Container>
-        <HillsEdge className="[--edge:#061a13]" />
       </section>
 
       {/* ------------------------------------------------- departures + globe */}
-      <section className="on-dark relative overflow-hidden bg-[#061a13] py-20 sm:py-28">
+      <section className="on-dark relative overflow-hidden border-t border-white/[0.08] bg-[#061a13] py-20 sm:py-28">
         <div
           aria-hidden
           className="absolute inset-0"
