@@ -1532,6 +1532,12 @@ model FlightTicketing {
   ticketTimeLimit DateTime? @map("ticket_time_limit") @db.Timestamptz
   pnr String?
   partnerReference String? @map("partner_reference")
+  /// Set when the booking was made through an API supplier rather than by hand.
+  externalProvider String? @map("external_provider")
+  externalOrderId String? @map("external_order_id")
+  /// ATTEMPTING while a booking request is in flight or its outcome is unknown; BOOKED; FAILED.
+  externalStatus String? @map("external_status")
+  externalAttemptAt DateTime? @map("external_attempt_at") @db.Timestamptz
   issuanceEvidence String? @map("issuance_evidence")
   issuedAt DateTime? @map("issued_at") @db.Timestamptz
   issuedById String? @map("issued_by_id") @db.Uuid
@@ -1561,6 +1567,10 @@ model FlightOption {
   refundRule String @default("") @map("refund_rule")
   validUntil DateTime @map("valid_until") @db.Timestamptz
   selected Boolean @default(false)
+  /// MANUAL = typed in by the desk; DUFFEL = a live fare from the Duffel API, bookable through it.
+  source String @default("MANUAL")
+  /// The supplier's own id for this fare (a Duffel offer id), kept so it can be re-priced and booked.
+  externalId String? @map("external_id")
   segments FlightSegment[]
   @@unique([ticketingId, position])
   @@map("flight_options")
