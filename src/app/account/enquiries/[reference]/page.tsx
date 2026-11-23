@@ -39,6 +39,13 @@ export default async function Page({
         title={e.service === "FLIGHT" ? "Your flight request" : e.eventMilestones ? "Thrill Events & Business" : "Your travel request"}
         lede={`${e.reference} · ${e.status.replaceAll("_", " ")}`}
       />
+      {e.service === "FLIGHT" && (
+        <p className="mb-4">
+          <Link href={`/account/enquiries/${e.reference}/trip`} className="inline-flex items-center gap-2 rounded-full bg-sun-500 px-5 py-2 font-semibold text-forest-950 hover:bg-sun-300">
+            <PlaneTakeoff className="size-4" aria-hidden /> Fares and tickets
+          </Link>
+        </p>
+      )}
       <p>
         Requests, acceptance, verified funds and supplier confirmation are
         separate steps. Contact the desk if any details need correction.

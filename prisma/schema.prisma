@@ -937,6 +937,7 @@ model Enquiry {
   supplierReviews SupplierReview[]
   whatsappConsent WhatsAppConsent?
   supportCases SupportCase[]
+  flightTicketing FlightTicketing?
   id             String   @id @default(uuid()) @db.Uuid
   reference      String   @unique
   submissionKey  String   @unique @map("submission_key") @db.Uuid
@@ -1507,4 +1508,127 @@ model WhatsAppConsent {
   evidence String
   actorId String @map("actor_id") @db.Uuid
   @@map("whatsapp_consents")
+}
+
+enum TicketingStatus {
+  OPTIONS
+  AWAITING_PAYMENT
+  READY_TO_TICKET
+  TICKETING
+  ISSUED
+  CLOSED
+  CANCELLED
+}
+
+/// One air-ticketing file per flight enquiry. Tickets are issued by the contracted partner; staff record the evidence.
+model FlightTicketing {
+  id String @id @default(uuid()) @db.Uuid
+  enquiryId String @unique @map("enquiry_id") @db.Uuid
+  enquiry Enquiry @relation(fields: [enquiryId], references: [id], onDelete: Restrict)
+  status TicketingStatus @default(OPTIONS)
+  version Int @default(0)
+  partner String @default("")
+  optionsSharedAt DateTime? @map("options_shared_at") @db.Timestamptz
+  ticketTimeLimit DateTime? @map("ticket_time_limit") @db.Timestamptz
+  pnr String?
+  partnerReference String? @map("partner_reference")
+  issuanceEvidence String? @map("issuance_evidence")
+  issuedAt DateTime? @map("issued_at") @db.Timestamptz
+  issuedById String? @map("issued_by_id") @db.Uuid
+  deliveredAt DateTime? @map("delivered_at") @db.Timestamptz
+  redactedAt DateTime? @map("redacted_at") @db.Timestamptz
+  createdById String @map("created_by_id") @db.Uuid
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  options FlightOption[]
+  passengers FlightPassenger[]
+  requests FlightServiceRequest[]
+  @@index([status, ticketTimeLimit])
+  @@map("flight_ticketing")
+}
+
+model FlightOption {
+  id String @id @default(uuid()) @db.Uuid
+  ticketingId String @map("ticketing_id") @db.Uuid
+  ticketing FlightTicketing @relation(fields: [ticketingId], references: [id], onDelete: Cascade)
+  position Int
+  label String
+  currency String
+  totalMinor Int @map("total_minor")
+  fareBasis String @default("") @map("fare_basis")
+  baggage String @default("")
+  changeRule String @default("") @map("change_rule")
+  refundRule String @default("") @map("refund_rule")
+  validUntil DateTime @map("valid_until") @db.Timestamptz
+  selected Boolean @default(false)
+  segments FlightSegment[]
+  @@unique([ticketingId, position])
+  @@map("flight_options")
+}
+
+model FlightSegment {
+  id String @id @default(uuid()) @db.Uuid
+  optionId String @map("option_id") @db.Uuid
+  option FlightOption @relation(fields: [optionId], references: [id], onDelete: Cascade)
+  position Int
+  airline String
+  flightNumber String @map("flight_number")
+  origin String
+  destination String
+  /// Airport-local wall-clock times as YYYY-MM-DDTHH:mm so no time zone is guessed.
+  departLocal String @map("depart_local")
+  arriveLocal String @map("arrive_local")
+  cabin String @default("ECONOMY")
+  bookingClass String @default("") @map("booking_class")
+  terminal String @default("")
+  @@unique([optionId, position])
+  @@map("flight_segments")
+}
+
+model FlightPassenger {
+  id String @id @default(uuid()) @db.Uuid
+  ticketingId String @map("ticketing_id") @db.Uuid
+  ticketing FlightTicketing @relation(fields: [ticketingId], references: [id], onDelete: Cascade)
+  position Int
+  kind String @default("ADULT")
+  title String @default("")
+  givenNames String @map("given_names")
+  surname String
+  /// Travel-document details are cleared after the trip by the retention job.
+  dateOfBirth String? @map("date_of_birth")
+  nationality String?
+  documentNumber String? @map("document_number")
+  documentExpiry String? @map("document_expiry")
+  ticketNumber String? @unique @map("ticket_number")
+  previousTickets String[] @map("previous_tickets")
+  ticketedAt DateTime? @map("ticketed_at") @db.Timestamptz
+  status String @default("ACTIVE")
+  @@unique([ticketingId, position])
+  @@map("flight_passengers")
+}
+
+/// Changes, reissues, voids, refunds and name corrections after ticketing, raised by the client or staff.
+model FlightServiceRequest {
+  id String @id @default(uuid()) @db.Uuid
+  ticketingId String @map("ticketing_id") @db.Uuid
+  ticketing FlightTicketing @relation(fields: [ticketingId], references: [id], onDelete: Restrict)
+  number Int
+  kind String
+  status String @default("REQUESTED")
+  origin String @default("STAFF")
+  requestedById String? @map("requested_by_id") @db.Uuid
+  description String
+  passengerIds String[] @map("passenger_ids")
+  partnerEvidence String? @map("partner_evidence")
+  currency String?
+  feeMinor Int @default(0) @map("fee_minor")
+  refundMinor Int @default(0) @map("refund_minor")
+  resolution String?
+  closedById String? @map("closed_by_id") @db.Uuid
+  closedAt DateTime? @map("closed_at") @db.Timestamptz
+  createdAt DateTime @default(now()) @map("created_at") @db.Timestamptz
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@unique([ticketingId, number])
+  @@index([status, createdAt])
+  @@map("flight_service_requests")
 }

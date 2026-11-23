@@ -7,8 +7,9 @@ import { quoteContentHash } from "@/lib/quote-render";
 import type { QuoteSnapshot } from "@/lib/quote-rules";
 import { getSiteSettings, paysOnline } from "@/lib/settings";
 import { depositMinor, quotedDepositPercent } from "@/lib/deposit";
-import { getUrubutoProvider, paymentOrigin } from "./urubuto";
-import { routedPaymentMethods } from "./routing";
+import { paymentOrigin } from "./urubuto";
+import { configuredGateways } from "./registry";
+import { routedPaymentMethods, routeForMethod } from "./routing";
 import { CollectionError, COLLECTION_METHODS, invoiceCharge, OPEN_COLLECTIONS, payerPhone, type CollectionMethod } from "./rules";
 
 const invoiceInclude = {
@@ -278,8 +279,7 @@ async function verifiedBankInstructions(invoice: Invoice) {
 }
 
 export async function beginCollection(access: CollectionAccess, input: NewPayment) {
-  const gateway = getUrubutoProvider();
-  if (!gateway?.enabled || !gateway.origin) throw new CollectionError("Online payments are currently unavailable.");
+  if (!configuredGateways().some((gateway) => gateway.enabled && gateway.origin)) throw new CollectionError("Online payments are currently unavailable.");
   const phone = payerPhone(input.phone, input.method);
   if (!phone) throw new CollectionError("Enter a valid phone number for the selected payment method.");
   const initial = await readInvoice(access);
@@ -308,7 +308,8 @@ export async function beginCollection(access: CollectionAccess, input: NewPaymen
     const paid = await invoiceBalance(invoice, tx);
     const amountMinor = invoiceCharge(invoice.totalMinor, paid, invoice.depositMinor);
     if (amountMinor !== input.expectedMinor) throw new CollectionError("The amount due changed. Refresh and review the new total.");
-    if (!(await routedPaymentMethods(invoice.currency, amountMinor, tx)).includes(input.method)) throw new CollectionError("This method is unavailable for the amount or currency.");
+    const gateway = await routeForMethod(input.method, invoice.currency, amountMinor, tx);
+    if (!gateway?.origin) throw new CollectionError("This method is unavailable for the amount or currency.");
     const customer = invoice.booking?.customer ?? invoice.financialCase!.enquiry;
     const attempt = await tx.collectionAttempt.create({
       data: {
@@ -318,10 +319,10 @@ export async function beginCollection(access: CollectionAccess, input: NewPaymen
         status: "CREATED", nextCheckAt: nextMinute(), expiresAt: new Date(Date.now() + (input.method === "CARD" ? 60 : 15) * 60_000),
       },
     });
-    return { attempt, name: "fullName" in customer ? customer.fullName : customer.name };
+    return { attempt, gateway, name: "fullName" in customer ? customer.fullName : customer.name };
   });
   if (!prepared) return;
-  const { attempt, name } = prepared;
+  const { attempt, gateway, name } = prepared;
   try {
     const opened = await gateway.provider.createPayment({
       ...providerTarget(attempt), name, email: input.email, phone,
