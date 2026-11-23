@@ -12,7 +12,10 @@ import { BusinessEventForm } from "@/components/dashboard/business-event-form";
 import { businessEventSourcing, isBusinessEvent, milestoneKinds, milestoneStatuses, sourcingStatuses } from "@/lib/business-events";
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { DashboardHead } from "@/components/dashboard/dashboard-shell";
+import { Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Monogram, StatGrid, StatTile, StatusPill, Toolbar } from "@/components/dashboard/dash-ui";
+import { DashboardHead, EmptyPanel } from "@/components/dashboard/dashboard-shell";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
 import { Pagination } from "@/components/ui/pagination";
 import { TableSearch } from "@/components/dashboard/table-search";
@@ -81,7 +84,19 @@ export async function EnquiryList({
         : []),
     ],
   };
-  const page = paginate(params, await db.enquiry.count({ where }));
+  const scope = enquiryScope(actor);
+  const [matching, openCount, newCount, overdueCount, unassignedCount] = await Promise.all([
+    db.enquiry.count({ where }),
+    db.enquiry.count({ where: { AND: [scope, { status: { notIn: CLOSED } }] } }),
+    db.enquiry.count({ where: { AND: [scope, { status: "NEW" }] } }),
+    db.enquiry.count({
+      where: { AND: [scope, { nextFollowUp: { lt: new Date() }, status: { notIn: CLOSED } }] },
+    }),
+    db.enquiry.count({
+      where: { AND: [scope, { ownerId: null, status: { notIn: CLOSED } }] },
+    }),
+  ]);
+  const page = paginate(params, matching);
   const rows = await db.enquiry.findMany({
     where,
     orderBy: [{ createdAt: "desc" }, { id: "desc" }],
@@ -97,6 +112,17 @@ export async function EnquiryList({
       owner: { select: { fullName: true } },
     },
   });
+  const now = new Date().getTime();
+  const filtered = Boolean(q || status || value("service") || value("source") || value("owner") || value("due"));
+  const select = (param: string, all: string, options: readonly { value: string; label: string }[]) => (
+    <SelectFilter
+      className="w-40"
+      pathname={base}
+      param={param}
+      label={all}
+      options={[{ value: "", label: all }, ...options]}
+    />
+  );
   return (
     <>
       <DashboardHead
@@ -104,113 +130,119 @@ export async function EnquiryList({
         lede={
           finance
             ? "Financial milestone queue. Contact and travel details are restricted."
-            : "Assign, follow up and record progress. Enquiries remain separate from bookings."
+            : "Every lead, from first contact to confirmed trip."
+        }
+        action={
+          !finance ? (
+            <Button href={`${base}/new`} variant="accent">
+              <Plus className="size-4" />
+              New enquiry
+            </Button>
+          ) : undefined
         }
       />
-      {!finance && (
-        <Link className="mb-5 inline-block underline" href={`${base}/new`}>
-          Capture a phone, WhatsApp or offline enquiry
-        </Link>
+      <StatGrid>
+        <StatTile label="Open" value={openCount} note="in progress" href={base} />
+        <StatTile label="New" value={newCount} note="not yet contacted" tone={newCount ? "alert" : "default"} href={`${base}?status=NEW`} />
+        <StatTile label="Overdue" value={overdueCount} note="follow-up passed" tone={overdueCount ? "alert" : "good"} href={`${base}?due=overdue`} />
+        <StatTile label="Unassigned" value={unassignedCount} note="no owner yet" href={`${base}?owner=unassigned`} />
+      </StatGrid>
+      <Toolbar>
+        <TableSearch
+          className="sm:w-72"
+          pathname={base}
+          placeholder={finance ? "Reference" : "Name, phone, email or reference"}
+        />
+        {select("status", "All statuses", ENQUIRY_STATUSES.map((s) => ({ value: s, label: label(s) })))}
+        {select("service", "All services", SERVICES.map((s) => ({ value: s, label: label(s) })))}
+        {select("source", "All sources", SOURCES.map((s) => ({ value: s, label: label(s) })))}
+        {select("owner", "Any owner", [
+          { value: "mine", label: "Assigned to me" },
+          { value: "unassigned", label: "Unassigned" },
+        ])}
+        {select("due", "Any follow-up", [{ value: "overdue", label: "Overdue" }])}
+        {filtered ? (
+          <Link href={base} className="ml-auto text-xs font-medium text-lake-700 underline">
+            Clear filters
+          </Link>
+        ) : null}
+      </Toolbar>
+      {rows.length ? (
+        <TableShell>
+          <thead>
+            <tr>
+              {!finance && <Th>Client</Th>}
+              <Th>Reference</Th>
+              <Th>Service</Th>
+              <Th>Stage</Th>
+              <Th>Owner</Th>
+              <Th>Follow-up</Th>
+            </tr>
+          </thead>
+          <tbody>
+            {rows.map((row) => {
+              const overdue =
+                row.nextFollowUp !== null && row.nextFollowUp.getTime() < now && !CLOSED.includes(row.status);
+              return (
+                <Tr key={row.reference}>
+                  {!finance && (
+                    <Td>
+                      <Link className="flex items-center gap-3" href={`${base}/${row.reference}`}>
+                        <Monogram name={row.name ?? ""} />
+                        <span className="min-w-0">
+                          <span className="block truncate font-medium">{row.name}</span>
+                          <span className="block text-2xs text-[var(--ink-faint)]">{label(row.source)}</span>
+                        </span>
+                      </Link>
+                    </Td>
+                  )}
+                  <Td className="whitespace-nowrap">
+                    <Link className="tnum font-mono text-xs hover:underline" href={`${base}/${row.reference}`}>
+                      {row.reference}
+                    </Link>
+                  </Td>
+                  <Td className="whitespace-nowrap">{label(row.service)}</Td>
+                  <Td>
+                    <StatusPill tone={statusTone(row.status)}>{label(row.status)}</StatusPill>
+                  </Td>
+                  <Td className="whitespace-nowrap">
+                    {row.owner?.fullName ?? <span className="text-[var(--ink-faint)]">Unassigned</span>}
+                  </Td>
+                  <Td className="whitespace-nowrap">
+                    {row.nextFollowUp ? (
+                      <span className={overdue ? "font-medium text-clay-700" : ""}>
+                        {row.nextFollowUp.toLocaleDateString("en-GB", {
+                          timeZone: "Africa/Kigali",
+                          day: "numeric",
+                          month: "short",
+                        })}
+                        {overdue ? " · overdue" : ""}
+                      </span>
+                    ) : (
+                      <span className="text-[var(--ink-faint)]">None set</span>
+                    )}
+                  </Td>
+                </Tr>
+              );
+            })}
+          </tbody>
+        </TableShell>
+      ) : (
+        <EmptyPanel
+          title={filtered ? "No enquiries match" : "No enquiries yet"}
+          body={filtered ? "Try removing a filter or searching for something broader." : "New website, WhatsApp and phone enquiries will appear here."}
+        />
       )}
-      <TableSearch
-        pathname={base}
-        placeholder={
-          finance ? "Enquiry reference" : "Reference, name, phone or email"
-        }
-      />
-      <div className="my-5 grid gap-3 sm:grid-cols-3">
-        <SelectFilter
-          pathname={base}
-          param="status"
-          label="Status"
-          options={[
-            { value: "", label: "All statuses" },
-            ...ENQUIRY_STATUSES.map((s) => ({ value: s, label: label(s) })),
-          ]}
-        />
-        <SelectFilter
-          pathname={base}
-          param="service"
-          label="Service"
-          options={[
-            { value: "", label: "All services" },
-            ...SERVICES.map((s) => ({ value: s, label: label(s) })),
-          ]}
-        />
-        <SelectFilter
-          pathname={base}
-          param="source"
-          label="Source"
-          options={[
-            { value: "", label: "All sources" },
-            ...SOURCES.map((s) => ({ value: s, label: label(s) })),
-          ]}
-        />
-        <SelectFilter
-          pathname={base}
-          param="owner"
-          label="Owner"
-          options={[
-            { value: "", label: "All accessible owners" },
-            { value: "mine", label: "Assigned to me" },
-            { value: "unassigned", label: "Unassigned" },
-          ]}
-        />
-        <SelectFilter
-          pathname={base}
-          param="due"
-          label="Follow-up"
-          options={[
-            { value: "", label: "All follow-ups" },
-            { value: "overdue", label: "Overdue" },
-          ]}
-        />
-      </div>
-      <TableShell>
-        <thead>
-          <tr>
-            <Th>Reference / service</Th>
-            {!finance && <Th>Customer</Th>}
-            <Th>Status</Th>
-            <Th>Owner / source</Th>
-            <Th>Follow-up (Kigali)</Th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((row) => (
-            <Tr key={row.reference}>
-              <Td>
-                <Link
-                  className="break-all underline"
-                  href={`${base}/${row.reference}`}
-                >
-                  {row.reference}
-                </Link>
-                <p>{label(row.service)}</p>
-              </Td>
-              {!finance && <Td>{row.name}</Td>}
-              <Td>{label(row.status)}</Td>
-              <Td>
-                {row.owner?.fullName ?? "Unassigned"}
-                <p>{label(row.source)}</p>
-              </Td>
-              <Td>{stamp(row.nextFollowUp)}</Td>
-            </Tr>
-          ))}
-        </tbody>
-      </TableShell>
-      {!rows.length && (
-        <p className="my-5">No enquiries match these filters.</p>
-      )}
-      <Pagination
-        page={page}
-        pathname={base}
-        params={params}
-        label="enquiries"
-      />
+      <Pagination page={page} pathname={base} params={params} label="enquiries" />
     </>
   );
 }
+const statusTone = (s: string): "neutral" | "good" | "warn" | "alert" | "info" =>
+  s === "NEW" ? "alert"
+  : ["CONFIRMED", "COMPLETED"].includes(s) ? "good"
+  : ["QUOTE_SENT", "AWAITING_PAYMENT", "PARTNER_PROCESSING"].includes(s) ? "info"
+  : s === "NEEDS_INFORMATION" ? "warn"
+  : "neutral";
 export async function EnquiryDetail({
   reference,
   base,

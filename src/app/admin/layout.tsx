@@ -71,20 +71,30 @@ export default async function AdminLayout({
     {
       label: "Operations",
       items: [
-        { label: "Corporate clients", href: "/admin/clients", icon: "users" },
-        { label: "Launch checklist", href: "/admin/readiness", icon: "settings" },
-        { label: "Launch controls", href: "/admin/launch", icon: "settings" },
+        { label: "Corporate accounts", href: "/admin/clients", icon: "users" },
         { label: "Support", href: "/admin/support", icon: "bookings" },
-        { label: "Reports & exports", href: "/admin/reports", icon: "overview" },
-        { label: "Off-site finance", href: "/admin/finance", icon: "payments" },
-        { label: "Supplier register", href: "/admin/suppliers", icon: "providers" },
-        { label: "Gateway payments", href: "/admin/payments", icon: "payments" },
+        { label: "Suppliers", href: "/admin/suppliers", icon: "providers" },
         { label: "Reviews", href: "/admin/reviews", badge: pendingReviews, icon: "reviews" },
-        { label: "Users & access", href: "/admin/users", icon: "users" },
+      ],
+    },
+    {
+      label: "Finance & insight",
+      items: [
+        { label: "Reports", href: "/admin/reports", icon: "overview" },
+        { label: "Off-site finance", href: "/admin/finance", icon: "payments" },
+        { label: "Gateway payments", href: "/admin/payments", icon: "payments" },
+      ],
+    },
+    {
+      label: "Administration",
+      items: [
+        { label: "Team & access", href: "/admin/users", icon: "users" },
         // Super admins only: the permanent record of who did what.
         ...(me?.isSuperAdmin ? [{ label: "Activity log", href: "/admin/activity", icon: "overview" }] : []),
         { label: "Email templates", href: "/admin/emails", icon: "emails" },
         { label: "Legal pages", href: "/admin/legal", icon: "legal" },
+        { label: "Launch readiness", href: "/admin/readiness", icon: "settings" },
+        { label: "Launch controls", href: "/admin/launch", icon: "settings" },
         { label: "Settings", href: "/admin/settings", icon: "settings" },
       ],
     },

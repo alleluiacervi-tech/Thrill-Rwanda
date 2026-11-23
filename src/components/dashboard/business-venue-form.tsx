@@ -24,9 +24,9 @@ export function BusinessVenueForm(props:
   const room = props.mode === "room" ? props.entry : undefined;
   const [state, action, pending] = useActionState(props.mode === "venue" ? saveBusinessVenue : saveBusinessVenueSpace, initial);
   return (
-    <details className="rounded-xl border border-[var(--line)] p-4">
-      <summary className="cursor-pointer font-semibold">
-        {entry ? `${entry.name} · ${entry.isPublished ? "Published" : "Draft"}` : props.mode === "venue" ? "Add a meeting venue" : "Add a room or hall"}
+    <details className="group rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] px-4 py-3 [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium"><span aria-hidden className="order-last text-lg leading-none text-[var(--ink-faint)] transition-transform group-open:rotate-45">+</span><span>
+        {entry ? `${entry.name} · ${entry.isPublished ? "Published" : "Draft"}` : props.mode === "venue" ? "Add a meeting venue" : "Add a room or hall"}</span>
       </summary>
       <form action={action} onReset={(event) => event.preventDefault()} className="mt-4 space-y-4">
         <input type="hidden" name="id" value={entry?.id ?? ""} />

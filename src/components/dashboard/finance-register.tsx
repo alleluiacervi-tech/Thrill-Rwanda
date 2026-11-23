@@ -20,7 +20,10 @@ import {
   FinanceForm,
   type FormField,
 } from "@/components/dashboard/finance-forms";
-import { DashboardHead } from "@/components/dashboard/dashboard-shell";
+import { DashboardHead, EmptyPanel } from "@/components/dashboard/dashboard-shell";
+import { Panel, StatGrid, StatTile, StatusPill } from "@/components/dashboard/dash-ui";
+import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
+import { label } from "@/lib/enquiry-workflow";
 import type { Supplier } from "@/generated/prisma/client";
 
 function SupplierEditor({
@@ -166,67 +169,68 @@ export async function SupplierRegister() {
           : { status: "APPROVED" },
     orderBy: { name: "asc" },
   });
+  const reviewDue = suppliers.filter((s) => s.nextReviewAt && s.nextReviewAt.getTime() < new Date().getTime()).length;
+  const field = (name: string, value: React.ReactNode) => (
+    <div className="min-w-0">
+      <dt className="text-2xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">{name}</dt>
+      <dd className="mt-1 whitespace-pre-wrap break-words text-sm">{value}</dd>
+    </div>
+  );
   return (
     <>
       <DashboardHead
-        title="Supplier register"
-        lede="Internal fulfilment evidence, permissions and review records. A provider login is not proof of a supplier agreement."
+        title="Suppliers"
+        lede="Fulfilment partners, their agreements and review dates."
       />
-      {(admin || operational) && <SupplierEditor admin={admin} />}
-      <div className="mt-6 space-y-5">
-        {suppliers.map((s) => (
-          <article
-            key={s.id}
-            className="min-w-0 rounded-xl border border-[var(--line)] p-5"
-          >
-            <h2 className="text-xl">
-              {s.name} · {s.category}
-            </h2>
-            <p>
-              {s.status} · {s.serviceArea} · {s.currencies.join(", ")}
-            </p>
-            <p className="mt-2 whitespace-pre-wrap">{s.deliverables}</p>
-            <p className="whitespace-pre-wrap">Limitations: {s.limitations}</p>
-            {(admin || operational || financial) && (
-              <p className="mt-2 whitespace-pre-wrap">
-                Contact: {s.contact}
-                <br />
-                Escalation: {s.escalation}
-              </p>
-            )}
-            {financial && (
-              <>
-                <p className="mt-2 whitespace-pre-wrap">
-                  Commercial terms: {s.commercialTerms}
-                </p>
-                <p className="whitespace-pre-wrap">
-                  Agreement evidence: {s.agreementEvidence}
-                </p>
-              </>
-            )}
-            <p className="mt-2">
-              Publication:{" "}
-              {s.publicationAllowed
-                ? s.approvedWording
-                : "No permission recorded"}
-            </p>
-            {(admin || operational || financial) && (
-              <p className="whitespace-pre-wrap">
-                Performance: {s.performanceNotes || "No issues recorded"}
-                <br />
-                Next review:{" "}
-                {s.nextReviewAt?.toLocaleString("en-GB", {
-                  timeZone: "Africa/Kigali",
-                }) ?? "Not scheduled"}
-              </p>
-            )}
-            {(admin || (operational && s.status === "DRAFT")) && (
-              <SupplierEditor key={s.version} supplier={s} admin={admin} />
-            )}
-          </article>
-        ))}
-      </div>
-      {!suppliers.length && <p>No accessible supplier records.</p>}
+      <StatGrid cols={3}>
+        <StatTile label="Suppliers" value={suppliers.length} />
+        <StatTile label="Approved" value={suppliers.filter((s) => s.status === "APPROVED").length} tone="good" />
+        <StatTile label="Review overdue" value={reviewDue} tone={reviewDue ? "alert" : "good"} />
+      </StatGrid>
+      {(admin || operational) && (
+        <div className="mb-6">
+          <SupplierEditor admin={admin} />
+        </div>
+      )}
+      {suppliers.length === 0 ? (
+        <EmptyPanel title="No suppliers yet" body="Registered suppliers will be listed here." />
+      ) : (
+        <div className="grid gap-4">
+          {suppliers.map((s) => (
+            <Panel
+              key={s.id}
+              title={s.name}
+              description={`${label(s.category)} · ${s.serviceArea} · ${s.currencies.join(", ")}`}
+              aside={
+                <StatusPill tone={s.status === "APPROVED" ? "good" : s.status === "SUSPENDED" ? "alert" : "neutral"}>
+                  {label(s.status)}
+                </StatusPill>
+              }
+            >
+              <dl className="grid gap-5 sm:grid-cols-2">
+                {field("Deliverables", s.deliverables)}
+                {field("Limitations", s.limitations)}
+                {(admin || operational || financial) && field("Contact", `${s.contact}\nEscalation: ${s.escalation}`)}
+                {financial && field("Commercial terms", s.commercialTerms)}
+                {financial && field("Agreement evidence", s.agreementEvidence)}
+                {field("Public wording", s.publicationAllowed ? s.approvedWording : "No permission recorded")}
+                {(admin || operational || financial) &&
+                  field("Performance", s.performanceNotes || "No issues recorded")}
+                {(admin || operational || financial) &&
+                  field(
+                    "Next review",
+                    s.nextReviewAt?.toLocaleDateString("en-GB", { timeZone: "Africa/Kigali", day: "numeric", month: "short", year: "numeric" }) ?? "Not scheduled",
+                  )}
+              </dl>
+              {(admin || (operational && s.status === "DRAFT")) && (
+                <div className="mt-4">
+                  <SupplierEditor key={s.version} supplier={s} admin={admin} />
+                </div>
+              )}
+            </Panel>
+          ))}
+        </div>
+      )}
       <SupplierReviews />
     </>
   );
@@ -334,160 +338,138 @@ export async function FinanceReport() {
   for (const g of totals.values())
     if (Object.values(g).some((value) => !Number.isSafeInteger(value)))
       throw new Error("Report exceeds integer precision");
+  const money = (v: number, c: string) => formatQuoteMoney(v, c);
   return (
     <>
       <DashboardHead
         title="Off-site finance"
-        lede="All-time recorded off-site cases, grouped by currency. Legacy Pesapal collections are separate and are not added to these totals."
+        lede="Recorded off-site cases by currency. Operating balances, not statutory profit or bank statements."
       />
-      <p>
-        These are operational balances, not statutory profit or bank statements.
-        Accepted quotes without a financial case are not included. Contribution
-        is a subtotal of reviewed cases only; unallocated reconciled cash
-        remains a customer liability.
-      </p>
-      <div className="mt-5 space-y-5">
+      {totals.size === 0 ? (
+        <EmptyPanel title="No financial cases yet" body="Totals appear once an accepted quote has a financial case." />
+      ) : null}
+      <div className="grid gap-6">
         {[...totals].map(([currency, g]) => (
-          <section key={currency} className="rounded-xl border p-5">
-            <h2 className="text-2xl">
-              {currency} · {g.cases} case(s)
-            </h2>
-            <dl className="mt-4 grid gap-4 sm:grid-cols-3">
-              {[
-                ["Accepted quote value", g.quoteValue],
-                ["Quoted ticket / supplier value", g.supplierQuotedValue],
-                ["Current agreed customer charges", g.agreedCharge],
-                ["Reconciled allocated collections", g.collections],
-                ["Unallocated reconciled cash (liability)", g.held],
-                ["Unverified receipt total", g.pending],
-                ["Customer refunds paid", g.refundsPaid],
-                ["Customer refunds still owed", g.refundDue],
-                ["Agreed service fees", g.fees],
-                ["Supplier net costs", g.supplierCost],
-                ["Supplier payables", g.supplierDue],
-                ["Supplier recoverables", g.supplierRecoverable],
-                ["External commission received", g.commissions],
-                ["Payment charges", g.charges],
-                ["Tax / other pass-through reserve", g.reserve],
-                ["Reviewed contribution subtotal", g.reviewedContribution],
-                ["Case cash position + held cash", g.cash + g.held],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt className="text-sm">{label}</dt>
-                  <dd className="font-semibold">
-                    {formatQuoteMoney(value as number, currency)}
-                  </dd>
-                </div>
-              ))}
-            </dl>
-            <p className="mt-4">
-              Commercial review complete for {g.reviewedCases}/{g.cases} cases.
-              Gross collections are not retained revenue or profit.
-            </p>
+          <section key={currency}>
+            <div className="mb-3 flex items-baseline justify-between">
+              <h2 className="text-lg font-semibold">{currency}</h2>
+              <span className="text-xs text-[var(--ink-muted)]">
+                {g.cases} {g.cases === 1 ? "case" : "cases"} · {g.reviewedCases} reviewed
+              </span>
+            </div>
+            <StatGrid>
+              <StatTile label="Collected" value={money(g.collections, currency)} note="reconciled, allocated" tone="good" />
+              <StatTile label="Held cash" value={money(g.held, currency)} note="unallocated liability" />
+              <StatTile label="Supplier payable" value={money(g.supplierDue, currency)} tone={g.supplierDue ? "alert" : "default"} />
+              <StatTile label="Contribution" value={money(g.reviewedContribution, currency)} note="reviewed cases only" />
+            </StatGrid>
+            <details className="group rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] [&_summary::-webkit-details-marker]:hidden">
+              <summary className="flex cursor-pointer list-none items-center justify-between px-5 py-3 text-sm font-medium">
+                Full breakdown
+                <span aria-hidden className="text-lg leading-none text-[var(--ink-faint)] transition-transform group-open:rotate-45">+</span>
+              </summary>
+              <dl className="grid gap-x-8 gap-y-4 border-t border-[var(--line)] p-5 sm:grid-cols-2 lg:grid-cols-3">
+                {[
+                  ["Accepted quote value", g.quoteValue],
+                  ["Quoted supplier value", g.supplierQuotedValue],
+                  ["Agreed customer charges", g.agreedCharge],
+                  ["Unverified receipts", g.pending],
+                  ["Refunds paid", g.refundsPaid],
+                  ["Refunds still owed", g.refundDue],
+                  ["Agreed service fees", g.fees],
+                  ["Supplier net costs", g.supplierCost],
+                  ["Supplier recoverables", g.supplierRecoverable],
+                  ["Commission received", g.commissions],
+                  ["Payment charges", g.charges],
+                  ["Tax and pass-through reserve", g.reserve],
+                  ["Cash position incl. held", g.cash + g.held],
+                ].map(([name, value]) => (
+                  <div key={name}>
+                    <dt className="text-xs text-[var(--ink-muted)]">{name}</dt>
+                    <dd className="tnum mt-0.5 font-medium">{money(value as number, currency)}</dd>
+                  </div>
+                ))}
+              </dl>
+            </details>
           </section>
         ))}
       </div>
-      <h2 className="mt-8 text-xl">Tracked cases</h2>
-      <ul>
-        {cases.map((c) => (
-          <li key={c.id} className="mt-2 rounded border p-3">
-            <Link
-              className="underline"
-              href={`/staff/enquiries/${c.enquiry.reference}`}
-            >
-              {c.enquiry.reference}
-            </Link>{" "}
-            · {c.enquiry.status} · {c.currency} · balance{" "}
-            {formatQuoteMoney(financialSummary(c).customerBalance, c.currency)}{" "}
-            · refund due{" "}
-            {formatQuoteMoney(financialSummary(c).refundDue, c.currency)}
-          </li>
-        ))}
-      </ul>
-      <h2 className="mt-8 text-xl">Approved off-site settlement accounts</h2>
-      <p>
-        Use one canonical code for each physical account/currency and consistent
-        statement identifiers. This register does not connect to banks or
-        activate payment gateways. Never enter login/API secrets.
-      </p>
-      {actor.role === "ADMIN" && (
-        <FinanceForm
-          kind="account"
-          title="Approve a settlement account"
-          hidden={{ intentKey: randomUUID() }}
-          fields={[
-            {
-              name: "code",
-              label: "Unique canonical account code",
-              required: true,
-            },
-            { name: "name", label: "Company account label", required: true },
-            {
-              name: "method",
-              label: "Approved method",
-              options: METHODS.map((value) => ({ value, label: value })),
-              required: true,
-            },
-            {
-              name: "currency",
-              label: "Currency",
-              options: QUOTE_CURRENCIES.map((value) => ({
-                value,
-                label: value,
-              })),
-              required: true,
-            },
-            {
-              name: "instructions",
-              label: "Approved customer payment instructions",
-              type: "textarea",
-              required: true,
-            },
-            {
-              name: "approvalEvidence",
-              label: "Company approval / account ownership evidence",
-              type: "textarea",
-              required: true,
-            },
-          ]}
-        />
+
+      {cases.length > 0 && (
+        <Panel title="Tracked cases" className="mt-8" flush>
+          <TableShell className="rounded-none border-0" dense>
+            <thead>
+              <tr><Th>Enquiry</Th><Th>Stage</Th><Th>Currency</Th><Th>Balance</Th><Th>Refund due</Th></tr>
+            </thead>
+            <tbody>
+              {cases.map((c) => {
+                const s = financialSummary(c);
+                return (
+                  <Tr key={c.id}>
+                    <Td><Link className="font-mono text-xs hover:underline" href={`/staff/enquiries/${c.enquiry.reference}`}>{c.enquiry.reference}</Link></Td>
+                    <Td><StatusPill tone="info">{label(c.enquiry.status)}</StatusPill></Td>
+                    <Td>{c.currency}</Td>
+                    <Td className="tnum">{money(s.customerBalance, c.currency)}</Td>
+                    <Td className="tnum">{money(s.refundDue, c.currency)}</Td>
+                  </Tr>
+                );
+              })}
+            </tbody>
+          </TableShell>
+        </Panel>
       )}
-      <ul>
-        {accounts.map((a) => (
-          <li key={a.id} className="mt-3 rounded border p-4">
-            <h3>
-              {a.code} · {a.name} · {a.method} · {a.currency} ·{" "}
-              {a.active ? "Active" : "Disabled"}
-            </h3>
-            <p className="whitespace-pre-wrap">{a.instructions}</p>
-            <p className="whitespace-pre-wrap">
-              Approval: {a.approvalEvidence}
-            </p>
-            {actor.role === "ADMIN" && (
-              <FinanceForm
-                key={a.version}
-                kind="accountStatus"
-                title={
-                  a.active ? "Disable for new records" : "Reactivate account"
-                }
-                hidden={{
-                  id: a.id,
-                  version: a.version,
-                  active: String(!a.active),
-                }}
-                fields={[
-                  {
-                    name: "evidence",
-                    label: "Approval evidence and reason",
-                    type: "textarea",
-                    required: true,
-                  },
-                ]}
-              />
-            )}
-          </li>
-        ))}
-      </ul>
+
+      <Panel
+        title="Settlement accounts"
+        description="One code per physical account and currency. Never enter login or API secrets here."
+        className="mt-8"
+      >
+        {actor.role === "ADMIN" && (
+          <FinanceForm
+            kind="account"
+            title="Approve a settlement account"
+            hidden={{ intentKey: randomUUID() }}
+            fields={[
+              { name: "code", label: "Unique canonical account code", required: true },
+              { name: "name", label: "Company account label", required: true },
+              { name: "method", label: "Approved method", options: METHODS.map((value) => ({ value, label: value })), required: true },
+              { name: "currency", label: "Currency", options: QUOTE_CURRENCIES.map((value) => ({ value, label: value })), required: true },
+              { name: "instructions", label: "Approved customer payment instructions", type: "textarea", required: true },
+              { name: "approvalEvidence", label: "Company approval / account ownership evidence", type: "textarea", required: true },
+            ]}
+          />
+        )}
+        <ul className="mt-4 grid gap-3">
+          {accounts.map((a) => (
+            <li key={a.id} className="rounded-[var(--radius-card)] border border-[var(--line)] p-4">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <p className="font-medium">
+                  <span className="font-mono text-xs">{a.code}</span> · {a.name}
+                </p>
+                <div className="flex gap-2">
+                  <StatusPill>{a.method}</StatusPill>
+                  <StatusPill>{a.currency}</StatusPill>
+                  <StatusPill tone={a.active ? "good" : "alert"}>{a.active ? "Active" : "Disabled"}</StatusPill>
+                </div>
+              </div>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-[var(--ink-muted)]">{a.instructions}</p>
+              {actor.role === "ADMIN" && (
+                <FinanceForm
+                  key={a.version}
+                  kind="accountStatus"
+                  title={a.active ? "Disable for new records" : "Reactivate account"}
+                  hidden={{ id: a.id, version: a.version, active: String(!a.active) }}
+                  fields={[{ name: "evidence", label: "Approval evidence and reason", type: "textarea", required: true }]}
+                />
+              )}
+            </li>
+          ))}
+        </ul>
+      </Panel>
+      <p className="mt-6 max-w-3xl text-xs leading-relaxed text-[var(--ink-faint)]">
+        Legacy gateway collections are separate and not included. Accepted quotes without a financial case are excluded.
+        Contribution covers reviewed cases only, and unallocated reconciled cash remains a customer liability.
+      </p>
     </>
   );
 }

@@ -18,7 +18,7 @@ export default async function AdminSettingsPage() {
     <>
       <DashboardHead
         title="Settings"
-        lede="Your business details, booking rules and payments — no developer needed. Changes show across the site as soon as you save."
+        lede="Business details, booking rules and payments. Changes go live when saved."
       />
       <SettingsForm
         values={{

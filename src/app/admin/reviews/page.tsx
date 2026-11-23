@@ -2,6 +2,7 @@ import { DashboardHead, EmptyPanel } from "@/components/dashboard/dashboard-shel
 import { ActionButton } from "@/components/dashboard/action-button";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
 import { Badge, Rating } from "@/components/ui/primitives";
+import { StatGrid, StatTile } from "@/components/dashboard/dash-ui";
 import { moderateReview } from "@/app/actions/review";
 import { resolveBookingSubjects } from "@/lib/booking-display";
 import { Pagination } from "@/components/ui/pagination";
@@ -37,8 +38,14 @@ export default async function AdminReviewsPage({
     <>
       <DashboardHead
         title="Reviews"
-        lede="New reviews arrive pending. Publish the genuine ones, hide anything abusive, delete only what shouldn't exist at all."
+        lede="Publish genuine reviews, hide anything abusive."
       />
+
+      <StatGrid cols={3}>
+        <StatTile label="Awaiting moderation" value={reviews.filter((r) => r.status === "PENDING").length} tone={reviews.some((r) => r.status === "PENDING") ? "alert" : "good"} note="on this page" />
+        <StatTile label="Published" value={reviews.filter((r) => r.status === "PUBLISHED").length} note="on this page" />
+        <StatTile label="Average rating" value={reviews.length ? (reviews.reduce((n, r) => n + r.rating, 0) / reviews.length).toFixed(1) : "—"} note="on this page" />
+      </StatGrid>
 
       {reviews.length === 0 ? (
         <EmptyPanel

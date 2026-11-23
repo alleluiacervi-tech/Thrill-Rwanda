@@ -2,6 +2,7 @@ import { StaffAccessForm } from "@/components/dashboard/staff-access-form";
 import { DashboardHead, EmptyPanel } from "@/components/dashboard/dashboard-shell";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
 import { Badge } from "@/components/ui/primitives";
+import { Monogram, StatGrid, StatTile } from "@/components/dashboard/dash-ui";
 import {
   revokeUserSessions,
   sendUserPasswordReset,
@@ -89,11 +90,17 @@ export default async function AdminUsersPage({
         title="Users & access"
         lede={
           canGrant
-            ? "As a super admin you grant and remove access: administrator, super admin, staff (sales, operations, finance) and provider. Every change is recorded in the activity log. Deactivating keeps records and bookings but signs the person out and blocks sign-in."
-            : "Only a super admin can change someone's access. Ask a super admin to make the change; it will be recorded in the activity log."
+            ? "Grant and remove access. Every change is recorded in the activity log."
+            : "Only a super admin can change access. Changes are recorded in the activity log."
         }
       />
 
+      <StatGrid>
+        <StatTile label="People" value={roleCounts.reduce((n, c) => n + c._count._all, 0)} />
+        <StatTile label="Customers" value={countOf("CUSTOMER")} />
+        <StatTile label="Providers" value={countOf("PROVIDER")} />
+        <StatTile label="Team" value={countOf("ADMIN") + staffCount} note="admins and staff" />
+      </StatGrid>
       <TableSearch pathname="/admin/users" placeholder="Search name, email or phone" className="mb-4" />
 
       <FilterChips
@@ -136,15 +143,20 @@ export default async function AdminUsersPage({
               return (
                 <Tr key={u.id}>
                   <Td>
-                    <span className="block font-medium">
-                      {u.fullName}
-                      {isSelf ? (
-                        <span className="ml-2 text-2xs font-normal text-[var(--ink-faint)]">(you)</span>
-                      ) : null}
-                    </span>
-                    <span className="block max-w-[16rem] truncate text-2xs text-[var(--ink-faint)]">
-                      {u.email}{u.phone ? ` · ${u.phone}` : ""}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <Monogram name={u.fullName} />
+                      <div className="min-w-0">
+                        <span className="block font-medium">
+                          {u.fullName}
+                          {isSelf ? (
+                            <span className="ml-2 text-2xs font-normal text-[var(--ink-faint)]">(you)</span>
+                          ) : null}
+                        </span>
+                        <span className="block max-w-[16rem] truncate text-2xs text-[var(--ink-faint)]">
+                          {u.email}{u.phone ? ` · ${u.phone}` : ""}
+                        </span>
+                      </div>
+                    </div>
                   </Td>
                   <Td>
                     <Badge

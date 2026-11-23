@@ -16,6 +16,7 @@ import {
   FileText,
   Mail,
   Settings,
+  ChevronDown,
   Star,
   UserRound,
   Users,
@@ -82,54 +83,72 @@ export function SidebarLayout({
     return () => document.removeEventListener("keydown", onKey);
   }, [open]);
 
+  // Sections fold so thirty links never sit on screen at once. A choice made by
+  // the user wins; otherwise the first section and the one holding the current
+  // page are open.
+  const [override, setOverride] = React.useState<Record<string, boolean>>({});
+
   const rail = (
     <div className="flex min-h-0 flex-1 flex-col">
-      <nav className="flex-1 overflow-y-auto px-3 py-6" aria-label="Admin sections">
-        {groups.map((group) => (
-          <div key={group.label} className="mb-7 last:mb-0">
-            <p className="px-3 pb-2.5 text-2xs font-semibold uppercase tracking-[0.2em] text-bone-50/35">
-              {group.label}
-            </p>
-            <ul className="grid gap-0.5">
-              {group.items.map((item) => {
-                const active = item.href === activeHref;
-                const Glyph = item.icon ? ICONS[item.icon] : undefined;
-                return (
-                  <li key={item.href}>
-                    <Link
-                      href={item.href}
-                      onClick={() => setOpen(false)}
-                      aria-current={active ? "page" : undefined}
-                      className={cn(
-                        "flex items-center gap-3 px-3 py-2.5 text-sm transition-colors",
-                        active
-                          ? "bg-bone-50/10 text-bone-50"
-                          : "text-forest-100/60 hover:bg-bone-50/5 hover:text-bone-50",
-                      )}
-                    >
-                      {Glyph ? (
-                        <Glyph
-                          className={cn(
-                            "size-4 shrink-0",
-                            active ? "text-sun-500" : "text-bone-50/40",
-                          )}
-                        />
-                      ) : (
-                        <span className="size-4 shrink-0" />
-                      )}
-                      <span className="flex-1 truncate">{item.label}</span>
-                      {item.badge ? (
-                        <span className="tnum rounded-full bg-sun-500 px-2 py-0.5 text-[0.625rem] font-semibold text-forest-950">
-                          {item.badge > 9 ? "9+" : item.badge}
-                        </span>
-                      ) : null}
-                    </Link>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        ))}
+      <nav className="flex-1 overflow-y-auto px-3 py-5" aria-label="Admin sections">
+        {groups.map((group, index) => {
+          const hasActive = group.items.some((i) => i.href === activeHref);
+          const expanded = override[group.label] ?? (index === 0 || hasActive);
+          const waiting = group.items.reduce((n, i) => n + (i.badge ?? 0), 0);
+          const panelId = `nav-group-${index}`;
+          return (
+            <div key={group.label} className="mb-1">
+              <button
+                type="button"
+                aria-expanded={expanded}
+                aria-controls={panelId}
+                onClick={() => setOverride((o) => ({ ...o, [group.label]: !expanded }))}
+                className="flex w-full items-center gap-2 rounded px-3 py-2 text-left text-2xs font-semibold uppercase tracking-[0.2em] text-bone-50/45 transition-colors hover:text-bone-50"
+              >
+                <span className="flex-1">{group.label}</span>
+                {!expanded && waiting ? (
+                  <span className="tnum rounded-full bg-sun-500 px-1.5 py-0.5 text-[0.625rem] font-semibold tracking-normal text-forest-950">
+                    {waiting > 9 ? "9+" : waiting}
+                  </span>
+                ) : null}
+                <ChevronDown className={cn("size-3.5 transition-transform", expanded ? "" : "-rotate-90")} />
+              </button>
+              <ul id={panelId} hidden={!expanded} className="mb-4 grid gap-0.5">
+                {group.items.map((item) => {
+                  const active = item.href === activeHref;
+                  const Glyph = item.icon ? ICONS[item.icon] : undefined;
+                  return (
+                    <li key={item.href}>
+                      <Link
+                        href={item.href}
+                        onClick={() => setOpen(false)}
+                        aria-current={active ? "page" : undefined}
+                        className={cn(
+                          "relative flex items-center gap-3 rounded px-3 py-2 text-[0.8125rem] transition-colors",
+                          active
+                            ? "bg-bone-50/10 text-bone-50 before:absolute before:inset-y-1.5 before:left-0 before:w-0.5 before:rounded-full before:bg-sun-500"
+                            : "text-forest-100/60 hover:bg-bone-50/5 hover:text-bone-50",
+                        )}
+                      >
+                        {Glyph ? (
+                          <Glyph className={cn("size-4 shrink-0", active ? "text-sun-500" : "text-bone-50/40")} />
+                        ) : (
+                          <span className="size-4 shrink-0" />
+                        )}
+                        <span className="flex-1 truncate">{item.label}</span>
+                        {item.badge ? (
+                          <span className="tnum rounded-full bg-sun-500 px-2 py-0.5 text-[0.625rem] font-semibold text-forest-950">
+                            {item.badge > 9 ? "9+" : item.badge}
+                          </span>
+                        ) : null}
+                      </Link>
+                    </li>
+                  );
+                })}
+              </ul>
+            </div>
+          );
+        })}
       </nav>
     </div>
   );
