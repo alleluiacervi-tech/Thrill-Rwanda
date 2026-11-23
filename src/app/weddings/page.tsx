@@ -1,14 +1,14 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowRight, MapPin, Users } from "lucide-react";
-import { PageShell } from "@/components/layout/page-shell";
-import { ServiceEnquiryForm } from "@/components/booking/service-enquiry-form";
-import { JourneyIcon } from "@/components/journey/icons";
+import Image from "next/image";
+import { ArrowRight, CalendarCheck, MapPin, ReceiptText, ShieldCheck, Users, UsersRound } from "lucide-react";
+import { Breadcrumbs, HillsEdge, PageShell } from "@/components/layout/page-shell";
+import { VenueKinds, WeddingDateChecker } from "@/components/booking/wedding-date-checker";
+import { WeddingRequestForm } from "@/components/booking/wedding-request-form";
 import {
   Arranges,
   FaqSection,
-  JourneyHero,
   PairWith,
   RequestSection,
   Story,
@@ -16,6 +16,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { Media } from "@/components/ui/media";
 import { Badge, Container, Eyebrow } from "@/components/ui/primitives";
+import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import { journeyImages, type Faq, type Point } from "@/lib/journeys";
 import { requirePublicService } from "@/lib/publication";
 import { getSite } from "@/lib/settings";
@@ -32,33 +33,13 @@ export const metadata: Metadata = {
   alternates: { canonical: "/weddings" },
 };
 
-/** Kinds of venue. Named venues come from the catalogue (Admin → Wedding venues) and follow below. */
-const styles = [
-  {
-    icon: "waves",
-    name: "Gardens & lakeshores",
-    body: "Open-air ceremonies with water or hills behind you.",
-    suits: "Ceremonies and sunset receptions",
-  },
-  {
-    icon: "building",
-    name: "Halls & ballrooms",
-    body: "Covered, catered spaces built for a full guest list.",
-    suits: "Large receptions, any season",
-  },
-  {
-    icon: "mountain",
-    name: "Lodges & hilltops",
-    body: "A whole lodge to yourselves, with rooms for the people closest to you.",
-    suits: "Intimate weddings and weekends",
-  },
-  {
-    icon: "landmark",
-    name: "City venues in Kigali",
-    body: "Hotels and event spaces close to the airport and your guests.",
-    suits: "Guests flying in",
-  },
-] as const;
+/** Under the date checker: what a request sets in motion. */
+const assurances = [
+  { icon: CalendarCheck, title: "Your date, checked", body: "With venues that are free that day" },
+  { icon: UsersRound, title: "Every guest looked after", body: "Transport and rooms around the day" },
+  { icon: ReceiptText, title: "One written quote", body: "Costs, inclusions and venue terms" },
+  { icon: ShieldCheck, title: "Nothing reserved or charged", body: "Until you accept" },
+];
 
 const arranges: Point[] = [
   { icon: "calendar", title: "The venue, for your date", body: "We check the date with the venue and confirm the reservation and its terms in writing." },
@@ -101,22 +82,51 @@ export default async function WeddingsPage({
 
   return (
     <PageShell overHero>
-      <JourneyHero
-        eyebrow="Weddings & events"
-        title="Your wedding,"
-        titleEm="held in the hills."
-        lede="Tell us the date and the day you imagine. We reserve the venue, bring your guests to it and look after them, through to the honeymoon."
-        image={journeyImages.weddings}
-        imagePosition="center 45%"
-        crumbs={[{ label: "Weddings & Events" }]}
-        facts={[
-          { label: "How it is bought", value: "Written quote" },
-          { label: "We reserve", value: "The venue, for your date" },
-          { label: "Also arranged", value: "Guest travel and rooms" },
-        ]}
-        primary={{ href: "#request", label: "Check a date", service: "EVENT" }}
-        secondary={{ href: "#venues", label: "Kinds of venue" }}
-      />
+      <section className="on-dark relative -mt-[4.5rem] bg-[#0b1611] pb-20 pt-[7.5rem] sm:pb-24 lg:-mt-24 lg:pb-28 lg:pt-44">
+        {/* On narrow screens the photograph stays in the top band, so it is not blown up behind the checker. */}
+        <div aria-hidden className="absolute inset-x-0 top-0 h-[36rem] overflow-hidden sm:h-[44rem] lg:inset-0 lg:h-auto">
+          <Image src={journeyImages.weddings} alt="" fill preload sizes="100vw" className="object-cover object-[center_45%]" />
+          <div
+            className="absolute inset-0"
+            style={{
+              background:
+                "linear-gradient(90deg, rgb(11 22 17 / 0.85) 0%, rgb(11 22 17 / 0.5) 45%, rgb(11 22 17 / 0.1) 100%), linear-gradient(to top, rgb(11 22 17 / 0.92) 0%, rgb(11 22 17 / 0.3) 45%, transparent 70%)",
+            }}
+          />
+          <div className="scrim-t absolute inset-x-0 top-0 h-40" />
+          <div className="absolute inset-x-0 bottom-0 h-48 bg-linear-to-t from-[#0b1611] to-transparent lg:hidden" />
+        </div>
+
+        <Container wide className="relative">
+          <Breadcrumbs items={[{ label: "Weddings & Events" }]} className="on-media mb-7 text-white/90" />
+          <Eyebrow className="on-media text-sun-300">Weddings & events</Eyebrow>
+          <h1 className="on-media mt-3 max-w-[14ch] text-display text-white">
+            Your wedding, <em className="text-sun-400">held in the hills.</em>
+          </h1>
+          <p className="on-media mt-5 max-w-xl text-base leading-relaxed text-white/90 sm:text-lg">
+            Tell us the date and the day you imagine. We reserve the venue, bring your guests to it and look after them, through to the honeymoon.
+          </p>
+
+          <div className="mt-10 sm:mt-12">
+            <WeddingDateChecker today={todayInRwanda()} />
+          </div>
+
+          <ul className="mt-8 grid grid-cols-2 gap-x-6 gap-y-5 lg:grid-cols-4">
+            {assurances.map(({ icon: Icon, title, body }) => (
+              <li key={title} className="flex items-start gap-3">
+                <span className="grid size-10 shrink-0 place-items-center rounded-full bg-white/10 text-sun-400 ring-1 ring-white/15">
+                  <Icon className="size-[1.1rem]" aria-hidden />
+                </span>
+                <span className="on-media pt-0.5">
+                  <span className="block text-[0.95rem] font-semibold leading-snug text-white">{title}</span>
+                  <span className="mt-0.5 block text-sm leading-snug text-white/75">{body}</span>
+                </span>
+              </li>
+            ))}
+          </ul>
+        </Container>
+        <HillsEdge />
+      </section>
 
       {/* ---------------------------------------------------------- Venues */}
       <section id="venues" className="scroll-mt-24 py-20 sm:py-28">
@@ -128,8 +138,8 @@ export default async function WeddingsPage({
                 Find the setting <em>that feels like you</em>
               </h2>
               <p className="mt-5 max-w-xl text-[1.0625rem] leading-relaxed text-[var(--ink-muted)]">
-                Tell us the kind of place you picture and how many guests you
-                expect. We come back with venues that are free on your date.
+                Choose the kind of place you picture and we start your request
+                with it. We come back with venues that are free on your date.
               </p>
             </div>
             <Button href="#request" variant="outline" className="shrink-0">
@@ -138,39 +148,9 @@ export default async function WeddingsPage({
             </Button>
           </div>
 
-          <ul className="mt-12 grid gap-4 sm:grid-cols-2 lg:mt-16 lg:grid-cols-4 lg:gap-5">
-            {styles.map((style, i) => (
-              <li
-                key={style.name}
-                className="group relative flex min-h-[19rem] flex-col overflow-hidden rounded-[var(--radius-card)] border border-[var(--line)] bg-bone-50 p-6 transition-[transform,box-shadow,background-color,border-color] duration-500 [transition-timing-function:var(--ease-out-expo)] hover:-translate-y-1 hover:border-forest-800 hover:bg-forest-900 hover:shadow-[var(--shadow-float)] sm:p-7"
-              >
-                <div
-                  aria-hidden
-                  className="imigongo absolute inset-0 opacity-[0.05] transition-opacity duration-500 group-hover:opacity-0"
-                />
-                <div className="relative flex items-center justify-between">
-                  <span className="grid size-14 place-items-center rounded-full bg-white text-forest-800 ring-1 ring-[var(--line)] transition-colors duration-500 group-hover:bg-sun-500 group-hover:text-forest-950 group-hover:ring-sun-500">
-                    <JourneyIcon name={style.icon} className="size-6" />
-                  </span>
-                  <span
-                    aria-hidden
-                    className="display-italic tnum font-display text-2xl text-bone-400 transition-colors duration-500 group-hover:text-sun-400"
-                  >
-                    {String(i + 1).padStart(2, "0")}
-                  </span>
-                </div>
-                <h3 className="relative mt-auto pt-10 text-[1.625rem] leading-[1.08] transition-colors duration-500 group-hover:text-white">
-                  {style.name}
-                </h3>
-                <p className="relative mt-2.5 text-[0.9375rem] leading-relaxed text-[var(--ink-muted)] transition-colors duration-500 group-hover:text-forest-100/85">
-                  {style.body}
-                </p>
-                <p className="relative mt-5 border-t border-[var(--line)] pt-4 text-2xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)] transition-colors duration-500 group-hover:border-white/20 group-hover:text-sun-300">
-                  {style.suits}
-                </p>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-12 lg:mt-16">
+            <VenueKinds />
+          </div>
         </Container>
       </section>
 
@@ -291,8 +271,8 @@ export default async function WeddingsPage({
           "Guest flights, transfers and rooms on the same quote",
           "One person to call, before and after the day",
         ]}
-        image={journeyImages.honeymoon}
-        imageAlt="Islands scattered across Lake Kivu, seen from the air"
+        image="/media/photos/lake-kivu-fishermen.jpg"
+        imageAlt="A fishing boat beside an island on Lake Kivu"
         imagePosition="center 55%"
         caption="Lake Kivu"
         flip
@@ -347,11 +327,11 @@ export default async function WeddingsPage({
             </Link>
           </p>
         ) : null}
-        <ServiceEnquiryForm
+        <WeddingRequestForm
           // A different venue is a different request: start the form afresh.
           key={chosen?.slug ?? "any"}
           submissionKey={randomUUID()}
-          journey="WEDDING"
+          today={todayInRwanda()}
           context={chosen ? venueContext(chosen) : "Wedding venue reservation"}
           initial={chosen ? { venueStyle: chosen.kind, location: chosen.location } : undefined}
         />
