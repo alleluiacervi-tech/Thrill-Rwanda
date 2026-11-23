@@ -52,6 +52,8 @@ export type SegmentDraft = {
 export type OptionDraft = {
   label: string; currency: string; total: string; fareBasis: string; baggage: string; changeRule: string; refundRule: string;
   validUntil: string; segments: SegmentDraft[];
+  /** Carried through so a fare from Duffel stays linked to it when the desk edits and re-saves. */
+  source?: string; externalId?: string | null;
 };
 const blankSegment = (): SegmentDraft => ({ airline: "WB", flightNumber: "", origin: "", destination: "", departLocal: "", arriveLocal: "", cabin: "ECONOMY", bookingClass: "", terminal: "" });
 const blankOption = (currency: string): OptionDraft => ({ label: "", currency, total: "", fareBasis: "", baggage: "", changeRule: "", refundRule: "", validUntil: "", segments: [blankSegment()] });

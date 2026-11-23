@@ -37,7 +37,7 @@ async function staffActor(tx: Tx, actorId: string) {
 }
 
 /** Loads a ticketing file for update: the caller's scope is re-read, the row is locked and the version must match. */
-async function lockFile(tx: Tx, actorId: string, reference: string, version?: number) {
+export async function lockFile(tx: Tx, actorId: string, reference: string, version?: number) {
   const actor = await staffActor(tx, actorId);
   const enquiry = await tx.enquiry.findFirst({
     where: { reference, service: "FLIGHT", ...enquiryScope(actor) },
@@ -53,10 +53,10 @@ async function lockFile(tx: Tx, actorId: string, reference: string, version?: nu
   return { actor, enquiry, file };
 }
 
-const bump = (tx: Tx, id: string, data: Prisma.FlightTicketingUpdateInput = {}) =>
+export const bump = (tx: Tx, id: string, data: Prisma.FlightTicketingUpdateInput = {}) =>
   tx.flightTicketing.update({ where: { id }, data: { ...data, version: { increment: 1 } } });
 
-const note = (tx: Tx, enquiryId: string, actorId: string, kind: string, body: string | null, changes: Prisma.InputJsonValue = {}) =>
+export const note = (tx: Tx, enquiryId: string, actorId: string, kind: string, body: string | null, changes: Prisma.InputJsonValue = {}) =>
   tx.enquiryActivity.create({ data: { enquiryId, actorId, kind, body, changes } });
 
 export function selectedOption(file: Pick<TicketingFile, "options">) {

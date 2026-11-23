@@ -127,9 +127,14 @@ export const optionSchema = z.object({
   changeRule: text(500).default(""),
   refundRule: text(500).default(""),
   validUntil: z.coerce.date(),
+  /** MANUAL fares are typed by the desk; DUFFEL fares came from the API and carry its offer id. */
+  source: z.enum(["MANUAL", "DUFFEL"]).default("MANUAL"),
+  externalId: z.string().trim().max(80).nullable().default(null),
   segments: z.array(segmentSchema).min(1, "Add at least one flight").max(12),
 });
-export type OptionInput = z.infer<typeof optionSchema>;
+type ParsedOption = z.infer<typeof optionSchema>;
+/** What the desk passes in. The supplier link is optional, so hand-typed fares need not mention it. */
+export type OptionInput = Omit<ParsedOption, "source" | "externalId"> & Partial<Pick<ParsedOption, "source" | "externalId">>;
 export const optionsSchema = z.array(optionSchema).min(1, "Add at least one fare option").max(6);
 
 /* ------------------------------------------------------------------ travellers */

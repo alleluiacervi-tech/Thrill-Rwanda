@@ -40,6 +40,8 @@ export function sameAirport(a: string, b: string) {
   if (x.code && y.code && !(x.city.length === 3 && x.city === x.code) && !(y.city.length === 3 && y.city === y.code)) return false;
   return x.city === y.city;
 }
+/** The three-letter airport code in a typed place such as "Kigali (KGL)" or "KGL", or null when there is none. */
+export const airportCodeOf = (value: string): string | null => parseAirport(value).code.toUpperCase() || null;
 export const flightLegSchema = z.object({
   origin: z.string().trim().min(2, "Enter a departure city or airport").max(120),
   destination: z.string().trim().min(2, "Enter a destination city or airport").max(120),

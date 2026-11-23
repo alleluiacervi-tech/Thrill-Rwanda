@@ -12,6 +12,8 @@ import {
   StaffRequestForm, TravellerEditor,
 } from "./ticketing-forms";
 import { optionDraftFromRow } from "./ticketing-drafts";
+import { DuffelBooking, DuffelNotConnected, LiveFares } from "./duffel-panel";
+import { duffelStatus } from "@/lib/ticketing-duffel";
 import { DeadlineChip, FlightCard, Panel, StageTracker, StatusPill, shortDate } from "./ticketing-ui";
 
 const fullName = (p: { title: string; givenNames: string; surname: string }) => `${p.title ? `${p.title} ` : ""}${p.givenNames} ${p.surname}`.toUpperCase();
@@ -63,6 +65,12 @@ export async function TicketingCase({ reference, base }: { reference: string; ba
 
   const status = file.status as TicketingStatus;
   const chosen = selectedOption(file);
+  const duffel = duffelStatus();
+  // Shown while a Duffel fare is the one being ticketed, or once an order exists, so the state of the booking is never hidden.
+  const showDuffelBooking = canEdit && duffel.configured && (
+    (status === "READY_TO_TICKET" && (chosen?.source === "DUFFEL" || !!file.externalOrderId || !!file.externalStatus)) ||
+    (status === "TICKETING" && !!file.externalOrderId)
+  );
   const deadline = fileDeadline(file);
   const editable = canEdit && ["OPTIONS", "AWAITING_PAYMENT", "READY_TO_TICKET", "TICKETING"].includes(status);
   const travellers: PassengerInput[] = file.passengers.map((p) => ({
@@ -118,7 +126,10 @@ export async function TicketingCase({ reference, base }: { reference: string; ba
       <Panel title={status === "OPTIONS" ? "Fare options" : "Fare and flights"} lede={status === "OPTIONS" ? "Checked prices from the ticketing partner. Each option carries a time after which the price is no longer guaranteed." : "The fare this file is ticketed on."}>
         {status === "OPTIONS" && editable ? (
           <div className="space-y-8">
-            <OptionsEditor reference={enquiry.reference} version={file.version} currency={enquiry.financialCase?.currency ?? "USD"}
+            {duffel.configured
+              ? <LiveFares reference={enquiry.reference} version={file.version} mode={duffel.mode} optionCount={file.options.length} />
+              : <DuffelNotConnected message={duffel.message} />}
+            <OptionsEditor key={file.version} reference={enquiry.reference} version={file.version} currency={enquiry.financialCase?.currency ?? "USD"}
               initial={file.options.map((o) => optionDraftFromRow(o))} />
             {file.options.length > 0 && (
               <div className="border-t border-[var(--line)] pt-6">
@@ -135,7 +146,10 @@ export async function TicketingCase({ reference, base }: { reference: string; ba
               <div key={o.id} className="space-y-3">
                 <div className="flex flex-wrap items-center justify-between gap-2">
                   <h3 className="text-lg">{o.label}</h3>
-                  <Badge tone="forest">{money2(o.totalMinor, o.currency)}</Badge>
+                  <span className="flex items-center gap-2">
+                    {o.source === "DUFFEL" && <Badge tone="outline">Live fare</Badge>}
+                    <Badge tone="forest">{money2(o.totalMinor, o.currency)}</Badge>
+                  </span>
                 </div>
                 {o.segments.map((s) => <FlightCard key={s.id} segment={s} />)}
                 <dl className="grid gap-3 text-sm sm:grid-cols-3">
@@ -174,6 +188,12 @@ export async function TicketingCase({ reference, base }: { reference: string; ba
       {canEdit && !["CLOSED", "CANCELLED"].includes(status) && (
         <Panel title={status === "TICKETING" ? "Record issued tickets" : status === "ISSUED" ? "Itinerary delivery" : "Move this file on"}
           lede={status === "TICKETING" ? "Only after the partner confirms issue. Ticket numbers cannot be reused on another file." : undefined}>
+          {showDuffelBooking && duffel.configured && (
+            <div className="mb-6">
+              <DuffelBooking reference={enquiry.reference} version={file.version} mode={duffel.mode} status={status}
+                externalStatus={file.externalStatus} orderId={file.externalOrderId} isAdmin={actor.role === "ADMIN"} />
+            </div>
+          )}
           {status === "TICKETING" && (
             <div className="space-y-8">
               <IssueForm reference={enquiry.reference} version={file.version} pnr={file.pnr ?? ""} partner={file.partner} passengers={passengerOptions} />
