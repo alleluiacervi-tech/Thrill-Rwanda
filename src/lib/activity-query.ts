@@ -23,6 +23,7 @@ export const ACTIVITY_AREAS = [
   "Settings",
   "Content",
   "Transfers",
+  "Mail",
 ] as const;
 
 type Params = Record<string, string | string[] | undefined>;

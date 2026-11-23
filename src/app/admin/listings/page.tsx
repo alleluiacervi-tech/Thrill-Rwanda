@@ -6,7 +6,7 @@ import { ActionButton } from "@/components/dashboard/action-button";
 import { DeleteListingButton } from "@/components/dashboard/delete-listing-button";
 import { FilterChips } from "@/components/dashboard/filter-chips";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
-import { Badge } from "@/components/ui/primitives";
+import { StatGrid, StatTile, StatusPill, Toolbar } from "@/components/dashboard/dash-ui";
 import { adminSetListingPublished } from "@/app/actions/admin";
 import { TableSearch } from "@/components/dashboard/table-search";
 import { searchTerm } from "@/lib/table-query";
@@ -102,6 +102,10 @@ export default async function AdminListingsPage({
     { value: "VEHICLE", label: "Vehicles", count: vehicles.length },
   ];
 
+  const live = all.filter((r) => r.isPublished && !(r.kind === "HOTEL" && !r.publishedRooms)).length;
+  const needsRoom = all.filter((r) => r.kind === "HOTEL" && r.isPublished && !r.publishedRooms).length;
+  const hidden = all.filter((r) => !r.isPublished).length;
+
   const TITLE: Record<string, string> = {
     "": "All listings",
     TOUR: "Tours & safaris",
@@ -113,7 +117,7 @@ export default async function AdminListingsPage({
     <>
       <DashboardHead
         title={TITLE[kind]}
-        lede="Edit or publish tours, properties and vehicles. Hotels need a published room type. Launch controls determine which services are visible and which can be booked online."
+        lede="Tours, properties and vehicles. A hotel needs a published room type to go live."
         action={
           <div className="flex flex-wrap gap-2">
             <Button href="/admin/listings/new/tours" variant="quiet">
@@ -132,11 +136,20 @@ export default async function AdminListingsPage({
         }
       />
 
-      <TableSearch
-        pathname="/admin/listings"
-        placeholder="Search listing, provider or destination"
-        className="mb-6"
-      />
+      <StatGrid>
+        <StatTile label="Listings" value={all.length} href="/admin/listings" />
+        <StatTile label="Live" value={live} tone="good" note="visible to travellers" />
+        <StatTile label="Hidden" value={hidden} note="unpublished" />
+        <StatTile label="Hotels needing a room" value={needsRoom} tone={needsRoom ? "alert" : "good"} note="published, no room live" href="/admin/listings?kind=HOTEL" />
+      </StatGrid>
+
+      <Toolbar>
+        <TableSearch
+          className="sm:w-72"
+          pathname="/admin/listings"
+          placeholder="Listing, provider or destination"
+        />
+      </Toolbar>
 
       <FilterChips
         basePath="/admin/listings"
@@ -168,13 +181,13 @@ export default async function AdminListingsPage({
                   <span className="block max-w-[16rem] truncate text-2xs text-[var(--ink-faint)]">{r.detail}</span>
                   {r.kind === "HOTEL" && <span className="block text-2xs">{r.publishedRooms} published room types</span>}
                 </Td>
-                <Td className="text-2xs uppercase tracking-[0.12em] text-[var(--ink-muted)]">{r.kind}</Td>
+                <Td className="whitespace-nowrap text-xs text-[var(--ink-muted)]">{r.kind === "TOUR" ? "Tour" : r.kind === "HOTEL" ? "Hotel" : "Vehicle"}</Td>
                 <Td className="max-w-[12rem] truncate">{r.provider}</Td>
                 <Td className="tnum whitespace-nowrap text-right">{r.price}</Td>
                 <Td>
-                  <Badge tone={r.isPublished ? "forest" : "outline"}>
+                  <StatusPill tone={!r.isPublished ? "neutral" : r.kind === "HOTEL" && !r.publishedRooms ? "warn" : "good"}>
                     {r.isPublished ? r.kind === "HOTEL" && !r.publishedRooms ? "Needs a published room" : "Published" : "Hidden"}
-                  </Badge>
+                  </StatusPill>
                 </Td>
                 <Td>
                   <div className="flex items-center gap-3 whitespace-nowrap">

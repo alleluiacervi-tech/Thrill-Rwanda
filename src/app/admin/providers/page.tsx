@@ -2,7 +2,7 @@ import { DashboardHead, EmptyPanel } from "@/components/dashboard/dashboard-shel
 import { ActionButton } from "@/components/dashboard/action-button";
 import { FilterChips } from "@/components/dashboard/filter-chips";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
-import { Badge } from "@/components/ui/primitives";
+import { Monogram, StatGrid, StatTile, StatusPill, Toolbar } from "@/components/dashboard/dash-ui";
 import { setProviderStatus } from "@/app/actions/admin";
 import { ProviderCategories } from "@/components/dashboard/provider-categories";
 import { TableSearch } from "@/components/dashboard/table-search";
@@ -16,10 +16,17 @@ import { requireAdmin } from "@/lib/session";
 const KIND_LABEL = { CAR: "Car provider", HOTEL: "Hotel owner", TOUR: "Tour operator" } as const;
 
 const TONE = {
-  PENDING: "clay",
-  VERIFIED: "forest",
-  REJECTED: "outline",
-  SUSPENDED: "sun",
+  PENDING: "warn",
+  VERIFIED: "good",
+  REJECTED: "neutral",
+  SUSPENDED: "alert",
+} as const;
+
+const STATUS_LABEL = {
+  PENDING: "Awaiting approval",
+  VERIFIED: "Verified",
+  REJECTED: "Rejected",
+  SUSPENDED: "Suspended",
 } as const;
 
 const STATUSES = new Set(["PENDING", "VERIFIED", "REJECTED", "SUSPENDED"]);
@@ -98,14 +105,23 @@ export default async function AdminProvidersPage({
               ? `${status[0]}${status.slice(1).toLowerCase()} providers`
               : "Providers"
         }
-        lede="Approve, reject and suspend. Approving grants the PROVIDER role; suspending or rejecting unpublishes every listing they have."
+        lede="Approve, reject or suspend. Suspending or rejecting hides all of a provider's listings."
       />
 
-      <TableSearch
-        pathname="/admin/providers"
-        placeholder="Search business, city or owner"
-        className="mb-6"
-      />
+      <StatGrid>
+        <StatTile label="Providers" value={total} href="/admin/providers" />
+        <StatTile label="Awaiting approval" value={countOf("PENDING")} tone={countOf("PENDING") ? "alert" : "good"} note="need a decision" href="/admin/providers?status=PENDING" />
+        <StatTile label="Verified" value={countOf("VERIFIED")} tone="good" href="/admin/providers?status=VERIFIED" />
+        <StatTile label="Suspended" value={countOf("SUSPENDED")} href="/admin/providers?status=SUSPENDED" />
+      </StatGrid>
+
+      <Toolbar>
+        <TableSearch
+          className="sm:w-72"
+          pathname="/admin/providers"
+          placeholder="Business, city or owner"
+        />
+      </Toolbar>
 
       {filtering === "status" ? (
         <FilterChips
@@ -160,15 +176,20 @@ export default async function AdminProvidersPage({
               return (
                 <Tr key={p.id}>
                   <Td>
-                    <span className="block font-medium">{p.businessName}</span>
-                    <span className="block text-2xs text-[var(--ink-faint)]">
-                      {KIND_LABEL[p.kind]}
-                      {p.city ? ` · ${p.city}` : ""}
-                    </span>
-                    <span className="block text-2xs text-[var(--ink-faint)]">
-                      {p.licenceNumber ? `Reg ${p.licenceNumber}` : "No registration on file"}
-                      {p.kraPin ? ` · KRA ${p.kraPin}` : ""}
-                    </span>
+                    <div className="flex items-center gap-3">
+                      <Monogram name={p.businessName} />
+                      <div className="min-w-0">
+                        <span className="block font-medium">{p.businessName}</span>
+                        <span className="block text-2xs text-[var(--ink-faint)]">
+                          {KIND_LABEL[p.kind]}
+                          {p.city ? ` · ${p.city}` : ""}
+                        </span>
+                        <span className="block text-2xs text-[var(--ink-faint)]">
+                          {p.licenceNumber ? `Reg ${p.licenceNumber}` : "No registration on file"}
+                          {p.kraPin ? ` · KRA ${p.kraPin}` : ""}
+                        </span>
+                      </div>
+                    </div>
                   </Td>
                   <Td>
                     <span className="block truncate">{p.user.fullName}</span>
@@ -176,7 +197,7 @@ export default async function AdminProvidersPage({
                   </Td>
                   <Td className="tnum text-right">{listings}</Td>
                   <Td className="tnum text-right">{p._count.bookings}</Td>
-                  <Td><Badge tone={TONE[p.status]}>{p.status}</Badge></Td>
+                  <Td><StatusPill tone={TONE[p.status]}>{STATUS_LABEL[p.status]}</StatusPill></Td>
                   <Td>
                     <ProviderCategories
                       providerId={p.id}

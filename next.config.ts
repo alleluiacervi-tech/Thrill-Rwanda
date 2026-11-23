@@ -35,6 +35,12 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   poweredByHeader: false,
 
+  // The proxy buffers request bodies and, past this size, silently keeps only
+  // the start. Admin mail accepts up to 20 MB of attachments, so a larger body
+  // than the default 10 MB must get through whole, or an attachment arrives
+  // truncated. The mail route also refuses anything over 25 MB outright.
+  experimental: { proxyClientMaxBodySize: "30mb" },
+
   // The VPS image (Dockerfile) builds a self-contained server; Vercel builds
   // as usual. See docs/VPS_DEPLOYMENT.md.
   output: process.env.NEXT_OUTPUT === "standalone" ? "standalone" : undefined,

@@ -4,6 +4,7 @@ import { BookingActions } from "@/components/dashboard/booking-actions";
 import { BookingExtrasLine } from "@/components/dashboard/booking-extras-line";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
 import { Badge } from "@/components/ui/primitives";
+import { Monogram, StatGrid, StatTile, Toolbar } from "@/components/dashboard/dash-ui";
 import { adminTransitionBooking } from "@/app/actions/admin";
 import { STATUS_LABEL, STATUS_TONE, allowedTransitions } from "@/lib/booking";
 import { resolveBookingSubjects, resourceIdsMatching } from "@/lib/booking-display";
@@ -107,33 +108,52 @@ export default async function AdminBookingsPage({
 
   const subjects = await resolveBookingSubjects(bookings);
 
+  // Whole-platform counts, unaffected by the filters below, so the tiles stay a stable overview.
+  const byStatus = await db.booking.groupBy({ by: ["status"], _count: { _all: true } });
+  const countOf = (s: string) => byStatus.find((g) => g.status === s)?._count._all ?? 0;
+  const everything = byStatus.reduce((n, g) => n + g._count._all, 0);
+  const filtered = Boolean(status || service || q || createdAt);
+
   return (
     <>
       <DashboardHead
-        title="All bookings"
-        lede="Every booking on the platform. Cancelling or rejecting here releases the held inventory immediately."
+        title="Bookings"
+        lede="Every online booking. Cancelling or rejecting releases the held inventory at once."
       />
 
-      <div className="mb-4 flex flex-wrap items-center gap-3">
+      <StatGrid>
+        <StatTile label="All bookings" value={everything} href="/admin/bookings" />
+        <StatTile label="Awaiting payment" value={countOf("AWAITING_PAYMENT")} tone={countOf("AWAITING_PAYMENT") ? "alert" : "good"} note="not yet paid" href="/admin/bookings?status=AWAITING_PAYMENT" />
+        <StatTile label="Confirmed" value={countOf("CONFIRMED")} note={`${countOf("PAID")} paid, awaiting confirmation`} href="/admin/bookings?status=CONFIRMED" />
+        <StatTile label="Completed" value={countOf("COMPLETED")} tone="good" href="/admin/bookings?status=COMPLETED" />
+      </StatGrid>
+
+      <Toolbar>
         <TableSearch
+          className="sm:w-72"
           pathname="/admin/bookings"
-          placeholder="Search reference, customer or provider"
+          placeholder="Reference, customer or provider"
         />
         <SelectFilter
           pathname="/admin/bookings"
           param="service"
           options={SERVICES}
           label="Filter by service type"
-          className="w-48"
+          className="w-44"
         />
         <SelectFilter
           pathname="/admin/bookings"
           param="range"
           options={DATE_RANGES}
           label="Filter by date"
-          className="w-44"
+          className="w-40"
         />
-      </div>
+        {filtered ? (
+          <Link href="/admin/bookings" className="ml-auto text-xs font-medium text-lake-700 underline">
+            Clear filters
+          </Link>
+        ) : null}
+      </Toolbar>
 
       <FilterChips
         basePath="/admin/bookings"
@@ -189,8 +209,13 @@ export default async function AdminBookingsPage({
                     <BookingExtrasLine details={b.details} notes={b.customerNotes} documents={b.documents} />
                   </Td>
                   <Td>
-                    <span className="block max-w-[11rem] truncate">{b.customer.fullName}</span>
-                    <span className="block max-w-[11rem] truncate text-2xs text-[var(--ink-faint)]">{b.customer.email}</span>
+                    <div className="flex items-center gap-3">
+                      <Monogram name={b.customer.fullName} />
+                      <div className="min-w-0">
+                        <span className="block max-w-[11rem] truncate">{b.customer.fullName}</span>
+                        <span className="block max-w-[11rem] truncate text-2xs text-[var(--ink-faint)]">{b.customer.email}</span>
+                      </div>
+                    </div>
                   </Td>
                   <Td className="max-w-[11rem] truncate">{b.provider.businessName}</Td>
                   <Td className="tnum whitespace-nowrap">{formatDateRange(b.startDate, b.endDate)}</Td>

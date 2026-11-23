@@ -33,6 +33,7 @@ export type ActivityArea =
   | "Settings"
   | "Content"
   | "Transfers"
+  | "Mail"
   | "Support";
 
 export type ActivityEntry = {
