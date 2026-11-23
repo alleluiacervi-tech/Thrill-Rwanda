@@ -45,8 +45,8 @@ export function FinanceForm({
     { status: "idle" } as FinanceActionState,
   );
   return (
-    <details className="mt-4 min-w-0 rounded-xl border border-[var(--line)] p-4">
-      <summary className="cursor-pointer font-semibold">{title}</summary>
+    <details className="group mt-3 min-w-0 border-b border-[var(--line)] pb-3 [&_summary::-webkit-details-marker]:hidden">
+      <summary className="flex cursor-pointer list-none items-center justify-between gap-3 text-sm font-medium">{title}<span aria-hidden className="text-lg leading-none text-[var(--ink-faint)] transition-transform group-open:rotate-45">+</span></summary>
       <form
         action={action}
         onReset={(e) => e.preventDefault()}

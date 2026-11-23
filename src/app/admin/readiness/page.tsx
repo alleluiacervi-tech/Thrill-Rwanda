@@ -9,6 +9,7 @@ import {
   REQUIRED_RELEASE_KEYS,
 } from "@/lib/release-rules";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
+import { Panel, StatGrid, StatTile, StatusPill } from "@/components/dashboard/dash-ui";
 import { OperationsForm } from "@/components/dashboard/operations-form";
 
 const configHelp: Record<string, { title: string; action: string }> = {
@@ -53,142 +54,135 @@ export default async function Page() {
   const openChecks = checks.filter((check) => !check.ok);
   const verified = new Set(records.filter((record) => record.state === "VERIFIED" && record.reviewAt > now).map((record) => record.key));
   const outstanding = REQUIRED_RELEASE_KEYS.filter((key) => !verified.has(key));
+  const doneApprovals = REQUIRED_RELEASE_KEYS.length - outstanding.length;
+  const readyPct = Math.round((doneApprovals / Math.max(1, REQUIRED_RELEASE_KEYS.length)) * 100);
+  const stale = (w: (typeof workers)[number]) => !w.succeededAt || now.getTime() - w.succeededAt.getTime() > 86400000;
+  const stateOf = (key: string) => {
+    const r = records.find((x) => x.key === key);
+    return verified.has(key) ? { tone: "good" as const, text: "Verified" }
+      : r?.state === "VERIFIED" ? { tone: "warn" as const, text: "Review due" }
+      : r?.state === "NOT_APPLICABLE" ? { tone: "neutral" as const, text: "Not applicable" }
+      : { tone: "alert" as const, text: "Pending" };
+  };
   return (
     <>
       <DashboardHead
-        title="Launch checklist"
-        lede={`Environment shown by the app: ${environment}. Use this checklist to review the hosting setup and record company approvals before a public launch.`}
+        title="Launch readiness"
+        lede={`Environment: ${environment}. Hosting checks and company approvals to clear before going public.`}
+        action={<Link href="/admin/launch" className="text-sm font-medium text-lake-700 hover:underline">Launch controls →</Link>}
       />
-      <div className="my-6 grid gap-4 sm:grid-cols-2">
-        <a href="#configuration" className="rounded-xl border border-[var(--line)] p-4">
-          <strong>{openChecks.length} setup {openChecks.length === 1 ? "check needs" : "checks need"} attention</strong>
-          <span className="mt-1 block text-sm">Hosting, email, uploads and backups</span>
-        </a>
-        <a href="#approvals" className="rounded-xl border border-[var(--line)] p-4">
-          <strong>{outstanding.length} of {REQUIRED_RELEASE_KEYS.length} approvals outstanding</strong>
-          <span className="mt-1 block text-sm">Company owners record evidence and review dates here.</span>
-        </a>
-      </div>
-      <p className="my-5 text-sm">
-        For day-to-day work, open <Link href="/admin/enquiries" className="underline">Enquiries</Link> or{" "}
-        <Link href="/admin/listings" className="underline">Listings</Link>. To change what travelers see, use{" "}
-        <Link href="/admin/launch" className="underline">Launch controls</Link>.
-      </p>
-      <section id="configuration" className="scroll-mt-24">
-        <h2 className="text-2xl">Setup that needs attention</h2>
-        {openChecks.length ? (
-          <ul className="my-4 space-y-3">
+      <Panel className="mb-6">
+        <div className="flex flex-wrap items-center gap-x-10 gap-y-4">
+          <div>
+            <p className="text-2xs font-semibold uppercase tracking-[0.14em] text-[var(--ink-faint)]">Approvals complete</p>
+            <p className="tnum mt-2 font-display text-5xl leading-none">{readyPct}%</p>
+          </div>
+          <div className="min-w-[14rem] flex-1">
+            <div className="h-2 overflow-hidden rounded-full bg-[var(--paper-sunken)]">
+              <div className="h-full rounded-full bg-forest-700" style={{ width: `${readyPct}%` }} />
+            </div>
+            <p className="mt-2 text-xs text-[var(--ink-muted)]">
+              {doneApprovals} of {REQUIRED_RELEASE_KEYS.length} required approvals verified
+            </p>
+          </div>
+        </div>
+      </Panel>
+      <StatGrid>
+        <StatTile label="Setup checks open" value={openChecks.length} tone={openChecks.length ? "alert" : "good"} href="#configuration" />
+        <StatTile label="Blocked emails" value={blocked} tone={blocked ? "alert" : "good"} />
+        <StatTile label="Failed jobs" value={failed} tone={failed ? "alert" : "good"} />
+        <StatTile label="Documents to review" value={overdueDocs} note="expired, not held" />
+      </StatGrid>
+
+      <div className="grid gap-5 lg:grid-cols-2">
+        <Panel
+          title="Setup"
+          description={openChecks.length ? "Needs attention before launch." : "Every configuration check passed."}
+          aside={<StatusPill tone={openChecks.length ? "alert" : "good"}>{openChecks.length ? `${openChecks.length} open` : "All clear"}</StatusPill>}
+          className="scroll-mt-24"
+        >
+          <div id="configuration" />
+          <ul className="grid gap-3">
             {openChecks.map((check) => (
-              <li key={check.key} className="rounded-xl border border-[var(--line)] p-4">
-                <strong>{configHelp[check.key]?.title ?? title(check.key)}</strong>
-                <p className="mt-1 text-sm">{configHelp[check.key]?.action ?? check.detail}</p>
+              <li key={check.key} className="border-b border-[var(--line)] pb-3 last:border-0 last:pb-0">
+                <p className="text-sm font-medium">{configHelp[check.key]?.title ?? title(check.key)}</p>
+                <p className="mt-1 text-xs leading-relaxed text-[var(--ink-muted)]">{configHelp[check.key]?.action ?? check.detail}</p>
               </li>
             ))}
           </ul>
-        ) : <p className="my-4">All configuration checks passed.</p>}
-        <details className="my-5 rounded-xl border border-[var(--line)] p-4">
-          <summary className="cursor-pointer font-semibold">Checks that passed ({checks.length - openChecks.length})</summary>
-          <ul className="mt-3 space-y-2 text-sm">
-            {checks.filter((check) => check.ok).map((check) => <li key={check.key}>{check.detail}</li>)}
-          </ul>
-        </details>
+          <details className="mt-4 text-sm">
+            <summary className="cursor-pointer font-medium text-[var(--ink-muted)]">Passed ({checks.length - openChecks.length})</summary>
+            <ul className="mt-3 grid gap-1.5 text-xs text-[var(--ink-muted)]">
+              {checks.filter((check) => check.ok).map((check) => <li key={check.key}>{check.detail}</li>)}
+            </ul>
+          </details>
+        </Panel>
+        <Panel title="Scheduled jobs" description="Last successful run of each worker.">
+          {workers.length ? (
+            <ul className="grid gap-3">
+              {workers.map((w) => (
+                <li key={w.name} className="flex items-start justify-between gap-3 text-sm">
+                  <span className="min-w-0">
+                    <span className="block font-medium">{w.name}</span>
+                    <span className="block text-xs text-[var(--ink-muted)]">
+                      {w.succeededAt ? stamp(w.succeededAt) : "No successful run"} · {w.processed} processed
+                      {w.errorCode ? ` · ${w.errorCode}` : ""}
+                    </span>
+                  </span>
+                  <StatusPill tone={stale(w) ? "alert" : "good"}>{stale(w) ? "Stale" : "Healthy"}</StatusPill>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="text-sm text-[var(--ink-muted)]">No scheduled job has reported yet.</p>
+          )}
+        </Panel>
+      </div>
+
+      <section id="approvals" className="mt-8 scroll-mt-24">
+        <div className="mb-3">
+          <h2 className="text-lg font-semibold">Company approvals</h2>
+          <p className="mt-1 max-w-2xl text-xs text-[var(--ink-muted)]">
+            Verify after the responsible person has checked it. Record owner, reference and review date. Keep passwords, keys and ID documents out of here.
+          </p>
+        </div>
+        <div className="rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper-raised)] px-5">
+          {RELEASE_KEYS.map((key) => {
+            const r = records.find((r) => r.key === key);
+            const state = stateOf(key);
+            const local = (date: Date | null | undefined) =>
+              date ? new Date(date.getTime() + 7200000).toISOString().slice(0, 16) : "";
+            return (
+              <OperationsForm
+                key={`${key}-${r?.version}`}
+                title={`${title(key)}  ·  ${state.text}`}
+                hidden={{ command: "RELEASE_RECORD", key, version: r?.version ?? -1 }}
+                fields={[
+                  { name: "owner", label: "Company operational owner", value: r?.owner, required: true },
+                  {
+                    name: "state",
+                    label: "Evidence status",
+                    value: r?.state ?? "PENDING",
+                    options: (key === "WHATSAPP_CHANNEL" ? ["PENDING", "VERIFIED", "NOT_APPLICABLE"] : ["PENDING", "VERIFIED"]).map(
+                      (value) => ({ value, label: title(value) }),
+                    ),
+                  },
+                  { name: "evidence", label: "Approval, test, account ownership or handover evidence", type: "textarea", value: r?.evidence, required: true },
+                  { name: "reviewAt", label: "Review due (Kigali UTC+2)", type: "datetime-local", value: local(r?.reviewAt), required: true },
+                  { name: "cost", label: "Recurring cost, optional", value: r?.costMinor == null ? "" : String(r.costMinor / (r.currency === "RWF" ? 1 : 100)) },
+                  {
+                    name: "currency",
+                    label: "Cost currency",
+                    value: r?.currency ?? "",
+                    options: ["", "USD", "EUR", "GBP", "RWF"].map((value) => ({ value, label: value || "Not recorded" })),
+                  },
+                  { name: "renewalAt", label: "Renewal time, optional (Kigali)", type: "datetime-local", value: local(r?.renewalAt) },
+                ]}
+              />
+            );
+          })}
+        </div>
       </section>
-      <h2 className="text-2xl">Scheduled jobs and delivery</h2>
-      <p className="my-4">
-        Blocked delivery jobs: {blocked} · Failed jobs: {failed} · Expired
-        document candidates not held: {overdueDocs}
-      </p>
-      <ul>
-        {workers.map((w) => (
-          <li key={w.name} className="my-3">
-            {w.name} · last success{" "}
-            {w.succeededAt ? `${stamp(w.succeededAt)} Kigali` : "No successful run recorded"} · processed{" "}
-            {w.processed} · {w.errorCode ?? "No recorded error"}
-            {!w.succeededAt ||
-            now.getTime() - w.succeededAt.getTime() > 86400000
-              ? " · Check scheduler freshness"
-              : ""}
-          </li>
-        ))}
-      </ul>
-      <h2 id="approvals" className="mt-8 scroll-mt-24 text-2xl">Company approvals</h2>
-      <p className="mt-2">
-        Mark an item verified after the responsible person has checked it. Record the owner,
-        a ticket or approval reference, and a review date. Keep passwords, keys and identity documents out of this page.
-      </p>
-      {RELEASE_KEYS.map((key) => {
-        const r = records.find((r) => r.key === key);
-        const local = (date: Date | null | undefined) =>
-          date
-            ? new Date(date.getTime() + 7200000).toISOString().slice(0, 16)
-            : "";
-        return (
-          <OperationsForm
-            key={`${key}-${r?.version}`}
-            title={`${title(key)} · ${verified.has(key) ? "Verified" : r?.state === "VERIFIED" ? "Review due" : r?.state === "NOT_APPLICABLE" ? "Not applicable" : "Pending"}`}
-            hidden={{
-              command: "RELEASE_RECORD",
-              key,
-              version: r?.version ?? -1,
-            }}
-            fields={[
-              {
-                name: "owner",
-                label: "Company operational owner",
-                value: r?.owner,
-                required: true,
-              },
-              {
-                name: "state",
-                label: "Evidence status",
-                value: r?.state ?? "PENDING",
-                options: (key === "WHATSAPP_CHANNEL"
-                  ? ["PENDING", "VERIFIED", "NOT_APPLICABLE"]
-                  : ["PENDING", "VERIFIED"]).map(
-                  (value) => ({ value, label: title(value) }),
-                ),
-              },
-              {
-                name: "evidence",
-                label: "Approval, test, account ownership or handover evidence",
-                type: "textarea",
-                value: r?.evidence,
-                required: true,
-              },
-              {
-                name: "reviewAt",
-                label: "Review due (Kigali UTC+2)",
-                type: "datetime-local",
-                value: local(r?.reviewAt),
-                required: true,
-              },
-              {
-                name: "cost",
-                label: "Recurring cost, optional",
-                value:
-                  r?.costMinor == null
-                    ? ""
-                    : String(r.costMinor / (r.currency === "RWF" ? 1 : 100)),
-              },
-              {
-                name: "currency",
-                label: "Cost currency",
-                value: r?.currency ?? "",
-                options: ["", "USD", "EUR", "GBP", "RWF"].map((value) => ({
-                  value,
-                  label: value || "Not recorded",
-                })),
-              },
-              {
-                name: "renewalAt",
-                label: "Renewal time, optional (Kigali)",
-                type: "datetime-local",
-                value: local(r?.renewalAt),
-              },
-            ]}
-          />
-        );
-      })}
     </>
   );
 }
