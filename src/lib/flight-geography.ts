@@ -36,6 +36,10 @@ export function airportSuggestions(input: string) {
   return matches;
 }
 
+export function airportCity(code: string) {
+  return entries.find((entry) => entry.code === code.toUpperCase())?.city ?? null;
+}
+
 export function countryName(code: string) {
   return regions.of(code) ?? code;
 }

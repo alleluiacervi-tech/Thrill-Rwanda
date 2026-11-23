@@ -20,6 +20,7 @@ export default async function StaffLayout({
           label: "Staff workspace",
           items: [
             { label: "Enquiries", href: "/staff/enquiries", icon: "bookings" },
+            { label: "Air ticketing", href: "/staff/ticketing", icon: "transfers" },
             ...(actor.staffRole !== "FINANCE" || actor.role === "ADMIN" ? [{ label: "Clients", href: "/staff/contacts", icon: "users" as const }] : []),
             { label: "Reports", href: "/staff/reports", icon: "overview" },
             ...(actor.staffRole !== "FINANCE" || actor.role === "ADMIN" ? [{ label: "Support", href: "/staff/support", icon: "bookings" as const }] : []),

@@ -9,7 +9,7 @@
 - [ ] Verify Resend delivery with the company sender and monitored reply address. Add signed delivery and bounce events, incoming replies linked to their cases, and frequent scheduled recovery for time-sensitive mail.
 - [ ] Link verified client accounts to guest histories and bookings, add Sales and Operations handover with shared case access, and support staff-assisted bookings against the existing stock and pricing controls.
 - [ ] Give authorized catalogue editors a shared location directory and draft publishing workflow for properties, halls, tours and cars.
-- [ ] Pilot flights with checked fare options and deadlines, passenger and ticket records, itinerary delivery and post-ticket changes through the ticketing partner.
+- [x] Pilot flights with checked fare options and deadlines, passenger and ticket records, itinerary delivery and post-ticket changes through the ticketing partner. See [AIR_TICKETING.md](AIR_TICKETING.md).
 - [ ] Pilot meetings with catalogue-linked rooms, time-specific holds, supplier confirmations, room blocks, deposits and a final organiser itinerary.
 - [ ] Extend itinerary components to honeymoons, hotels, tours and safaris with room and permit confirmations, manifests, vouchers and change handling.
 - [ ] Separate car hire and transfer activation, reserve vehicle capacity, assign drivers and record pickup, handover and return.

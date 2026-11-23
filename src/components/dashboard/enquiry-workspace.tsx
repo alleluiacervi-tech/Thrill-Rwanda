@@ -296,6 +296,13 @@ export async function EnquiryDetail({
       <Link href={base} className="underline">
         Back to enquiries
       </Link>
+      {row.service === "FLIGHT" && (
+        <p className="my-3">
+          <Link href={`${base.replace("enquiries", "ticketing")}/${row.reference}`} className="inline-flex items-center gap-2 rounded-full bg-sun-500 px-4 py-1.5 text-sm font-semibold text-forest-950 hover:bg-sun-300">
+            Air ticketing file
+          </Link>
+        </p>
+      )}
       <DashboardHead
         title={businessEvent ? "Thrill Events & Business" : `${label(row.service)} enquiry`}
         lede={row.reference}
