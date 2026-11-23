@@ -19,6 +19,8 @@ Use `.env.example` for local placeholders; never commit actual `.env` files. Use
 | URUBUTOPAY_API_KEY / URUBUTOPAY_MERCHANT_CODE / URUBUTOPAY_SERVICE_CODE | UrubutoPay merchant authentication | Server-side; separate merchant keys and services per environment |
 | URUBUTOPAY_APPROVED_METHODS / URUBUTOPAY_MIN_RWF / URUBUTOPAY_MAX_RWF | Contracted channels and limits | Record the verified scope from BK TecHouse |
 | URUBUTOPAY_WEBHOOK_USERNAME / URUBUTOPAY_WEBHOOK_PASSWORD / URUBUTOPAY_WEBHOOK_SECRET | Provider callback authentication | Give only the username and password to BK TecHouse. Keep the independent signing secret private |
+| MTN_ENABLED / MTN_LIVE_APPROVED / MTN_BASE_URL / MTN_TARGET_ENVIRONMENT | Live MTN Rwanda Collections gates | Default off. Needs APP_ENV=production, an https non-sandbox base URL, the merchant pack target environment and a saved Admin routing policy that includes MOMO |
+| MTN_SUBSCRIPTION_KEY / MTN_API_USER / MTN_API_KEY / MTN_MIN_RWF / MTN_MAX_RWF | MTN credentials and contracted RWF limits | Server-side only. The API user must be a UUID |
 | PAYMENT_PUBLIC_ORIGIN | Public payment-link and return origin | Approved HTTPS origin for the deployment |
 | PESAPAL_LEGACY_RECONCILE / PESAPAL_ENV / PESAPAL_LIVE_APPROVED / PESAPAL_CONSUMER_KEY / PESAPAL_CONSUMER_SECRET | Historical lookup during cutover | Default off. Preserve existing credentials during reconciliation only |
 | CLOUDINARY_CLOUD_NAME / CLOUDINARY_API_KEY / CLOUDINARY_API_SECRET | Preferred listing-image storage driver | Secret API material; company-owned account |
