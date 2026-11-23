@@ -35,6 +35,7 @@ export default async function AdminLayout({
       label: "Main",
       items: [
         { label: "Overview", href: "/admin", icon: "overview" },
+        { label: "Mail", href: "/admin/mail", icon: "emails" },
         { label: "Clients", href: "/admin/contacts", icon: "users" },
         { label: "Enquiries", href: "/admin/enquiries", icon: "bookings" },
         { label: "Air ticketing", href: "/admin/ticketing", icon: "transfers" },
