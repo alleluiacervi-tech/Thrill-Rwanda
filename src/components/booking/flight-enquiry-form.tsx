@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useActionState, useEffect, useRef, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
-  ArrowLeftRight, ArrowRight, CalendarDays, Check, Mail, MessageCircle, Pencil, Phone, Plane, PlaneLanding,
+  ArrowLeftRight, ArrowRight, CalendarDays, Check, History, Mail, MessageCircle, Pencil, Phone, Plane, PlaneLanding,
   PlaneTakeoff, Plus, ReceiptText, Trash2, UsersRound,
 } from "lucide-react";
 import { submitFlightEnquiry } from "@/app/actions/flight-enquiry";
@@ -24,6 +24,28 @@ const tripTypes = [["RETURN", "Round trip"], ["ONE_WAY", "One way"], ["MULTI_CIT
 const MAX_PARTY = 20;
 const initialRoute = { origin: "Kigali (KGL)", destination: "", departureDate: "", returnDate: "", adults: "1", children: "0", infants: "0", cabin: "ECONOMY" };
 const initial: FlightEnquiryState = { status: "idle" };
+
+/* Recent searches: kept in this browser only, as a convenience. */
+const RECENT_KEY = "thrill:recent-flight-searches";
+const RECENT_EVENT = "thrill:recent-flight-searches";
+type Recent = typeof initialRoute & { tripType: "RETURN" | "ONE_WAY" };
+const readRecent = () => {
+  try { return localStorage.getItem(RECENT_KEY) ?? ""; } catch { return ""; }
+};
+const subscribeRecent = (callback: () => void) => {
+  window.addEventListener("storage", callback);
+  window.addEventListener(RECENT_EVENT, callback);
+  return () => {
+    window.removeEventListener("storage", callback);
+    window.removeEventListener(RECENT_EVENT, callback);
+  };
+};
+function writeRecent(list: Recent[]) {
+  try {
+    localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    window.dispatchEvent(new Event(RECENT_EVENT));
+  } catch {}
+}
 
 /** "Kigali (KGL)" → KGL and Kigali; free text keeps what was typed. */
 function place(value: string) {
@@ -84,6 +106,25 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
   const tripLabel = tripTypes.find(([value]) => value === tripType)![1];
   const max = latestDate(today);
   const nights = nightsBetween(route.departureDate, route.returnDate);
+  const recentRaw = useSyncExternalStore(subscribeRecent, readRecent, () => "");
+  const recent = useMemo(() => {
+    try {
+      const list = JSON.parse(recentRaw || "[]");
+      return Array.isArray(list) ? (list as Recent[]).filter((r) => r?.origin && r?.destination && r.departureDate >= today).slice(0, 3) : [];
+    } catch { return []; }
+  }, [recentRaw, today]);
+  function remember() {
+    if (multi) return;
+    const entry: Recent = { ...route, returnDate: tripType === "RETURN" ? route.returnDate : "", tripType };
+    const same = (r: Recent) => r.origin === entry.origin && r.destination === entry.destination && r.departureDate === entry.departureDate && r.returnDate === entry.returnDate;
+    writeRecent([entry, ...recent.filter((r) => !same(r))].slice(0, 3));
+  }
+  function restore({ tripType: kind, ...saved }: Recent) {
+    setTripType(kind);
+    setRoute({ ...initialRoute, ...saved });
+    setIssue("");
+    setPanel(null);
+  }
 
   const set = (key: keyof typeof route, value: string) => setRoute(old => ({ ...old, [key]: value }));
   const toggle = (id: string) => (open: boolean) => setPanel(open ? id : null);
@@ -186,6 +227,7 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
       setIssue(problem);
       if (problem) return;
       setPanel(null);
+      remember();
       setReview(true);
     }}>
       <div className={s.topline}>
@@ -299,6 +341,22 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
         </button>
       </div>
       {issue && <p role="alert" className={s.issue}>{issue}</p>}
+      {recent.length > 0 && !multi ? (
+        <div className={s.recent}>
+          <span className={s.recentLabel}><History size={14} aria-hidden /> Recent</span>
+          <ul>
+            {recent.map((entry) => (
+              <li key={`${entry.origin}-${entry.destination}-${entry.departureDate}-${entry.returnDate}`}>
+                <button type="button" onClick={() => restore(entry)}>
+                  <b>{place(entry.origin).city} → {place(entry.destination).city}</b>
+                  <small>{fieldDate(entry.departureDate)}{entry.returnDate ? ` – ${fieldDate(entry.returnDate)}` : ""}</small>
+                </button>
+              </li>
+            ))}
+          </ul>
+          <button type="button" className={s.recentClear} onClick={() => writeRecent([])}>Clear</button>
+        </div>
+      ) : null}
     </form>
   );
 

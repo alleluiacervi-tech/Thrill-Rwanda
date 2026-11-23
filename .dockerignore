@@ -13,3 +13,9 @@ deploy/.env
 !.env.example
 *.log
 tsconfig.tsbuildinfo
+src/generated
+deploy/.env*
+!deploy/.env.example
+test-results
+*.trb
+*.dump

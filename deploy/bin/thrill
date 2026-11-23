@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# docker compose for the running release, for hand commands on the server:
+#   sudo /opt/thrill/bin/thrill ps
+#   sudo /opt/thrill/bin/thrill logs -f --tail 100 app caddy scheduler
+#   sudo /opt/thrill/bin/thrill run --rm --no-deps migrate tsx scripts/make-super-admin.ts owner@example.com
+# Deploys go through deploy-gate, not this. Never "down -v": it deletes the database.
+set -euo pipefail
+ROOT=/opt/thrill
+RELEASE=$(cat "$ROOT/.release" 2>/dev/null || true)
+[ -n "$RELEASE" ] || { echo "No release is deployed yet (see deploy-gate)." >&2; exit 1; }
+IMAGE_REPO=$(sed -n 's/^IMAGE_REPO=//p' "$ROOT/.env" 2>/dev/null | tail -n 1 | tr -d '"'"'" || true)
+export RELEASE IMAGE_REPO=${IMAGE_REPO:-ghcr.io/alleluiacervi-tech/thrill-rwanda}
+for arg in "$@"; do
+  case "$arg" in
+    -v|--volumes) echo "Refusing: $arg would delete the database and certificates." >&2; exit 1 ;;
+  esac
+done
+exec docker compose --project-directory "$ROOT" -f "$ROOT/compose.yml" "$@"

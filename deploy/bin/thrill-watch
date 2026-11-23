@@ -1,0 +1,38 @@
+#!/usr/bin/env bash
+# Every 15 minutes (thrill-watch.timer): checks disk, memory and containers and
+# reports to a heartbeat monitor (healthchecks.io style). A good run pings
+# WATCH_HEARTBEAT_URL; a problem pings "<url>/fail" with what is wrong; if the
+# server stops altogether, the missing ping raises the alert.
+# Settings: /opt/thrill/ops.env (WATCH_HEARTBEAT_URL, DISK_ALERT_PERCENT, MEMORY_ALERT_PERCENT).
+set -uo pipefail
+ROOT=/opt/thrill
+[ -r "$ROOT/ops.env" ] && . "$ROOT/ops.env"
+DISK_LIMIT=${DISK_ALERT_PERCENT:-80}
+MEMORY_LIMIT=${MEMORY_ALERT_PERCENT:-90}
+
+problems=()
+disk=$(df --output=pcent / | tail -n 1 | tr -dc '0-9')
+[ "$disk" -ge "$DISK_LIMIT" ] && problems+=("disk ${disk}% used")
+docker_disk=$(df --output=pcent /var/lib/docker 2>/dev/null | tail -n 1 | tr -dc '0-9')
+[ -n "$docker_disk" ] && [ "$docker_disk" -ge "$DISK_LIMIT" ] && problems+=("docker disk ${docker_disk}% used")
+memory=$(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "%d", (t-a)*100/t}' /proc/meminfo)
+[ "$memory" -ge "$MEMORY_LIMIT" ] && problems+=("memory ${memory}% used")
+
+for service in db app scheduler caddy; do
+  state=$(docker ps --filter "label=com.docker.compose.project=thrill" --filter "label=com.docker.compose.service=$service" \
+    --format '{{.Status}}' | head -n 1)
+  case "$state" in
+    "") problems+=("$service not running") ;;
+    *unhealthy*) problems+=("$service unhealthy") ;;
+  esac
+done
+
+if [ ${#problems[@]} -gt 0 ]; then
+  message=$(IFS='; '; echo "${problems[*]}")
+  logger -t thrill-watch "$message"
+  echo "$message"
+  [ -n "${WATCH_HEARTBEAT_URL:-}" ] && curl -fsS -m 10 --retry 3 --data-raw "$message" "${WATCH_HEARTBEAT_URL%/}/fail" >/dev/null
+  exit 1
+fi
+[ -n "${WATCH_HEARTBEAT_URL:-}" ] && curl -fsS -m 10 --retry 3 --data-raw "disk ${disk}%, memory ${memory}%" "$WATCH_HEARTBEAT_URL" >/dev/null
+echo "ok: disk ${disk}%, memory ${memory}%"

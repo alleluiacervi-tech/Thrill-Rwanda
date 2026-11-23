@@ -14,6 +14,10 @@ Use `.env.example` for local placeholders; never commit actual `.env` files. Use
 | DIRECT_URL | Prisma migrations/backup connection | Secret; same database as runtime, direct connection where applicable |
 | DATABASE_POOL_MAX | Standard pg pool size | Default 5; respect hosting/database limits |
 | CRON_SECRET | Protected worker authorization | Secret, at least 32 characters; do not place in query strings |
+| RELEASE | Image tag the server runs (`sha-<commit>`), reported by `/api/health` | Set by the image build; not secret. VPS only |
+| SITE_DOMAIN / ACME_EMAIL | Caddy's HTTPS site and certificate-notice address | VPS only (`/opt/thrill/.env`) |
+| IMAGE_REPO | Registry path of the release images | Optional; default `ghcr.io/alleluiacervi-tech/thrill-rwanda`. VPS only |
+| BACKUP_HEARTBEAT_URL | Heartbeat pinged after each nightly backup (`/fail` on failure) | Optional; contains a check token, so treat it as a low-grade secret. VPS only |
 | RESEND_API_KEY / EMAIL_FROM | Email adapter and approved sender | API key secret; real domain/inbox validation required |
 | URUBUTOPAY_ENABLED / URUBUTOPAY_ENVIRONMENT / URUBUTOPAY_LIVE_APPROVED | UrubutoPay collection gates | Default off; live requires production identity and saved Admin routing approval |
 | URUBUTOPAY_API_KEY / URUBUTOPAY_MERCHANT_CODE / URUBUTOPAY_SERVICE_CODE | UrubutoPay merchant authentication | Server-side; separate merchant keys and services per environment |

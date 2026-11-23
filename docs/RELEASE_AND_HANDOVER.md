@@ -73,7 +73,12 @@ Local evidence: a PostgreSQL 17 encrypted archive restored into a disposable dat
 4. Check `/api/health`, sign-in, fresh role revocation, public service modes, guest capture, quotation and exact acceptance, off-site finance, supplier confirmation, portal ownership and support. Use approved test records with no live money movement. Verify receipt in real approved provider inboxes separately.
 5. Only after the named owner approves, enable the authorized service scope and schedules. Record release commit, evidence and rollback owner. Watch queues and support after release.
 
-The migration added in this slice is additive. For code rollback, pause workers/channels, restore the prior application release against the still-compatible database and recheck critical flows. Do not run old notification workers over new WhatsApp jobs. Keep new tables/history rather than deleting migrations or financial evidence. Database rollback/recovery needs a separately validated restored database and explicit cutover; prefer a forward repair when suitable. The repository contains no automatic production deploy or destructive rollback workflow.
+The migration added in this slice is additive. For code rollback, pause workers/channels, restore the prior application release against the still-compatible database and recheck critical flows. Do not run old notification workers over new WhatsApp jobs. Keep new tables/history rather than deleting migrations or financial evidence. Database rollback/recovery needs a separately validated restored database and explicit cutover; prefer a forward repair when suitable.
+
+On the VPS, a push to `main` deploys automatically through `.github/workflows/deploy.yml` (see [VPS_DEPLOYMENT.md](VPS_DEPLOYMENT.md)). Each deploy backs up, migrates, and then runs the old and new releases side by side for a few seconds. Its automatic rollback only returns to the previous application image: it never rolls back the database and never deletes data. That is why **every migration must be backward compatible (expand, then contract)**:
+- add new columns as nullable or with a default;
+- stop using a column in one release, and drop it in a later one;
+- never rename a column in place.
 
 ## Monitoring and incident response
 

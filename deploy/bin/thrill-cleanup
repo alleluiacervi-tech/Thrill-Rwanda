@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# Frees disk without touching data. Runs after every deploy and weekly
+# (thrill-cleanup.timer).
+#
+# Removes:  our release images other than the newest KEEP_RELEASES (default 4)
+#           dangling images, containers stopped for more than a day, build cache
+#           optimised images nobody has requested for 30 days
+# Never:    volumes (database, certificates, image cache), the backups folder,
+#           or any image a container still uses
+set -Eeuo pipefail
+ROOT=/opt/thrill
+KEEP=${KEEP_RELEASES:-4}
+IMAGE_REPO=$(sed -n 's/^IMAGE_REPO=//p' "$ROOT/.env" 2>/dev/null | tail -n 1 | tr -d '"'"'" || true)
+IMAGE_REPO=${IMAGE_REPO:-ghcr.io/alleluiacervi-tech/thrill-rwanda}
+current=$(cat "$ROOT/.release" 2>/dev/null || true)
+
+# The releases to keep: the current one, then the most recent others.
+keep=$( { echo "$current"; awk '{print $2}' "$ROOT/releases.log" 2>/dev/null | tac; } | awk 'NF && !seen[$0]++' | head -n "$KEEP")
+in_use=$(docker ps -aq | xargs -r docker inspect -f '{{.Image}}' | sort -u)
+
+removed=0
+for kind in app tools; do
+  while read -r tag id; do
+    [ -n "$tag" ] || continue
+    grep -qxF "$tag" <<<"$keep" && continue
+    grep -qxF "$id" <<<"$in_use" && continue
+    if docker image rm "$IMAGE_REPO-$kind:$tag" >/dev/null 2>&1; then removed=$((removed + 1)); fi
+  done < <(docker image ls "$IMAGE_REPO-$kind" --no-trunc --format '{{.Tag}} {{.ID}}')
+done
+
+docker image prune -f >/dev/null
+docker container prune -f --filter until=24h >/dev/null
+docker builder prune -f --keep-storage 1GB >/dev/null 2>&1 || true
+
+if [ -n "$current" ]; then
+  docker run --rm --network none -v thrill_next-cache:/cache --entrypoint find "$IMAGE_REPO-tools:$current" \
+    /cache/images -type f -atime +30 -delete >/dev/null 2>&1 || true
+fi
+
+echo "cleanup: removed $removed old release images; disk $(df -h --output=pcent / | tail -n 1 | tr -d ' ') used"

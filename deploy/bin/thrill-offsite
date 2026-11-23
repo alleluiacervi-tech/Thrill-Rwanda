@@ -1,0 +1,24 @@
+#!/usr/bin/env bash
+# Daily (thrill-offsite.timer, as root because backups are mode 600): copies
+# the encrypted backups to storage off this server. Files are only ever added,
+# never changed or deleted from here; the bucket's own lifecycle rule expires
+# old copies, so a compromised server cannot erase the history.
+# Settings: /opt/thrill/ops.env (OFFSITE_REMOTE, OFFSITE_HEARTBEAT_URL)
+#           /opt/thrill/rclone.conf (made with: rclone config --config /opt/thrill/rclone.conf)
+set -uo pipefail
+ROOT=/opt/thrill
+[ -r "$ROOT/ops.env" ] && . "$ROOT/ops.env"
+[ -n "${OFFSITE_REMOTE:-}" ] || { echo "OFFSITE_REMOTE is not set in $ROOT/ops.env; skipping"; exit 0; }
+
+beat() { [ -n "${OFFSITE_HEARTBEAT_URL:-}" ] && curl -fsS -m 10 --retry 3 ${2:+--data-raw "$2"} "$OFFSITE_HEARTBEAT_URL$1" >/dev/null; return 0; }
+
+if rclone --config "$ROOT/rclone.conf" copy "$ROOT/backups" "$OFFSITE_REMOTE" \
+    --max-age 72h --immutable --no-traverse --stats-one-line --stats-log-level NOTICE; then
+  echo "offsite: copied to $OFFSITE_REMOTE"
+  beat ""
+else
+  code=$?
+  logger -t thrill-offsite "copy failed (exit $code)"
+  beat "/fail" "rclone exit $code"
+  exit "$code"
+fi

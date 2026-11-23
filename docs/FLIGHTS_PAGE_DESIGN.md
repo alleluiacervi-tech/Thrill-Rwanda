@@ -33,3 +33,22 @@ Not yet seen in a browser: the confirmation pass after a real submission (it wri
 | Board destinations, popular list | `src/lib/flight-destinations.ts` |
 
 Design notes: the hero is a dark section, so `.search`, `.reviewGrid` and `.issued` restore the light tokens that `.on-dark` replaces. The hero must not get `isolate`, or the phone bottom sheets sit under the WhatsApp button and header.
+
+## Route globe (2026-11-24)
+
+The departures band is now the board beside a turning globe (`src/components/booking/flight-globe.tsx`, combined in `FlightRoutes` in `flight-departures-board.tsx`).
+
+- Drawn on a canvas with no 3D library: land as a dot matrix, faint graticule, atmosphere, great-circle arcs from Kigali lifted by distance, planes along the routes of the region chosen on the board, pulsing markers and labels that avoid each other.
+- The board's region lights its routes; the row under the pointer turns the globe to that route; clicking a city on the globe fills the search like the board. Drag turns it.
+- Animates only while on screen and the tab is visible; holds still for reduced motion. Screen readers get a description; the board is the accessible way to choose.
+- Land data: `src/data/globe-land-dots.json` (5,936 points, ~51 KB, loaded only with the globe), sampled every 1.35 degrees from Natural Earth land (public domain) as packaged by `world-atlas` 2.0.2 (land-50m). It was generated once; to regenerate, sample the land polygon on the same grid and write `[lon*10, lat*10, ...]`.
+- Airport coordinates for the board's destinations and Kigali live in `src/lib/flight-destinations.ts`. Routes show destinations, not services: no airline or schedule is implied.
+
+## Refinements (2026-11-24, second pass)
+
+- **Flags, not codes.** Globe labels are a flag and the city; Kigali is a gold pill with the Rwandan flag. The board leads with a round flag and the city name, with "Country · CODE" small underneath. Airport codes stay only where travellers expect them: the search suggestions and the boarding-pass itinerary.
+- **World traffic.** Faint aircraft fly 18 busy long-haul city pairs elsewhere in the world (no lines, no labels; 9 on small screens). Kigali's routes carry brighter aircraft along their gold arcs. Aircraft point the way they fly and leave a fading contrail.
+- **Hero edge.** The hills ridgeline under the search promises is gone on this page; the hero runs into the globe band with a hairline seam.
+- **Recent searches** (after Trip.com): the last three round-trip or one-way searches, kept in the visitor's browser only, shown inside the search panel and restored with one tap.
+
+Trip.com could not be audited live: its flights page sends automated visitors to a verification check. The comparison was made from Trip.com's long-standing layout. Kept out on purpose: prices on destination cards and "deals" (public fares are an owner decision) and long link lists of popular routes (crowding).

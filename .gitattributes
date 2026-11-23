@@ -1,2 +1,6 @@
 # Shell scripts run on Linux servers; CRLF endings break them.
 *.sh text eol=lf
+# Everything copied to or built for the server is read on Linux.
+deploy/** text eol=lf
+Dockerfile text eol=lf
+.github/** text eol=lf
