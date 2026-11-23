@@ -1,8 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import { ArrowRight } from "lucide-react";
-import { destinationRegions, PICK_DESTINATION_EVENT, placeLabel, type Destination } from "@/lib/flight-destinations";
+import { allDestinations, destinationRegions, PICK_DESTINATION_EVENT, placeLabel, type Destination } from "@/lib/flight-destinations";
+import { FlightGlobe } from "./flight-globe";
 import { CountryFlag } from "./flight-marks";
 import s from "./flight-departures-board.module.css";
 
@@ -17,18 +18,46 @@ function Flaps({ text, className }: { text: string; className?: string }) {
   );
 }
 
-/**
- * "Departures from Kigali": destinations people ask the desk for. Choosing
- * one fills the search above and opens the calendar.
- */
-export function DeparturesBoard({ formId }: { formId: string }) {
-  const [region, setRegion] = useState(destinationRegions[0].id);
-  const shown = destinationRegions.find((item) => item.id === region)!;
+const routed = allDestinations.filter((place): place is Destination & { lat: number; lon: number } => place.lat !== undefined && place.lon !== undefined);
 
-  function choose(place: Destination) {
+/**
+ * The departures band: the board beside the globe. The region chosen on the
+ * board lights its routes on the globe, the row under the pointer turns the
+ * globe towards that route, and a city chosen on either fills the search.
+ */
+export function FlightRoutes({ formId, children }: { formId: string; children: React.ReactNode }) {
+  const [region, setRegion] = useState(destinationRegions[0].id);
+  const [focus, setFocus] = useState<string | null>(null);
+  const lit = destinationRegions.find((item) => item.id === region)!.places.map((place) => place.code);
+  const choose = useCallback((place: Destination) => {
     document.getElementById(formId)?.scrollIntoView({ behavior: "smooth", block: "start" });
     window.dispatchEvent(new CustomEvent(PICK_DESTINATION_EVENT, { detail: placeLabel(place) }));
-  }
+  }, [formId]);
+
+  return (
+    <div className={s.routes}>
+      <div className={s.routesText}>
+        {children}
+        <DeparturesBoard region={region} onRegionChange={setRegion} onFocus={setFocus} onChoose={choose} />
+      </div>
+      <div className={s.globe}>
+        <FlightGlobe places={routed} highlight={lit} focus={focus} onPick={choose} />
+        <p className={s.globeHint} aria-hidden>Drag to turn · choose a city to plan the route</p>
+      </div>
+    </div>
+  );
+}
+
+/** "Departures from Kigali": destinations people ask the desk for, by region. */
+export function DeparturesBoard({ region, onRegionChange, onFocus, onChoose }: {
+  region: string;
+  onRegionChange: (region: string) => void;
+  onFocus: (code: string | null) => void;
+  onChoose: (place: Destination) => void;
+}) {
+  const shown = destinationRegions.find((item) => item.id === region)!;
+  const setRegion = onRegionChange;
+  const choose = onChoose;
 
   return (
     <div className={s.board}>
@@ -57,10 +86,8 @@ export function DeparturesBoard({ formId }: { formId: string }) {
       </div>
 
       <div className={s.head} aria-hidden>
-        <span>From</span>
         <span>To</span>
         <span className={s.headCity}>Destination</span>
-        <span className={s.headCountry}>Country</span>
         <span className={s.headAction}>Fares</span>
       </div>
 
@@ -69,11 +96,14 @@ export function DeparturesBoard({ formId }: { formId: string }) {
           const country = regionNames.of(place.country) ?? place.country;
           return (
             <li key={place.code}>
-              <button type="button" className={s.row} onClick={() => choose(place)} aria-label={`Plan Kigali to ${place.city}, ${country}`}>
-                <Flaps text="KGL" className={s.codeFrom} />
+              <button type="button" className={s.row} onClick={() => choose(place)} aria-label={`Plan Kigali to ${place.city}, ${country}`}
+                onMouseEnter={() => onFocus(place.code)} onMouseLeave={() => onFocus(null)}
+                onFocus={() => onFocus(place.code)} onBlur={() => onFocus(null)}>
                 <Flaps text={place.code} className={s.code} />
-                <span className={s.city}>{place.city}</span>
-                <span className={s.country}><CountryFlag country={place.country} /> <span>{country}</span></span>
+                <span className={s.place}>
+                  <span className={s.city}>{place.city}</span>
+                  <span className={s.country}><CountryFlag country={place.country} /> <span>{country}</span></span>
+                </span>
                 <span className={s.action}>Plan route <ArrowRight size={16} aria-hidden /></span>
               </button>
             </li>

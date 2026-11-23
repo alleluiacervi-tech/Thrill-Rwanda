@@ -7,7 +7,7 @@ import { Container, Eyebrow } from "@/components/ui/primitives";
 import { FaqSection, PairWith, Story } from "@/components/journey/sections";
 import { FlightEnquiryForm } from "@/components/booking/flight-enquiry-form";
 import { AirportDirectoryProvider } from "@/components/booking/flight-airport-input";
-import { DeparturesBoard } from "@/components/booking/flight-departures-board";
+import { FlightRoutes } from "@/components/booking/flight-departures-board";
 import { airlines } from "@/lib/flight-airlines";
 import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import { journeyImages, type Faq } from "@/lib/journeys";
@@ -106,26 +106,28 @@ export default async function FlightsPage() {
             ))}
           </ul>
         </Container>
-        <HillsEdge className="[--edge:var(--color-bone-50)]" />
+        <HillsEdge className="[--edge:#061a13]" />
       </section>
 
-      {/* ------------------------------------------------------ departures */}
-      <section className="bg-bone-50 py-20 sm:py-28">
-        <Container wide>
-          <div className="flex flex-col gap-5 md:flex-row md:items-end md:justify-between md:gap-10">
-            <div className="max-w-2xl">
+      {/* ------------------------------------------------- departures + globe */}
+      <section className="on-dark relative overflow-hidden bg-[#061a13] py-20 sm:py-28">
+        <div
+          aria-hidden
+          className="absolute inset-0"
+          style={{ background: "radial-gradient(45% 60% at 78% 45%, rgb(47 128 96 / 0.28), transparent 70%), radial-gradient(40% 50% at 10% 100%, rgb(248 195 0 / 0.06), transparent 70%)" }}
+        />
+        <Container wide className="relative">
+          <FlightRoutes formId={FORM_ID}>
+            <div className="mb-8 max-w-xl">
               <Eyebrow>Departures from Kigali</Eyebrow>
-              <h2 className="mt-3 text-display-sm">
-                Where people <em>fly from here</em>
+              <h2 className="mt-3 text-display-sm text-white">
+                Where people <em className="text-sun-400">fly from here</em>
               </h2>
+              <p className="mt-5 text-[1.0625rem] leading-relaxed text-forest-100/80">
+                The routes our desk is asked for most. Choose a city on the board or the globe and we fill in the search above; pick your dates and we do the rest.
+              </p>
             </div>
-            <p className="max-w-md text-[1.0625rem] leading-relaxed text-[var(--ink-muted)]">
-              Choose a destination and we fill in the route above. Pick your dates and the desk does the rest.
-            </p>
-          </div>
-          <div className="mt-10 lg:mt-14">
-            <DeparturesBoard formId={FORM_ID} />
-          </div>
+          </FlightRoutes>
         </Container>
       </section>
 

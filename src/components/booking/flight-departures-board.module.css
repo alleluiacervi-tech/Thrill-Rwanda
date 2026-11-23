@@ -1,3 +1,24 @@
+/* The band: text and board on the left, the globe on the right. */
+.routes {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+  align-items: center;
+  gap: clamp(2rem, 5vw, 5rem);
+}
+.routesText { min-width: 0; }
+.globe { position: relative; min-width: 0; }
+.globe::before {
+  content: "";
+  position: absolute;
+  inset: 8%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(47 128 96 / 0.35), transparent);
+  filter: blur(30px);
+  pointer-events: none;
+}
+.globe canvas { position: relative; }
+.globeHint { margin-top: -0.5rem; text-align: center; font-size: 0.8rem; color: rgb(255 255 255 / 0.55); }
+
 .board {
   position: relative;
   overflow: hidden;
@@ -27,7 +48,7 @@
 
 .head, .row {
   display: grid;
-  grid-template-columns: 6.6rem 6.6rem minmax(0, 1.4fr) minmax(0, 1.2fr) auto;
+  grid-template-columns: 6.6rem minmax(0, 1fr) auto;
   align-items: center;
   gap: 1.25rem;
 }
@@ -55,7 +76,7 @@
 .row:hover { background: rgb(255 255 255 / 0.06); }
 .row:focus-visible { outline: 2px solid var(--color-sun-300); outline-offset: -2px; }
 
-.codeFrom, .code { display: flex; gap: 3px; }
+.code { display: flex; gap: 3px; }
 .flap {
   position: relative;
   display: grid;
@@ -73,13 +94,13 @@
 }
 /* The hinge across each tile. */
 .flap::after { content: ""; position: absolute; inset: 50% 0 auto; height: 1px; background: rgb(0 0 0 / 0.55); }
-.codeFrom .flap { color: #fff; }
 @keyframes flip {
   from { transform: perspective(200px) rotateX(-90deg); opacity: 0; }
 }
 
+.place { display: grid; min-width: 0; gap: 0.2rem; }
 .city { overflow: hidden; font-family: var(--font-display); font-size: 1.35rem; text-overflow: ellipsis; white-space: nowrap; }
-.country { display: flex; align-items: center; gap: 0.5rem; overflow: hidden; font-size: 0.9rem; color: rgb(255 255 255 / 0.7); white-space: nowrap; }
+.country { display: flex; align-items: center; gap: 0.45rem; overflow: hidden; font-size: 0.82rem; color: rgb(255 255 255 / 0.7); white-space: nowrap; }
 .country > span { overflow: hidden; text-overflow: ellipsis; }
 .action {
   display: inline-flex;
@@ -98,10 +119,16 @@
 
 .foot { margin-top: 1.25rem; padding: 0 1rem; font-size: 0.88rem; color: rgb(255 255 255 / 0.65); }
 
+@media (max-width: 1024px) {
+  /* Heading, then the globe, then the board. */
+  .routes { grid-template-columns: minmax(0, 1fr); gap: 2rem; }
+  .routesText { display: contents; }
+  .globe { order: 1; max-width: 34rem; width: 100%; margin: -1.5rem auto -1rem; }
+  .routes .board { order: 2; }
+}
 @media (max-width: 900px) {
   .head, .row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.9rem; }
   .head { display: none; }
-  .codeFrom, .country { display: none; }
   .city { font-size: 1.2rem; }
 }
 @media (max-width: 520px) {
