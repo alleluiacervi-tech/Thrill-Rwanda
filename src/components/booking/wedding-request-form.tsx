@@ -13,7 +13,7 @@ import {
 } from "@/lib/wedding-request";
 import { cn } from "@/lib/utils";
 import { Calendar, DropField, fieldDate, itineraryDate, latestDate, nightsBetween } from "./flight-search-controls";
-import s from "./wedding.module.css";
+import s from "./journey-form.module.css";
 
 /* -------------------------------------------------------------- GuestCount */
 

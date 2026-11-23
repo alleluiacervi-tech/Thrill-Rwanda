@@ -20,7 +20,7 @@ Not yet seen in a browser: the confirmation after a real submission (it writes a
 | Page | `src/app/weddings/page.tsx` |
 | Hero checker, venue cards | `src/components/booking/wedding-date-checker.tsx` |
 | Stepped request form, guest dial | `src/components/booking/wedding-request-form.tsx` |
-| Styles | `src/components/booking/wedding.module.css` |
+| Styles | `src/components/booking/journey-form.module.css` (shared with Tembera) |
 | Venue kinds, photos, locations, prefill event | `src/lib/wedding-request.ts` |
 
 ## Photographs

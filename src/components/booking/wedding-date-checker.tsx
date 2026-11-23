@@ -7,7 +7,7 @@ import { VENUE_STYLES } from "@/lib/journey-requests";
 import { prefillWedding, venueKinds } from "@/lib/wedding-request";
 import { Calendar, DropField, itineraryDate, latestDate } from "./flight-search-controls";
 import { GuestCount } from "./wedding-request-form";
-import s from "./wedding.module.css";
+import s from "./journey-form.module.css";
 
 /** "Save the date" in the hero: three answers, then on to the full request. */
 export function WeddingDateChecker({ today }: { today: string }) {

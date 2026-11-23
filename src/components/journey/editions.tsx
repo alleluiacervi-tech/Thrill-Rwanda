@@ -20,7 +20,7 @@ import { cn, formatMoney } from "@/lib/utils";
  * request instead, and shows no price: a price belongs on the written quote.
  */
 
-const requestHref = (edition: Edition) =>
+export const requestHref = (edition: Edition) =>
   `/enquire?journey=TEMBERA&subject=${encodeURIComponent(
     `${edition.tour.name}, ${formatRun(edition.departure.startsOn, edition.departure.lastDay)}`,
   )}`;

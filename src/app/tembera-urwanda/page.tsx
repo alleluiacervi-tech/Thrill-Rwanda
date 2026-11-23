@@ -1,20 +1,25 @@
 import { randomUUID } from "node:crypto";
 import type { Metadata } from "next";
 import Image from "next/image";
-import { ArrowRight, CalendarDays, Check } from "lucide-react";
+import Link from "next/link";
+import { ArrowRight, CalendarDays, Check, MapPin, Users } from "lucide-react";
 import {
   Breadcrumbs,
   HillsEdge,
   PageShell,
 } from "@/components/layout/page-shell";
-import { ServiceEnquiryForm } from "@/components/booking/service-enquiry-form";
+import { TemberaRequestForm } from "@/components/booking/tembera-request-form";
 import { JourneyIcon } from "@/components/journey/icons";
 import {
   FaqSection,
   PairWith,
   RequestSection,
 } from "@/components/journey/sections";
-import { EditionCard } from "@/components/journey/editions";
+import { bookHref } from "@/components/journey/editions";
+import { EditionsExplorer } from "@/components/journey/editions-explorer";
+import { dateParts, formatRun } from "@/lib/departure-rules";
+import { todayInRwanda } from "@/lib/flight-enquiry-schema";
+import { formatMoney } from "@/lib/utils";
 import { temberaIncludes } from "@/components/journey/tembera-band";
 import { listEditions } from "@/lib/departures";
 import { Button } from "@/components/ui/button";
@@ -59,11 +64,13 @@ export default async function TemberaPage() {
   const [{ publications }, editions] = await Promise.all([getSite(), listEditions()]);
   // Booked online only while trips are switched to direct booking in Admin → Launch.
   const bookable = publications.TRIP === "DIRECT";
+  const next = editions.find((edition) => edition.departure.seatsLeft > 0) ?? editions[0];
+  const nextDirect = next && bookable && !next.tour.enquiryOnly && next.departure.seatsLeft > 0;
 
   return (
     <PageShell overHero>
       {/* ------------------------------------------------------------ Hero */}
-      <section className="on-dark relative -mt-[4.5rem] overflow-hidden bg-forest-950 pb-24 pt-[8.5rem] sm:pb-32 lg:-mt-24 lg:pt-48">
+      <section className="on-dark relative -mt-[4.5rem] overflow-hidden bg-[#0b1611] pb-24 pt-[8.5rem] sm:pb-32 lg:-mt-24 lg:pt-48">
         <Image
           src={journeyImages.tembera}
           alt=""
@@ -83,7 +90,8 @@ export default async function TemberaPage() {
         />
         <div aria-hidden className="scrim-t absolute inset-x-0 top-0 h-40" />
 
-        <Container wide className="relative">
+        <Container wide className="relative grid items-end gap-12 lg:grid-cols-[minmax(0,1fr)_23rem] lg:gap-16">
+          <div>
           <Breadcrumbs
             items={[{ label: TEMBERA.name }]}
             className="on-media mb-8 text-white/90"
@@ -144,6 +152,52 @@ export default async function TemberaPage() {
               ),
             )}
           </ul>
+          </div>
+
+          {next ? (
+            // The next edition, as a ticket: the campaign is live and this is the next bus.
+            <Link
+              href={nextDirect ? bookHref(next) : "#editions"}
+              className="anim-rise group relative block overflow-hidden rounded-[1.5rem] bg-white text-forest-950 shadow-[0_40px_80px_-36px_rgb(0_0_0/0.7)] [animation-delay:640ms]"
+            >
+              <div className="flex items-center justify-between bg-sun-500 px-5 py-2.5">
+                <span className="text-2xs font-bold uppercase tracking-[0.2em]">Next departure</span>
+                <span className="tnum inline-flex items-center gap-1.5 text-xs font-bold">
+                  <Users className="size-3.5" aria-hidden />
+                  {next.departure.seatsLeft > 0 ? `${next.departure.seatsLeft} places left` : "Full"}
+                </span>
+              </div>
+              <div className="flex gap-4 p-5">
+                <div className="w-16 shrink-0 overflow-hidden rounded-xl text-center ring-1 ring-[var(--line)]">
+                  <p className="bg-forest-900 py-0.5 text-2xs font-bold uppercase tracking-[0.12em] text-white">{dateParts(next.departure.startsOn).month}</p>
+                  <p className="tnum pt-1 font-display text-3xl leading-none">{dateParts(next.departure.startsOn).day}</p>
+                  <p className="pb-1.5 text-2xs font-semibold uppercase text-bone-600">{dateParts(next.departure.startsOn).weekday}</p>
+                </div>
+                <div className="min-w-0">
+                  <p className="tnum text-2xs font-bold uppercase tracking-[0.14em] text-lake-700">{formatRun(next.departure.startsOn, next.departure.lastDay)}</p>
+                  <p className="mt-1 font-display text-2xl leading-[1.1] group-hover:underline group-hover:decoration-sun-500 group-hover:underline-offset-4">{next.tour.name}</p>
+                  <p className="mt-1.5 flex items-center gap-1.5 text-sm text-bone-600">
+                    <MapPin className="size-4 shrink-0 text-clay-600" aria-hidden />
+                    {next.tour.destination}
+                  </p>
+                </div>
+              </div>
+              <div className="relative flex items-center justify-between border-t-2 border-dashed border-bone-300 px-5 py-4">
+                {nextDirect ? (
+                  <span>
+                    <span className="block text-2xs font-semibold uppercase tracking-[0.12em] text-bone-600">From, all-inclusive</span>
+                    <span className="tnum font-display text-2xl leading-none">{formatMoney(next.tour.priceFrom)}</span>
+                  </span>
+                ) : (
+                  <span className="text-sm font-semibold text-forest-700">Price on your written quote</span>
+                )}
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-forest-900 px-4 py-2.5 text-sm font-bold text-white transition-colors group-hover:bg-forest-800">
+                  {nextDirect ? "Book" : "See editions"}
+                  <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" aria-hidden />
+                </span>
+              </div>
+            </Link>
+          ) : null}
         </Container>
         <HillsEdge />
       </section>
@@ -284,13 +338,9 @@ export default async function TemberaPage() {
                   ? "Choose a date, pick the rate that matches your ID and pay to secure your place."
                   : "Choose a date and ask for a place. We confirm the price and your seat in writing."}
               </p>
-              <ul className="mt-10 grid gap-5 sm:grid-cols-2 lg:mt-14 lg:grid-cols-3 lg:gap-6">
-                {editions.map((edition) => (
-                  <li key={edition.departure.id} className="flex">
-                    <EditionCard edition={edition} bookable={bookable} />
-                  </li>
-                ))}
-              </ul>
+              <div className="mt-10 lg:mt-14">
+                <EditionsExplorer editions={editions} bookable={bookable} />
+              </div>
             </>
           ) : (
             <div className="mt-10 flex flex-col items-start gap-6 rounded-[var(--radius-panel)] border border-dashed border-[var(--line-strong)] bg-bone-50 p-8 sm:flex-row sm:items-center sm:justify-between sm:p-10 lg:mt-14">
@@ -374,11 +424,7 @@ export default async function TemberaPage() {
           ["Book your place", "Choose your rate and pay to secure your seat."],
         ]}
       >
-        <ServiceEnquiryForm
-          submissionKey={randomUUID()}
-          journey="TEMBERA"
-          context={TEMBERA.name}
-        />
+        <TemberaRequestForm submissionKey={randomUUID()} today={todayInRwanda()} context={TEMBERA.name} />
       </RequestSection>
 
       <PairWith

@@ -1,5 +1,6 @@
-/* Weddings: hero date checker, venue cards and the stepped request. The calendar
-   and popover cells come from flight-planner.module.css via flight-search-controls. */
+/* Request forms for the front doors (weddings, Tembera u Rwanda): date checker, venue cards,
+   chips, inputs, the request card and its confirmation. The calendar and popover cells come
+   from flight-planner.module.css via flight-search-controls. */
 
 .checker, .card {
   --paper: #fff;
@@ -239,7 +240,7 @@
 .group legend, .groupLabel { float: left; width: 100%; margin-bottom: 0.8rem; font-size: 0.95rem; font-weight: 700; color: var(--ink); }
 .group legend + *, .groupLabel + * { clear: both; }
 .groupLabel { margin-bottom: 0; }
-.groupLabel small, .labelled small { font-weight: 500; color: var(--ink-muted); }
+.group legend small, .groupLabel small, .labelled small { font-weight: 500; color: var(--ink-muted); }
 
 .chips { display: flex; flex-wrap: wrap; gap: 0.45rem; }
 .chips label { position: relative; cursor: pointer; }
@@ -350,6 +351,8 @@
 textarea.input { resize: vertical; line-height: 1.55; }
 .input::placeholder { color: var(--color-bone-500); }
 .input:focus { outline: none; border-color: var(--color-forest-700); box-shadow: 0 0 0 3px rgb(37 110 82 / 0.16); }
+.narrow { max-width: 26rem; }
+.divider { border-top: 1px solid var(--line); }
 .extras { border-radius: 1rem; padding: 1.1rem 1.25rem; background: var(--color-bone-100); }
 .pair { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 1rem; }
 .labelled { display: grid; gap: 0.45rem; font-size: 0.9rem; font-weight: 700; }
