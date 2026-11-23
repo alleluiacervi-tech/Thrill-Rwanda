@@ -1,0 +1,11 @@
+[Unit]
+Description=Thrill Rwanda: copy encrypted backups off the server
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Root, because backups are written with mode 600 by the backup job.
+ExecStart=/opt/thrill/bin/thrill-offsite
+Nice=10
+IOSchedulingClass=idle

@@ -1,0 +1,10 @@
+[Unit]
+Description=Thrill Rwanda: remove old release images and caches (never volumes)
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+User=deploy
+Group=deploy
+ExecStart=/opt/thrill/bin/thrill-cleanup

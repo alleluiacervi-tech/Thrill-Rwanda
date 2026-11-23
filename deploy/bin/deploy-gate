@@ -1,0 +1,230 @@
+#!/usr/bin/env bash
+# deploy-gate: the one command the deploy SSH key is allowed to run.
+#
+# The key is installed in ~deploy/.ssh/authorized_keys as
+#     restrict,command="/opt/thrill/bin/deploy-gate" ssh-ed25519 AAAA...
+# so whatever the client asks for arrives in SSH_ORIGINAL_COMMAND and is
+# checked here. Accepted requests:
+#     deploy sha-<hex>   pull that release, back up, migrate, roll it out
+#     rollback           return to the most recent release other than the current
+#                        one (its images are kept on the server; no migrations run)
+#     status             show the running release and containers
+# For "deploy", the client may send two lines on standard input: a registry
+# user and a short-lived token (GitHub Actions sends its job token). They are
+# used for one pull in a throwaway Docker config and never written to disk.
+#
+# A release only replaces the running one after its container is healthy and
+# reports the expected release. Any failure before that leaves the site as it was.
+set -Eeuo pipefail
+umask 027
+
+ROOT=/opt/thrill
+HEALTH_TIMEOUT=${HEALTH_TIMEOUT:-180}
+TAG_PATTERN='^sha-[0-9a-f]{7,40}$'
+
+log() { printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"; }
+die() { log "FAILED: $*"; exit 1; }
+
+env_value() { # env_value NAME: a value from .env, without sourcing it
+  sed -n "s/^$1=//p" "$ROOT/.env" 2>/dev/null | tail -n 1 | tr -d '"'"'" || true
+}
+IMAGE_REPO=$(env_value IMAGE_REPO)
+export IMAGE_REPO=${IMAGE_REPO:-ghcr.io/alleluiacervi-tech/thrill-rwanda}
+
+compose() { docker compose --project-directory "$ROOT" -f "$ROOT/compose.yml" "$@"; }
+current_release() { cat "$ROOT/.release" 2>/dev/null || true; }
+known_release() { grep -qE "^[^ ]+ $1\$" "$ROOT/releases.log" 2>/dev/null; }
+
+request=${SSH_ORIGINAL_COMMAND:-$*}
+read -r action target extra <<<"$request" || true
+# Refuse anything unexpected before touching the server.
+[ -z "${extra:-}" ] || die "unexpected arguments"
+case "${action:-}" in
+  deploy) [[ "${target:-}" =~ $TAG_PATTERN ]] || die "deploy needs a release tag like sha-1a2b3c4" ;;
+  rollback|status) [ -z "${target:-}" ] || die "$action takes no arguments" ;;
+  *) die "allowed: deploy sha-<hex> | rollback | status" ;;
+esac
+
+# One deploy at a time; a second one waits up to ten minutes for its turn.
+# "status" only reads, so it never waits.
+if [ "$action" != status ]; then
+  exec 9>"$ROOT/.deploy.lock"
+  flock -w 600 9 || die "another deploy is still running"
+fi
+
+# A throwaway Docker config, so registry credentials never outlive this run.
+DOCKER_CONFIG=$(mktemp -d)
+STAGE=$(mktemp -d)
+export DOCKER_CONFIG
+trap 'rm -rf "$DOCKER_CONFIG" "$STAGE"' EXIT
+
+registry_login() {
+  local user="" token=""
+  if [ ! -t 0 ]; then
+    IFS= read -r user || true
+    IFS= read -r token || true
+  fi
+  if [ -z "$token" ] && [ -r "$ROOT/.ghcr" ]; then
+    # Fallback: "user token" in a file only root and deploy can read.
+    read -r user token <"$ROOT/.ghcr" || true
+  fi
+  [ -n "$token" ] || return 0
+  printf '%s' "$token" | docker login "${IMAGE_REPO%%/*}" -u "${user:-deploy}" --password-stdin >/dev/null \
+    || die "registry login refused"
+}
+
+pull() { # pull IMAGE, unless it is already here
+  docker image inspect "$1" >/dev/null 2>&1 && return 0
+  docker pull --quiet "$1" >/dev/null || die "could not pull $1; nothing was changed"
+}
+
+wait_healthy() { # wait_healthy CONTAINER RELEASE
+  local id=$1 want=$2 waited=0 health running got
+  while [ "$waited" -lt "$HEALTH_TIMEOUT" ]; do
+    running=$(docker inspect -f '{{.State.Running}}' "$id" 2>/dev/null || echo false)
+    health=$(docker inspect -f '{{if .State.Health}}{{.State.Health.Status}}{{end}}' "$id" 2>/dev/null || echo gone)
+    [ "$running" = true ] || return 1
+    if [ "$health" = healthy ]; then
+      got=$(docker exec "$id" node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>r.json()).then(j=>console.log(j.release)).catch(()=>console.log('?'))" 2>/dev/null || true)
+      [ "$got" = "$want" ] && return 0
+      log "container answers as release '$got', expected '$want'"
+      return 1
+    fi
+    [ "$health" = unhealthy ] && return 1
+    sleep 3
+    waited=$((waited + 3))
+  done
+  return 1
+}
+
+install_config() { # copy compose.yml, the Caddyfile and these scripts out of the tools image
+  local cid changed=0
+  cid=$(docker create "$IMAGE_REPO-tools:$1")
+  docker cp --quiet "$cid:/app/deploy/." "$STAGE/" || { docker rm "$cid" >/dev/null; die "release has no deploy folder"; }
+  docker rm "$cid" >/dev/null
+  [ -f "$STAGE/compose.yml" ] && [ -f "$STAGE/caddy/Caddyfile" ] || die "release is missing compose.yml or the Caddyfile"
+  RELEASE=$1 docker compose --project-directory "$ROOT" -f "$STAGE/compose.yml" config --quiet \
+    || die "the release's compose.yml does not validate against .env"
+
+  install -m 640 "$STAGE/compose.yml" "$ROOT/compose.yml.new" && mv -f "$ROOT/compose.yml.new" "$ROOT/compose.yml"
+  mkdir -p "$ROOT/caddy"
+  if ! cmp -s "$STAGE/caddy/Caddyfile" "$ROOT/caddy/Caddyfile"; then
+    install -m 644 "$STAGE/caddy/Caddyfile" "$ROOT/caddy/Caddyfile"
+    changed=1
+  fi
+  # mv gives each script a new file, so this running script is not overwritten under itself.
+  for script in "$STAGE"/bin/*; do
+    [ -f "$script" ] || continue
+    install -m 750 "$script" "$ROOT/bin/.$(basename "$script").new"
+    mv -f "$ROOT/bin/.$(basename "$script").new" "$ROOT/bin/$(basename "$script")"
+  done
+  CADDY_CHANGED=$changed
+}
+
+roll_out_app() { # start the new app beside the old one, then retire the old one
+  local release=$1 old="" new="" id
+  for id in $(compose ps -aq app); do
+    if [ "$(docker inspect -f '{{.State.Running}}' "$id")" = true ]; then old="$old $id"; else docker rm -f "$id" >/dev/null; fi
+  done
+  old=$(echo $old)
+
+  if [ -z "$old" ]; then
+    compose up -d --no-deps app >/dev/null
+    new=$(compose ps -q app)
+  else
+    compose up -d --no-deps --no-recreate --scale "app=$(( $(wc -w <<<"$old") + 1 ))" app >/dev/null
+    new=$(comm -13 <(tr ' ' '\n' <<<"$old" | sort) <(compose ps -q app | sort) | tr '\n' ' ')
+  fi
+  new=$(echo $new)
+  [ -n "$new" ] || die "the new container did not start"
+
+  log "waiting for the new container to be healthy"
+  if ! wait_healthy "$new" "$release"; then
+    docker logs --tail 40 "$new" 2>&1 | sed 's/^/  app: /' || true
+    docker rm -f "$new" >/dev/null
+    die "release $release failed its health check; the previous release is still serving"
+  fi
+
+  if [ -n "$old" ]; then
+    # Let Caddy see the new upstream (it re-reads Docker's DNS every second).
+    sleep 3
+    # SIGTERM: Next stops taking new connections and finishes those in flight;
+    # Caddy retries any refused request on the new container.
+    docker stop -t 30 $old >/dev/null
+    docker rm $old >/dev/null
+  fi
+}
+
+deploy() { # deploy RELEASE [rollback]
+  local release=$1 mode=${2:-deploy} previous
+  previous=$(current_release)
+  [ "$release" != "$previous" ] || { log "release $release is already running"; status; return 0; }
+  [ -f "$ROOT/.env" ] || die "$ROOT/.env is missing"
+
+  log "$mode: ${previous:-none} -> $release"
+  registry_login
+  pull "$IMAGE_REPO-app:$release"
+  pull "$IMAGE_REPO-tools:$release"
+  install_config "$release"
+  export RELEASE=$release
+
+  compose up -d --no-deps --wait db >/dev/null || die "the database did not become healthy"
+
+  # An earlier release (rollback) keeps the newer schema: its old migration
+  # folder must not be applied over it. Migrations are always expand-then-
+  # contract, so the older code still works on the newer schema.
+  if [ "$mode" = deploy ] && ! known_release "$release"; then
+    if [ -n "$previous" ]; then
+      log "backing up the database before migrating"
+      compose run --rm --no-deps scheduler tsx scripts/backup-database.ts >/dev/null \
+        || die "pre-deploy backup failed; nothing was changed"
+    fi
+    log "applying migrations"
+    compose run --rm --no-deps migrate || die "migrations failed; the previous release is still serving (a backup was taken first)"
+  else
+    log "earlier release: migrations skipped"
+  fi
+
+  roll_out_app "$release"
+
+  compose up -d --no-deps scheduler >/dev/null
+  if [ -z "$(compose ps -q caddy)" ]; then
+    compose up -d --no-deps caddy >/dev/null
+  else
+    compose up -d --no-deps caddy >/dev/null # recreates only if its image or settings changed
+    if [ "${CADDY_CHANGED:-0}" = 1 ]; then
+      compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
+        || log "warning: caddy reload failed; the previous Caddyfile is still in use"
+    fi
+  fi
+
+  printf '%s\n' "$release" >"$ROOT/.release.new" && mv -f "$ROOT/.release.new" "$ROOT/.release"
+  printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$release" >>"$ROOT/releases.log"
+
+  "$ROOT/bin/thrill-cleanup" || log "warning: cleanup failed (the release is live)"
+  log "done: $release is live"
+  status
+}
+
+status() {
+  local release
+  release=$(current_release)
+  echo "release: ${release:-none}"
+  [ -n "$release" ] && RELEASE=$release compose ps --format 'table {{.Service}}\t{{.Status}}\t{{.Image}}'
+  return 0
+}
+
+case "$action" in
+  deploy)
+    deploy "$target"
+    ;;
+  rollback)
+    now=$(current_release)
+    before=$(awk '{print $2}' "$ROOT/releases.log" 2>/dev/null | grep -vxF "$now" | tail -n 1 || true)
+    [ -n "$before" ] || die "there is no earlier release to return to"
+    deploy "$before" rollback
+    ;;
+  status)
+    status
+    ;;
+esac

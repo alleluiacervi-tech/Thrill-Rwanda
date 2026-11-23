@@ -1,16 +1,22 @@
+# syntax=docker/dockerfile:1.10
 # Thrill Rwanda on a VPS. Two images from one file:
-#   app    - the website (Next.js standalone server, no dev tools, runs as a non-root user)
-#   tools  - the full project, for migrations, backups, seeding and checks
-# docker compose (deploy/compose.yml) builds both. See docs/VPS_DEPLOYMENT.md.
+#   app    the website: the Next.js standalone server only, run as a non-root user
+#   tools  migrations, the scheduler, backups and admin scripts, with no website build
+# GitHub Actions builds and publishes both (.github/workflows/deploy.yml).
+# See docs/VPS_DEPLOYMENT.md.
 
-ARG NODE_VERSION=24
+# Pinned by digest; Dependabot proposes updates (.github/dependabot.yml).
+ARG NODE_IMAGE=node:24.22.3-bookworm-slim@sha256:dc26ae92c9fb15cf6b1d63e20f0944b2efe0f115b20e00be48fb23fceb061c54
 
-FROM node:${NODE_VERSION}-bookworm-slim AS deps
+# --- deps: every package, for the build -----------------------------------
+FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY prisma ./prisma
-RUN npm ci --no-audit --no-fund
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --no-audit --no-fund
 
+# --- build: the website ---------------------------------------------------
 FROM deps AS build
 COPY . .
 # NEXT_PUBLIC_* values are fixed into the browser code at build time.
@@ -26,8 +32,20 @@ RUN BETTER_AUTH_SECRET=build-only-not-a-real-secret-0000000000 \
     DATABASE_URL=postgresql://build:build@127.0.0.1:1/build \
     npm run build
 
-# --- tools: migrations, backups (pg_dump 17), seeds, checks ---------------
-FROM build AS tools
+# --- runtime-deps: production packages only (prisma, tsx, pg, ...) --------
+FROM ${NODE_IMAGE} AS runtime-deps
+WORKDIR /app
+COPY package.json package-lock.json ./
+COPY prisma ./prisma
+# postinstall generates the Prisma client into src/generated/prisma.
+# Next's compiler binaries are only needed to build, never by the scripts.
+RUN --mount=type=cache,target=/root/.npm \
+    npm ci --omit=dev --no-audit --no-fund \
+ && rm -rf node_modules/@next/swc-*
+
+# --- tools: migrations, scheduler, backups (pg_dump 17) -------------------
+FROM ${NODE_IMAGE} AS tools
+WORKDIR /app
 RUN apt-get update \
  && apt-get install -y --no-install-recommends ca-certificates curl gnupg \
  && install -d /usr/share/postgresql-common/pgdg \
@@ -35,12 +53,28 @@ RUN apt-get update \
  && echo "deb [signed-by=/usr/share/postgresql-common/pgdg/apt.postgresql.org.asc] https://apt.postgresql.org/pub/repos/apt bookworm-pgdg main" > /etc/apt/sources.list.d/pgdg.list \
  && apt-get update \
  && apt-get install -y --no-install-recommends postgresql-client-17 \
+ && apt-get purge -y --auto-remove curl gnupg \
  && rm -rf /var/lib/apt/lists/*
-ENV NODE_ENV=production
-CMD ["npx", "prisma", "migrate", "deploy"]
+COPY --from=runtime-deps --chown=node:node /app ./
+COPY --chown=node:node tsconfig.json prisma7.config.ts ./
+COPY --chown=node:node scripts ./scripts
+COPY --chown=node:node src ./src
+# The server's deploy configuration ships inside the image it belongs to;
+# deploy-gate copies it out, so the server never needs a git checkout.
+COPY --chown=node:node deploy ./deploy
+RUN install -d -o node -g node /app/.backups
+ENV NODE_ENV=production \
+    CHECKPOINT_DISABLE=1 \
+    PRISMA_HIDE_UPDATE_MESSAGE=1 \
+    PATH=/app/node_modules/.bin:$PATH
+# Declared last, so a new release changes only this layer.
+ARG RELEASE=dev
+ENV RELEASE=${RELEASE}
+USER node
+CMD ["prisma", "migrate", "deploy"]
 
 # --- app: the website -----------------------------------------------------
-FROM node:${NODE_VERSION}-bookworm-slim AS app
+FROM ${NODE_IMAGE} AS app
 WORKDIR /app
 ENV NODE_ENV=production \
     NEXT_TELEMETRY_DISABLED=1 \
@@ -49,8 +83,13 @@ ENV NODE_ENV=production \
 COPY --from=build --chown=node:node /app/.next/standalone ./
 COPY --from=build --chown=node:node /app/.next/static ./.next/static
 COPY --from=build --chown=node:node /app/public ./public
+# Optimised images are kept in a volume here (deploy/compose.yml); the
+# folder must exist and belong to node so the volume inherits that owner.
+RUN install -d -o node -g node /app/.next/cache
+ARG RELEASE=dev
+ENV RELEASE=${RELEASE}
 USER node
 EXPOSE 3000
-HEALTHCHECK --interval=30s --timeout=5s --start-period=40s --retries=3 \
-  CMD node -e "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+HEALTHCHECK --interval=15s --timeout=5s --start-period=40s --retries=3 \
+  CMD ["node", "-e", "fetch('http://127.0.0.1:3000/api/health').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"]
 CMD ["node", "server.js"]

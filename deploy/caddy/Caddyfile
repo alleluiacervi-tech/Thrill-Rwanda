@@ -1,0 +1,48 @@
+# Caddy gets and renews the HTTPS certificate for SITE_DOMAIN by itself and
+# keeps it in the caddy-data volume. Point the domain's A record (and www)
+# at the server before the first start. See docs/VPS_ROLLOUT_PLAN.md, Phase 4.
+{
+	# Expiry and problem notices from the certificate authority.
+	email {$ACME_EMAIL}
+}
+
+www.{$SITE_DOMAIN} {
+	redir https://{$SITE_DOMAIN}{uri} permanent
+}
+
+{$SITE_DOMAIN} {
+	encode zstd gzip
+
+	# Scheduled-job routes are for the scheduler inside the server only.
+	@cron path /api/cron/*
+	respond @cron 404
+
+	request_body {
+		max_size 25MB
+	}
+
+	header -Server
+
+	# Every running "app" container is an upstream: Docker's DNS returns one
+	# address per container. During a deploy the new and old containers both
+	# answer, and a request that can't reach one is retried on the other, so a
+	# rollout drops nothing. deploy-gate waits for the new container's health
+	# check before stopping the old one.
+	reverse_proxy {
+		dynamic a {
+			name app
+			port 3000
+			refresh 1s
+			dial_timeout 2s
+		}
+		lb_policy round_robin
+		lb_try_duration 15s
+		lb_try_interval 250ms
+		fail_duration 10s
+	}
+
+	log {
+		output stdout
+		format console
+	}
+}

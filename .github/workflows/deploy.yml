@@ -1,0 +1,277 @@
+# Push to main -> checks -> build both images once -> scan -> roll out on the
+# VPS -> confirm from outside -> roll back automatically if that fails.
+#
+# Rollback by hand: Actions > "Deploy to the VPS" > Run workflow, with an
+# earlier release tag (sha-...; see the server's releases.log or GHCR).
+#
+# Repository secrets:   VPS_HOST, VPS_SSH_KEY, VPS_KNOWN_HOSTS
+# Repository variables: DEPLOY_ENABLED ("true" once the server is ready),
+#                       SITE_URL (default https://thrillrwanda.com), VPS_PORT (22),
+#                       VERIFY_PUBLIC ("false" until DNS points at the server)
+# The site's own secrets never come here; they live in /opt/thrill/.env.
+# Setup: docs/VPS_DEPLOYMENT.md
+name: Deploy to the VPS
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      release:
+        description: "Redeploy an existing release instead of building main, e.g. sha-1a2b3c4d5e6f (rollback)"
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+# One deploy at a time. A newer push waits instead of interrupting a rollout.
+concurrency:
+  group: production
+  cancel-in-progress: false
+
+env:
+  SITE_URL: ${{ vars.SITE_URL || 'https://thrillrwanda.com' }}
+  TRIVY_IMAGE: aquasec/trivy:0.76.2@sha256:8f6bb947dbc528902e11f2f5be52f7b519f6a39d5d148f41166f2040499768fb
+
+jobs:
+  validate:
+    if: ${{ !inputs.release }}
+    uses: ./.github/workflows/validate.yml
+    permissions:
+      contents: read
+
+  build:
+    needs: validate
+    if: ${{ !inputs.release }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      packages: write
+    outputs:
+      release: ${{ steps.meta.outputs.release }}
+      repo: ${{ steps.meta.outputs.repo }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Name the release
+        id: meta
+        run: |
+          echo "release=sha-${GITHUB_SHA::12}" >> "$GITHUB_OUTPUT"
+          echo "repo=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/thrill-rwanda" >> "$GITHUB_OUTPUT"
+          echo "created=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      # Single-manifest images (no attestation manifests): the package cleanup
+      # can then delete old versions without breaking a kept one. The SBOM is
+      # produced by the scan job instead.
+      - name: Build and push the website image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: app
+          push: true
+          provenance: false
+          sbom: false
+          tags: |
+            ${{ steps.meta.outputs.repo }}-app:${{ steps.meta.outputs.release }}
+            ${{ steps.meta.outputs.repo }}-app:main
+          build-args: |
+            NEXT_PUBLIC_SITE_URL=${{ env.SITE_URL }}
+            RELEASE=${{ steps.meta.outputs.release }}
+          labels: |
+            org.opencontainers.image.title=thrill-rwanda-app
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+          cache-from: |
+            type=gha,scope=thrill-app
+            type=gha,scope=thrill-tools
+          cache-to: type=gha,scope=thrill-app,mode=max
+
+      - name: Build and push the tools image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7.4.0
+        with:
+          context: .
+          target: tools
+          push: true
+          provenance: false
+          sbom: false
+          tags: |
+            ${{ steps.meta.outputs.repo }}-tools:${{ steps.meta.outputs.release }}
+            ${{ steps.meta.outputs.repo }}-tools:main
+          build-args: |
+            RELEASE=${{ steps.meta.outputs.release }}
+          labels: |
+            org.opencontainers.image.title=thrill-rwanda-tools
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.created=${{ steps.meta.outputs.created }}
+          cache-from: |
+            type=gha,scope=thrill-tools
+            type=gha,scope=thrill-app
+          cache-to: type=gha,scope=thrill-tools,mode=max
+
+      - name: Record image sizes
+        env:
+          REPO: ${{ steps.meta.outputs.repo }}
+          RELEASE: ${{ steps.meta.outputs.release }}
+        run: |
+          {
+            echo "### Release \`$RELEASE\`"
+            echo "| Image | Compressed size |"
+            echo "|---|---|"
+            for kind in app tools; do
+              bytes=$(docker buildx imagetools inspect --raw "$REPO-$kind:$RELEASE" | jq '[.layers[].size] | add')
+              echo "| $kind | $(numfmt --to=iec --suffix=B "$bytes") |"
+            done
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  scan:
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    env:
+      REPO: ${{ needs.build.outputs.repo }}
+      RELEASE: ${{ needs.build.outputs.release }}
+    steps:
+      # Blocks the deploy on CRITICAL vulnerabilities that have a fix. HIGH ones
+      # are reported in the run summary and the Security tab, not blocking.
+      - name: Scan both images with Trivy
+        env:
+          TRIVY_USERNAME: ${{ github.actor }}
+          TRIVY_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p reports
+          trivy() { docker run --rm -e TRIVY_USERNAME -e TRIVY_PASSWORD -v "$PWD/reports:/reports" -v trivy-cache:/root/.cache "$TRIVY_IMAGE" "$@"; }
+          blocked=0
+          echo "### Vulnerability scan (\`$RELEASE\`)" >> "$GITHUB_STEP_SUMMARY"
+          for kind in app tools; do
+            image="$REPO-$kind:$RELEASE"
+            trivy image --quiet --scanners vuln --format json --output "/reports/$kind.json" "$image"
+            trivy image --quiet --format cyclonedx --output "/reports/$kind.cdx.json" "$image"
+            trivy convert --format sarif --output "/reports/$kind.sarif" "/reports/$kind.json"
+            critical=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL" and (.FixedVersion // "") != "")] | length' "reports/$kind.json")
+            high=$(jq '[.Results[]?.Vulnerabilities[]? | select(.Severity == "HIGH" and (.FixedVersion // "") != "")] | length' "reports/$kind.json")
+            echo "- **$kind**: $critical critical and $high high with a fix available" >> "$GITHUB_STEP_SUMMARY"
+            if [ "$critical" -gt 0 ]; then
+              blocked=1
+              jq -r '.Results[]?.Vulnerabilities[]? | select(.Severity == "CRITICAL" and (.FixedVersion // "") != "") | "  \(.PkgName) \(.InstalledVersion) -> \(.FixedVersion)  \(.VulnerabilityID)"' "reports/$kind.json"
+            fi
+          done
+          [ "$blocked" = 0 ] || { echo "::error::Critical vulnerabilities with fixes available; update the base image or package before deploying."; exit 1; }
+
+      # Code scanning needs GitHub Advanced Security on a private repository;
+      # without it this upload fails harmlessly and the summary above remains.
+      - name: Upload to the Security tab
+        if: always()
+        continue-on-error: true
+        uses: github/codeql-action/upload-sarif@1bd86f2fdb4b86187fa4059f16f31a3202acc9ea # v4.39.4
+        with:
+          sarif_file: reports
+
+      - name: Keep the reports and SBOMs
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
+        with:
+          name: security-${{ needs.build.outputs.release }}
+          path: reports
+          retention-days: 90
+
+  deploy:
+    needs: [build, scan]
+    # Runs after a green build and scan, or alone for a manual redeploy.
+    # Off until the server is set up: repository variable DEPLOY_ENABLED=true.
+    if: ${{ !cancelled() && vars.DEPLOY_ENABLED == 'true' && (inputs.release || (needs.build.result == 'success' && needs.scan.result == 'success')) }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: production
+      url: ${{ vars.SITE_URL || 'https://thrillrwanda.com' }}
+    permissions:
+      contents: read
+      packages: read
+    steps:
+      - name: Choose the release
+        id: pick
+        env:
+          REQUESTED: ${{ inputs.release }}
+          BUILT: ${{ needs.build.outputs.release }}
+        run: |
+          release=${REQUESTED:-$BUILT}
+          [[ "$release" =~ ^sha-[0-9a-f]{7,40}$ ]] || { echo "::error::Not a release tag: '$release'"; exit 1; }
+          echo "release=$release" >> "$GITHUB_OUTPUT"
+
+      - name: Prepare SSH
+        env:
+          SSH_KEY: ${{ secrets.VPS_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.VPS_KNOWN_HOSTS }}
+        run: |
+          [ -n "$SSH_KEY" ] && [ -n "$KNOWN_HOSTS" ] || { echo "::error::Set the VPS_SSH_KEY and VPS_KNOWN_HOSTS secrets."; exit 1; }
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+          printf '%s\n' "$SSH_KEY" > ~/.ssh/deploy_key
+          chmod 600 ~/.ssh/deploy_key ~/.ssh/known_hosts
+
+      # The server's forced command (deploy/bin/deploy-gate) accepts only
+      # "deploy <tag>", "rollback" or "status". The job's short-lived token is
+      # sent on standard input for the pull and expires when this job ends.
+      - name: Roll out on the server
+        id: rollout
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          PORT: ${{ vars.VPS_PORT || '22' }}
+          RELEASE: ${{ steps.pick.outputs.release }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          printf '%s\n%s\n' "$GITHUB_ACTOR" "$TOKEN" | ssh -i ~/.ssh/deploy_key -p "$PORT" \
+            -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            -o ServerAliveInterval=15 -o ConnectTimeout=20 \
+            "deploy@$HOST" "deploy $RELEASE"
+
+      - name: Confirm from the internet
+        id: verify
+        if: ${{ vars.VERIFY_PUBLIC != 'false' }}
+        env:
+          RELEASE: ${{ steps.pick.outputs.release }}
+        run: |
+          for attempt in $(seq 1 24); do
+            body=$(curl -fsS -m 10 "$SITE_URL/api/health" || true)
+            if [ "$(jq -r '.status + " " + .release' <<<"$body" 2>/dev/null)" = "ok $RELEASE" ] \
+               && curl -fsS -m 15 -o /dev/null "$SITE_URL/"; then
+              echo "Live: $SITE_URL is serving $RELEASE"
+              echo "Live: $SITE_URL serves \`$RELEASE\`" >> "$GITHUB_STEP_SUMMARY"
+              exit 0
+            fi
+            sleep 5
+          done
+          echo "::error::$SITE_URL did not report $RELEASE as healthy within 2 minutes (last answer: ${body:-none})"
+          exit 1
+
+      - name: Roll back after a failed confirmation
+        if: ${{ failure() && steps.verify.outcome == 'failure' }}
+        env:
+          HOST: ${{ secrets.VPS_HOST }}
+          PORT: ${{ vars.VPS_PORT || '22' }}
+        run: |
+          ssh -i ~/.ssh/deploy_key -p "$PORT" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
+            "deploy@$HOST" "rollback" </dev/null
+          echo "::warning::Rolled back to the previous release."
+
+      - name: Remove the key
+        if: always()
+        run: rm -f ~/.ssh/deploy_key

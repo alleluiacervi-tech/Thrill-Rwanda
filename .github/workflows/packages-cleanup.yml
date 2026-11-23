@@ -1,0 +1,28 @@
+# Monthly: keep the newest 15 versions of each image in GHCR and delete older
+# ones. The server keeps its own last 4 releases, so a rollback never depends
+# on GHCR; the images here only need to cover a manual redeploy.
+name: Clean up old images
+
+on:
+  schedule:
+    - cron: "40 4 1 * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      packages: write
+    strategy:
+      matrix:
+        image: [thrill-rwanda-app, thrill-rwanda-tools]
+    steps:
+      - uses: actions/delete-package-versions@e5bc658cc4c965c472efe991f8beea3981499c55 # v5.0.0
+        with:
+          package-name: ${{ matrix.image }}
+          package-type: container
+          min-versions-to-keep: 15

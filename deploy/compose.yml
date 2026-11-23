@@ -1,23 +1,53 @@
-# Thrill Rwanda on one VPS: database, website, HTTPS, scheduled jobs.
-#   cd deploy && cp .env.example .env   (fill it in)
-#   docker compose up -d --build
+# Thrill Rwanda on one VPS: database, website, HTTPS and scheduled jobs.
+#
+# On the server this file lives in /opt/thrill and is run by deploy-gate
+# (deploy/bin/deploy-gate) with the image tag in RELEASE. For a hand command, use
+# the wrapper, which sets RELEASE to the running release:
+#     /opt/thrill/bin/thrill ps
+#     /opt/thrill/bin/thrill logs -f app
+# To build locally instead of pulling, add compose.build.yml (see that file).
 # Full steps: docs/VPS_DEPLOYMENT.md
 
-x-database-url: &database-url "postgresql://thrill:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in deploy/.env}@db:5432/thrill_rwanda"
+name: thrill
 
-x-build: &build
-  context: ..
-  args:
-    NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set NEXT_PUBLIC_SITE_URL in deploy/.env}
+x-database-url: &database-url "postgresql://thrill:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/thrill_rwanda"
+
+x-hardened: &hardened
+  security_opt: ["no-new-privileges:true"]
+  cap_drop: [ALL]
+  init: true
+
+x-images:
+  app: &app-image ${IMAGE_REPO:-ghcr.io/alleluiacervi-tech/thrill-rwanda}-app:${RELEASE:?set RELEASE (the image tag) or use bin/thrill}
+  tools: &tools-image ${IMAGE_REPO:-ghcr.io/alleluiacervi-tech/thrill-rwanda}-tools:${RELEASE:?set RELEASE (the image tag) or use bin/thrill}
 
 services:
   db:
-    image: postgres:17-alpine
+    # Pinned. Minor upgrades are deliberate: change the tag, deploy, check.
+    image: postgres:17.12-alpine@sha256:f9cf3e1f0066f0eb0c48707d864f0ac5941e9ff454a072077d97a4d278d07d73
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
     environment:
       POSTGRES_USER: thrill
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
       POSTGRES_DB: thrill_rwanda
+    # Sized for a 4 GB server. Slow queries (over 1 s) are logged without values.
+    command:
+      - postgres
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - effective_cache_size=2GB
+      - -c
+      - work_mem=8MB
+      - -c
+      - maintenance_work_mem=128MB
+      - -c
+      - max_connections=60
+      - -c
+      - log_min_duration_statement=1000
+      - -c
+      - log_parameter_max_length=0
     volumes:
       - db-data:/var/lib/postgresql/data
     # No published port: only the containers below can reach the database.
@@ -27,23 +57,26 @@ services:
       timeout: 5s
       retries: 10
     shm_size: 256mb
+    mem_limit: 1280m
+    stop_grace_period: 60s
 
-  # Applies database migrations, then exits. The website waits for it.
+  # Applies database migrations, then exits. deploy-gate runs it before each release.
   migrate:
-    build: { <<: *build, target: tools }
-    image: thrill-rwanda-tools
+    image: *tools-image
+    <<: *hardened
     env_file: .env
     environment:
       DATABASE_URL: *database-url
       DIRECT_URL: *database-url
     depends_on:
       db: { condition: service_healthy }
-    command: ["npx", "prisma", "migrate", "deploy"]
+    command: ["prisma", "migrate", "deploy"]
     restart: "no"
+    mem_limit: 768m
 
   app:
-    build: { <<: *build, target: app }
-    image: thrill-rwanda-app
+    image: *app-image
+    <<: *hardened
     restart: unless-stopped
     env_file: .env
     environment:
@@ -53,10 +86,19 @@ services:
     depends_on:
       migrate: { condition: service_completed_successfully }
     expose: ["3000"]
+    volumes:
+      # Optimised images survive deploys; bin/thrill-cleanup expires old ones.
+      - next-cache:/app/.next/cache
+    tmpfs: ["/tmp:size=64m"]
+    mem_limit: 1536m
+    pids_limit: 512
+    # Next finishes requests in flight on SIGTERM; give it time during a rollout.
+    stop_grace_period: 30s
 
   # Runs the scheduled jobs and nightly encrypted backups (scripts/vps-scheduler.ts).
   scheduler:
-    image: thrill-rwanda-tools
+    image: *tools-image
+    <<: *hardened
     restart: unless-stopped
     env_file: .env
     environment:
@@ -64,29 +106,38 @@ services:
       DIRECT_URL: *database-url
       APP_INTERNAL_URL: http://app:3000
     depends_on:
-      app: { condition: service_healthy }
+      db: { condition: service_healthy }
     volumes:
       - ./backups:/app/.backups
-    command: ["npx", "tsx", "scripts/vps-scheduler.ts"]
+    tmpfs: ["/tmp:size=256m"]
+    command: ["tsx", "scripts/vps-scheduler.ts"]
+    mem_limit: 768m
+    pids_limit: 256
 
   # HTTPS with automatic certificates, in front of the website.
   caddy:
-    image: caddy:2-alpine
+    image: caddy:2.11.9-alpine@sha256:003a97808e781aa9f7e75cc2f43d34d461099031faf5e20faefb9f61126836f0
     restart: unless-stopped
+    security_opt: ["no-new-privileges:true"]
+    cap_drop: [ALL]
+    cap_add: [NET_BIND_SERVICE]
     environment:
-      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in deploy/.env}
+      SITE_DOMAIN: ${SITE_DOMAIN:?set SITE_DOMAIN in .env}
+      ACME_EMAIL: ${ACME_EMAIL:?set ACME_EMAIL in .env}
     ports:
       - "80:80"
       - "443:443"
       - "443:443/udp"
     volumes:
-      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      # The folder, not the file, so a new Caddyfile is seen by "caddy reload".
+      - ./caddy:/etc/caddy:ro
       - caddy-data:/data
       - caddy-config:/config
-    depends_on:
-      app: { condition: service_healthy }
+    mem_limit: 256m
 
+# Permanent data. Cleanup never removes volumes; never run "down -v" here.
 volumes:
   db-data:
   caddy-data:
   caddy-config:
+  next-cache:

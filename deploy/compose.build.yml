@@ -1,0 +1,18 @@
+# Build the images from this checkout instead of pulling them, for trying the
+# production setup on a local machine. Not used on the server.
+#   cd deploy && cp .env.example .env    (fill in; SITE_DOMAIN=localhost works)
+#   RELEASE=local docker compose -f compose.yml -f compose.build.yml up -d --build
+
+x-build: &build
+  context: ..
+  args:
+    NEXT_PUBLIC_SITE_URL: ${NEXT_PUBLIC_SITE_URL:?set NEXT_PUBLIC_SITE_URL in .env}
+    RELEASE: ${RELEASE:-local}
+
+services:
+  migrate:
+    build: { <<: *build, target: tools }
+  app:
+    build: { <<: *build, target: app }
+  scheduler:
+    build: { <<: *build, target: tools }
