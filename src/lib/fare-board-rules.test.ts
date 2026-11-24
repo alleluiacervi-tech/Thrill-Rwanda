@@ -4,7 +4,9 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ db: {} }));
 import { bestDeals, cheapestFares, formatFare, trendingDestinations, type FareRow } from "./fare-board-rules";
-import { cheapestOffer, fareWatchState, plannedSearches, WATCHED } from "./fare-watch";
+import { cheapestOffer, plannedSearches, WATCHED } from "./fare-watch";
+import { sourceReadiness } from "./fare-sources";
+import { cheapestQuote, type IndicativeResponse } from "./skyscanner";
 import type { DuffelOffer } from "./duffel/types";
 
 const now = new Date("2026-11-24T08:00:00Z");
@@ -90,11 +92,14 @@ describe("formatting and the daily check", () => {
     expect(formatFare(250_000, "RWF").replace(/\s/g, " ")).toBe("RWF 250,000");
   });
 
-  it("only runs with the switch on and a live Duffel token", () => {
-    expect(fareWatchState({}).ok).toBe(false);
-    expect(fareWatchState({ FARE_WATCH_ENABLED: "true", DUFFEL_ACCESS_TOKEN: "duffel_test_x" })).toMatchObject({ ok: false });
-    expect(fareWatchState({ FARE_WATCH_ENABLED: "true", DUFFEL_ACCESS_TOKEN: "duffel_live_x" }).ok).toBe(false);
-    expect(fareWatchState({ FARE_WATCH_ENABLED: "true", DUFFEL_ACCESS_TOKEN: "duffel_live_x", DUFFEL_ALLOW_LIVE: "true" }).ok).toBe(true);
+  it("uses Duffel only with a live token, and Skyscanner only with its key", () => {
+    expect(sourceReadiness("off", {}).ok).toBe(true);
+    expect(sourceReadiness("duffel", {}).ok).toBe(false);
+    expect(sourceReadiness("duffel", { DUFFEL_ACCESS_TOKEN: "duffel_test_x" }).ok).toBe(false);
+    expect(sourceReadiness("duffel", { DUFFEL_ACCESS_TOKEN: "duffel_live_x" }).ok).toBe(false);
+    expect(sourceReadiness("duffel", { DUFFEL_ACCESS_TOKEN: "duffel_live_x", DUFFEL_ALLOW_LIVE: "true" }).ok).toBe(true);
+    expect(sourceReadiness("skyscanner", {}).ok).toBe(false);
+    expect(sourceReadiness("skyscanner", { SKYSCANNER_API_KEY: "k" }).ok).toBe(true);
   });
 
   it("checks every watched destination once a day, 2 to 9 weeks out, on a moving date", () => {
@@ -114,5 +119,50 @@ describe("formatting and the daily check", () => {
       ({ id: amount, total_amount: amount, total_currency: "USD", owner: { name: "X", iata_code: "WB" }, slices: [], passengers: [], expires_at: "", ...extra }) as DuffelOffer;
     expect(cheapestOffer([offer("300.00"), offer("215.50"), offer("100.00", { live_mode: false }), offer("90.00", { owner: { name: "Duffel Airways", iata_code: "ZZ" } })])?.total_amount).toBe("215.50");
     expect(cheapestOffer([])).toBeNull();
+  });
+});
+
+describe("Skyscanner cached prices", () => {
+  const quote = (amount: string, day: number, extra: Record<string, unknown> = {}) => ({
+    minPrice: { amount, unit: "PRICE_UNIT_WHOLE" },
+    isDirect: false,
+    outboundLeg: {
+      originPlaceId: "kgl",
+      destinationPlaceId: "nbo",
+      departureDateTime: { year: 2026, month: 12, day },
+      quoteCreationTimestamp: daysAgo(1).toISOString(),
+      marketingCarrierId: "wb",
+    },
+    ...extra,
+  });
+  const body = (quotes: Record<string, unknown>): IndicativeResponse => ({
+    content: {
+      results: {
+        quotes: quotes as never,
+        places: { kgl: { iata: "KGL" }, nbo: { iata: "NBO" }, ebb: { iata: "EBB" } },
+        carriers: { wb: { name: "RwandAir" } },
+      },
+    },
+  });
+
+  it("takes the cheapest future quote, with its airline, date and the time Skyscanner found it", () => {
+    const fare = cheapestQuote(body({ a: quote("300", 10), b: quote("215", 18), c: quote("90", 20, { isDirect: true }) }), "NBO", now);
+    expect(fare).toMatchObject({ departureDate: "2026-12-20", amount: 90, airline: "RwandAir", stops: 0 });
+    expect(fare?.foundAt.toISOString()).toBe(daysAgo(1).toISOString());
+    expect(cheapestQuote(body({ a: quote("215", 18) }), "NBO", now)?.stops).toBe(-1);
+  });
+
+  it("reads minor units", () => {
+    const centi = quote("21550", 18, { minPrice: { amount: "21550", unit: "PRICE_UNIT_CENTI" } });
+    expect(cheapestQuote(body({ a: centi }), "NBO", now)?.amount).toBe(215.5);
+  });
+
+  it("drops quotes past Skyscanner's 4-day cache, in the past, or to another airport", () => {
+    const old = quote("50", 18);
+    old.outboundLeg.quoteCreationTimestamp = daysAgo(5).toISOString();
+    const gone = quote("60", 18, { outboundLeg: { ...quote("60", 18).outboundLeg, departureDateTime: { year: 2026, month: 11, day: 20 } } });
+    const elsewhere = quote("70", 18, { outboundLeg: { ...quote("70", 18).outboundLeg, destinationPlaceId: "ebb" } });
+    expect(cheapestQuote(body({ old, gone, elsewhere, ok: quote("400", 18) }), "NBO", now)?.amount).toBe(400);
+    expect(cheapestQuote({}, "NBO", now)).toBeNull();
   });
 });

@@ -5,7 +5,7 @@ import type { BoardFare, FareBoard } from "@/lib/fare-board";
  * Invented fares for reviewing the board's design on a local machine
  * (/flights?fares=sample). The page refuses this in production.
  */
-export function sampleFareBoard(): FareBoard {
+export function sampleFareBoard(source: "duffel" | "skyscanner" = "duffel"): FareBoard {
   const place = (code: string) => allDestinations.find((p) => p.code === code)!;
   const fare = (code: string, price: string, date: string, stops: number, airline: string, note?: string): BoardFare => ({
     place: place(code), price, date, stops, airline, note,
@@ -31,5 +31,6 @@ export function sampleFareBoard(): FareBoard {
       { place: place("EBB"), rank: 4, fare: cheap[0] },
     ],
     checkedOn: "2026-11-24",
+    source,
   };
 }
