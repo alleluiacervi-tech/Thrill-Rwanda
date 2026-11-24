@@ -10,7 +10,7 @@ import { submitFlightEnquiry } from "@/app/actions/flight-enquiry";
 import {
   airportCodeOf, ENQUIRY_CONSENT_TEXT, flightLegSchema, MAX_FLIGHT_LEGS, type FlightEnquiryState, type FlightLeg,
 } from "@/lib/flight-enquiry-schema";
-import { PICK_DESTINATION_EVENT } from "@/lib/flight-destinations";
+import { PICK_DESTINATION_EVENT, type DestinationPick } from "@/lib/flight-destinations";
 import { airlines, isAirlineCode } from "@/lib/flight-airlines";
 import { cn } from "@/lib/utils";
 import { AirlineLogo } from "./flight-marks";
@@ -139,12 +139,20 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
 
   // The departures board below fills the destination and opens the calendar.
   useEffect(() => {
+    // A fare row also carries its date: the fare is one way, so the search becomes one way on that day.
     function pick(event: Event) {
-      const destination = (event as CustomEvent<string>).detail;
+      const detail = (event as CustomEvent<DestinationPick>).detail;
+      const { destination, departureDate } = typeof detail === "string" ? { destination: detail, departureDate: undefined } : detail;
       setReview(false);
       setIssue("");
-      setRoute(old => ({ ...old, origin: initialRoute.origin, destination }));
-      setPanel("dep");
+      if (departureDate) {
+        setTripType("ONE_WAY");
+        setRoute(old => ({ ...old, origin: initialRoute.origin, destination, departureDate, returnDate: "" }));
+        setPanel("party");
+      } else {
+        setRoute(old => ({ ...old, origin: initialRoute.origin, destination }));
+        setPanel("dep");
+      }
     }
     window.addEventListener(PICK_DESTINATION_EVENT, pick);
     return () => window.removeEventListener(PICK_DESTINATION_EVENT, pick);

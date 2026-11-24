@@ -69,3 +69,6 @@ export const placeLabel = ({ city, code }: Destination) => `${city} (${code})`;
 
 /** Fired by the departures board; the search panel listens and fills its destination. */
 export const PICK_DESTINATION_EVENT = "thrill:flight-destination";
+
+/** What the board sends: a place label, or a place and the date of the fare shown for it. */
+export type DestinationPick = string | { destination: string; departureDate: string };

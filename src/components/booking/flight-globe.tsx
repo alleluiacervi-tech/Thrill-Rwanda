@@ -103,6 +103,7 @@ export function FlightGlobe({
   highlight,
   focus,
   onPick,
+  prices,
 }: {
   places: Place[];
   /** Codes whose routes are lit and flown. */
@@ -110,12 +111,14 @@ export function FlightGlobe({
   /** A code to turn towards, e.g. the row under the pointer. */
   focus: string | null;
   onPick: (place: Place) => void;
+  /** A fare to show beside a city's label, by code, e.g. { NBO: "US$215" }. */
+  prices?: Record<string, string>;
 }) {
   const canvas = useRef<HTMLCanvasElement>(null);
-  const live = useRef({ highlight, focus, onPick, places });
+  const live = useRef({ highlight, focus, onPick, places, prices });
   useEffect(() => {
-    live.current = { highlight, focus, onPick, places };
-  }, [highlight, focus, onPick, places]);
+    live.current = { highlight, focus, onPick, places, prices };
+  }, [highlight, focus, onPick, places, prices]);
 
   useEffect(() => {
     const el = canvas.current;
@@ -338,10 +341,11 @@ export function FlightGlobe({
 
       // Labels: a flag and the city, placed where they do not collide.
       const boxes: [number, number, number, number][] = [];
-      const label = (text: string, country: string, x: number, y: number, strong: boolean) => {
+      const label = (text: string, country: string, x: number, y: number, strong: boolean, price?: string) => {
         ctx!.font = `700 ${12.5 * dpr}px ${font}`;
         const pad = 6 * dpr, h = 24 * dpr, fw = 16 * dpr, fh = 12 * dpr;
-        const wBox = pad + fw + 6 * dpr + ctx!.measureText(text).width + pad * 1.6, gap = 9 * dpr;
+        const priceW = price ? ctx!.measureText(price).width + 7 * dpr : 0;
+        const wBox = pad + fw + 6 * dpr + ctx!.measureText(text).width + priceW + pad * 1.6, gap = 9 * dpr;
         // Right of the dot, then left, above and below: the first spot that is free.
         const spots: [number, number][] = [
           [x + gap, y - h / 2], [x - gap - wBox, y - h / 2], [x - wBox / 2, y - gap - h], [x - wBox / 2, y + gap],
@@ -376,6 +380,10 @@ export function FlightGlobe({
         ctx!.textBaseline = "middle";
         ctx!.fillStyle = strong ? "#0f3a2c" : "#ffffff";
         ctx!.fillText(text, fx + fw + 6 * dpr, by + h / 2 + dpr * 0.5);
+        if (price) {
+          ctx!.fillStyle = `rgb(${GOLD})`;
+          ctx!.fillText(price, fx + fw + 6 * dpr + ctx!.measureText(text).width + 7 * dpr, by + h / 2 + dpr * 0.5);
+        }
       };
 
       // Kigali first: it is the one label that must always show.
@@ -410,7 +418,7 @@ export function FlightGlobe({
       }
       for (const { place, ground } of labelled) {
         const p = project(ground);
-        if (p.z > 0.22) label(place.city, place.country, X(p), Y(p), false);
+        if (p.z > 0.22) label(place.city, place.country, X(p), Y(p), false, live.current.prices?.[place.code]);
       }
 
       if (running) frame = requestAnimationFrame(draw);

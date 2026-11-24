@@ -9,6 +9,8 @@ import { FlightEnquiryForm } from "@/components/booking/flight-enquiry-form";
 import { AirportDirectoryProvider } from "@/components/booking/flight-airport-input";
 import { FlightRoutes } from "@/components/booking/flight-departures-board";
 import { airlines } from "@/lib/flight-airlines";
+import { getFareBoard, type FareBoard } from "@/lib/fare-board";
+import { sampleFareBoard } from "@/lib/fare-board-sample";
 import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import { journeyImages, type Faq } from "@/lib/journeys";
 import { requirePublicService } from "@/lib/publication";
@@ -47,9 +49,12 @@ const faqs: Faq[] = [
   ["Can you add a hotel or an airport pickup?", "Yes. Mention it in your request notes, or add it from the links at the bottom of this page, and it comes back on the same written quote."],
 ];
 
-export default async function FlightsPage() {
+export default async function FlightsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requirePublicService("FLIGHT");
-  const { publications } = await getSite();
+  const [{ publications }, live, query] = await Promise.all([getSite(), getFareBoard(), searchParams]);
+  // Sample fares to review the design locally; never in production.
+  const fares: FareBoard = process.env.NODE_ENV !== "production" && query.fares === "sample" ? sampleFareBoard() : live;
+  const priced = fares.cheap.length > 0 || fares.deals.length > 0;
 
   return (
     <PageShell overHero>
@@ -116,14 +121,16 @@ export default async function FlightsPage() {
           style={{ background: "radial-gradient(45% 60% at 78% 45%, rgb(47 128 96 / 0.28), transparent 70%), radial-gradient(40% 50% at 10% 100%, rgb(248 195 0 / 0.06), transparent 70%)" }}
         />
         <Container wide className="relative">
-          <FlightRoutes formId={FORM_ID}>
+          <FlightRoutes formId={FORM_ID} fares={fares}>
             <div className="mb-8 max-w-xl">
-              <Eyebrow>Departures from Kigali</Eyebrow>
+              <Eyebrow>{priced ? "Fares from Kigali" : "Departures from Kigali"}</Eyebrow>
               <h2 className="mt-3 text-display-sm text-white">
-                Where people <em className="text-sun-400">fly from here</em>
+                {priced ? <>What it costs <em className="text-sun-400">to fly from here</em></> : <>Where people <em className="text-sun-400">fly from here</em></>}
               </h2>
               <p className="mt-5 text-[1.0625rem] leading-relaxed text-forest-100/80">
-                The routes our desk is asked for most. Choose a city on the board or the globe and we fill in the search above; pick your dates and we do the rest.
+                {priced
+                  ? "Fares our daily check found this week. Choose one and we fill in the search above with the city and date; the desk then checks it for you."
+                  : "The routes our desk is asked for most. Choose a city on the board or the globe and we fill in the search above; pick your dates and we do the rest."}
               </p>
             </div>
           </FlightRoutes>
@@ -176,13 +183,13 @@ export default async function FlightsPage() {
               includes it when checking fares.
             </p>
           </div>
-          <ul className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+          <ul className="grid grid-cols-3 gap-2 sm:grid-cols-4 sm:gap-3">
             {Object.entries(airlines).map(([code, name]) => (
               <li
                 key={code}
-                className="grid h-20 place-items-center rounded-2xl border border-[var(--line)] bg-white px-4 transition-[border-color,box-shadow] duration-300 hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-float)]"
+                className="grid h-14 place-items-center rounded-xl border border-[var(--line)] bg-white px-2.5 transition-[border-color,box-shadow] duration-300 hover:border-[var(--line-strong)] hover:shadow-[var(--shadow-float)] sm:h-20 sm:rounded-2xl sm:px-4"
               >
-                <Image src={`/media/airlines/${code}.svg`} alt={name} title={name} width={115} height={32} unoptimized className="h-8 w-full object-contain" />
+                <Image src={`/media/airlines/${code}.svg`} alt={name} title={name} width={115} height={32} unoptimized className="h-6 w-full object-contain sm:h-8" />
               </li>
             ))}
           </ul>
