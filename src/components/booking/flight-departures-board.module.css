@@ -143,7 +143,26 @@
 }
 .row:hover .action { background: var(--color-sun-500); color: var(--color-forest-950); }
 
+/* A tab with nothing to show yet: what it will show, and the way in meanwhile. */
+.empty { display: grid; justify-items: start; gap: 0.75rem; padding: 1.5rem 1rem 0.5rem; max-width: 34rem; font-size: 0.95rem; line-height: 1.6; color: rgb(255 255 255 / 0.75); }
+.emptyTitle { font-family: var(--font-display); font-size: 1.5rem; line-height: 1.2; color: #fff; }
+.emptyAction {
+  display: inline-flex; align-items: center; gap: 0.45rem; margin-top: 0.25rem;
+  border-radius: 999px; padding: 0.65rem 1.1rem;
+  font-size: 0.9rem; font-weight: 700;
+  background: var(--color-sun-500); color: var(--color-forest-950);
+  transition: background-color 0.2s;
+}
+.emptyAction:hover { background: var(--color-sun-400); }
+.emptyAction:focus-visible { outline: 2px solid var(--color-sun-300); outline-offset: 2px; }
+
 .foot { margin-top: 1.25rem; padding: 0 1rem; font-size: 0.88rem; color: rgb(255 255 255 / 0.65); }
+
+/* The credit Skyscanner requires beside its prices. */
+.credit { display: inline-flex; align-items: baseline; gap: 0.35rem; margin: 0.75rem 1rem 0; font-size: 0.8rem; color: rgb(255 255 255 / 0.6); }
+.credit:hover { color: #fff; }
+.credit:focus-visible { outline: 2px solid var(--color-sun-300); outline-offset: 2px; border-radius: 4px; }
+.creditMark { font-size: 0.95rem; font-weight: 700; color: #fff; }
 
 @media (max-width: 1024px) {
   /* Heading, then the globe, then the board. */
@@ -162,6 +181,7 @@
   .action { padding: 0.5rem; font-size: 0; gap: 0; }
   .action svg { width: 1.1rem; height: 1.1rem; }
   .foot { padding: 0 0.25rem; }
+  .empty { padding: 1.25rem 0.25rem 0.25rem; }
   .views { gap: 1.25rem; }
   .views button { font-size: 1rem; }
   .amount { font-size: 1.3rem; }
