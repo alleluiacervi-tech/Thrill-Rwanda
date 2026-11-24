@@ -45,7 +45,10 @@ if [ -n "${DEPLOY_SSH_KEY:-}" ]; then
 fi
 
 step "$ROOT: scripts, settings, backups"
-install -d -m 750 -o "$USER_NAME" -g "$USER_NAME" "$ROOT" "$ROOT/bin" "$ROOT/caddy"
+install -d -m 750 -o "$USER_NAME" -g "$USER_NAME" "$ROOT" "$ROOT/bin"
+# 755: the proxy container reads its Caddyfile here with every capability
+# dropped, so even its root user needs the folder open. Nothing secret in it.
+install -d -m 755 -o "$USER_NAME" -g "$USER_NAME" "$ROOT/caddy"
 # The backup job runs as uid 1000 (node) inside its container. On this server
 # uid 1000 is another user, so only that uid (and root) can read the folder.
 install -d -m 700 -o 1000 -g 1000 "$ROOT/backups"

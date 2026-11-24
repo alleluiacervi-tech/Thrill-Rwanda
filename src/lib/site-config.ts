@@ -51,7 +51,7 @@ export const SITE_DEFAULTS = {
   phone: "+250 786 261 104",
   phoneAlt: null,
   whatsapp: "+250 786 261 104",
-  email: "info@thrillrwanda.com",
+  email: "contact@thrillrwanda.com",
   address: "Kigali, Rwanda",
   heroTitle: "Your journey starts",
   heroSubtitle: "with a conversation.",

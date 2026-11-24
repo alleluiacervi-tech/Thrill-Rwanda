@@ -66,7 +66,34 @@ function Pesapal() {
   );
 }
 
+function MtnMomo() {
+  return (
+    <svg viewBox="0 0 66 24" role="img" aria-label="MTN Mobile Money" className="h-5 w-auto">
+      <ellipse cx="12" cy="12" rx="11.5" ry="8" fill="#FFCB05" stroke="#1D1D1B" strokeWidth="1.4" />
+      <text x="12" y="15" textAnchor="middle" fontFamily={FONT} fontSize="8" fontWeight="900" fill="#1D1D1B">
+        MTN
+      </text>
+      <text x="27" y="17" fontFamily={FONT} fontSize="14" fontWeight="800" fill="#1D1D1B" textLength="37" lengthAdjust="spacingAndGlyphs">
+        MoMo
+      </text>
+    </svg>
+  );
+}
+
+function Urubuto() {
+  return (
+    <svg viewBox="0 0 84 24" role="img" aria-label="UrubutoPay" className="h-5 w-auto">
+      <text x="0" y="17" fontFamily={FONT} fontSize="15.5" fontWeight="800" fill="#0B4F8A" textLength="82" lengthAdjust="spacingAndGlyphs">
+        urubuto
+        <tspan fill="#F29100">Pay</tspan>
+      </text>
+    </svg>
+  );
+}
+
 const MARKS = {
+  urubuto: Urubuto,
+  mtn: MtnMomo,
   pesapal: Pesapal,
   mpesa: MPesa,
   airtel: Airtel,

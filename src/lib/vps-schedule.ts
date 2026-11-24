@@ -20,6 +20,8 @@ export const VPS_JOBS: ScheduledJob[] = [
   { name: "document-maintenance", path: "/api/cron/maintenance", dailyAt: "04:00" },
   // Same moment as the Vercel cron (03:00 UTC).
   { name: "release-holds", path: "/api/cron/release-holds", dailyAt: "05:00" },
+  // Fares for the public board; does nothing unless FARE_WATCH_ENABLED=true with a live Duffel token.
+  { name: "fare-watch", path: "/api/cron/fare-watch", dailyAt: "06:15" },
 ];
 
 const KIGALI_OFFSET_MINUTES = 120;

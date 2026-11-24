@@ -3,6 +3,7 @@ import { ArrowRight, Clock3, Mail, MapPin, MessageCircle, Phone } from "lucide-r
 import { Logo } from "@/components/brand/logo";
 import { Button } from "@/components/ui/button";
 import { Container } from "@/components/ui/primitives";
+import { PaymentLogos } from "@/components/ui/payment-logos";
 
 import { visiblePath } from "@/lib/launch-rules";
 import { footerNav as allFooterNav } from "@/lib/site";
@@ -134,12 +135,23 @@ export async function SiteFooter() {
           </div>
         </div>
 
+        {/* The methods the checkout really runs (src/lib/urubuto-pay.ts). */}
+        <div className="grid gap-5 border-t border-white/10 py-8 lg:grid-cols-[1fr_auto] lg:items-center lg:gap-10">
+          <div className="max-w-md">
+            <h3 className="font-display text-lg text-white">Ways to pay</h3>
+            <p className="mt-1.5 text-sm leading-relaxed text-forest-200">
+              MTN MoMo, Airtel Money, or a Visa or Mastercard debit or credit card, all through UrubutoPay.{" "}
+              <Link href="/how-it-works" className="link-draw text-forest-100 underline-offset-4 hover:text-white">
+                How paying works
+              </Link>
+            </p>
+          </div>
+          <PaymentLogos marks={["urubuto", "mtn", "airtel", "visa", "mastercard"]} className="gap-2.5 [&>span]:h-10 [&>span]:px-3 [&>span]:border-white/0" />
+        </div>
+
         <div className="flex flex-col gap-4 border-t border-white/10 py-7 pb-24 text-xs text-forest-300 sm:flex-row sm:items-center sm:justify-between sm:pb-8">
           <p>
             © {new Date().getFullYear()} {site.legalName}. Made in Kigali.
-          </p>
-          <p className="flex flex-wrap items-center gap-2">
-            <Link href="/how-it-works" className="relative after:absolute after:-inset-x-1 after:-inset-y-3 underline">Payment instructions follow your checked quote</Link>
           </p>
         </div>
       </Container>

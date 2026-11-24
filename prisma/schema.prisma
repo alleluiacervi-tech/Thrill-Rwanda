@@ -1642,3 +1642,21 @@ model FlightServiceRequest {
   @@index([status, createdAt])
   @@map("flight_service_requests")
 }
+
+/// The lowest fare a daily check found for one route and date (src/lib/fare-watch.ts).
+/// Only live Duffel results are stored; the public fares board reads these rows.
+model FareSnapshot {
+  id            String   @id @default(uuid()) @db.Uuid
+  origin        String
+  destination   String
+  departureDate DateTime @map("departure_date") @db.Date
+  cabin         String   @default("ECONOMY")
+  currency      String
+  totalMinor    Int      @map("total_minor")
+  airline       String   @default("")
+  stops         Int      @default(0)
+  checkedAt     DateTime @default(now()) @map("checked_at") @db.Timestamptz
+  @@index([destination, checkedAt])
+  @@index([checkedAt])
+  @@map("fare_snapshots")
+}

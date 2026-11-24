@@ -42,10 +42,14 @@ import {
 } from "@/components/home/hero-sequence";
 import { InMotion, TrailPhotos } from "@/components/home/media-sections";
 import { getSite } from "@/lib/settings";
+import { site as siteMeta } from "@/lib/site";
 import { cn } from "@/lib/utils";
+import type { Metadata } from "next";
 
 // Listings come from the database. Edits refresh this at once; this is only the safety net.
 export const revalidate = 300;
+
+export const metadata: Metadata = { alternates: { canonical: "/" } };
 
 export default async function HomePage() {
   const [site, tours, hotels, vehicles, destinations, rating, reviews, nextEdition] =
@@ -66,6 +70,11 @@ export default async function HomePage() {
 
   return (
     <PageShell overHero>
+      <script
+        type="application/ld+json"
+        // Built from Admin → Settings, never from visitor input; "<" is escaped all the same.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(organisationLd(site)).replace(/</g, "\\u003c") }}
+      />
       <Hero
         title={site.heroTitle}
         subtitle={site.heroSubtitle}
@@ -869,4 +878,23 @@ function ClosingCall({ flight }: { flight: boolean }) {
       </Container>
     </section>
   );
+}
+
+/** Who we are, for search engines: the business, its contacts and the country it serves. */
+function organisationLd(site: Awaited<ReturnType<typeof getSite>>) {
+  return {
+    "@context": "https://schema.org",
+    "@type": "TravelAgency",
+    name: site.name,
+    legalName: site.legalName,
+    description: site.description,
+    url: siteMeta.url,
+    logo: `${siteMeta.url}/icon.png`,
+    image: `${siteMeta.url}/opengraph-image.png`,
+    email: site.contact.email || undefined,
+    telephone: site.contact.phone || undefined,
+    address: { "@type": "PostalAddress", addressLocality: "Kigali", addressCountry: "RW" },
+    areaServed: { "@type": "Country", name: "Rwanda" },
+    sameAs: site.socials.map((link) => link.url),
+  };
 }

@@ -107,7 +107,7 @@ install_config() { # copy compose.yml, the Caddyfile and these scripts out of th
     || die "the release's compose.yml does not validate against .env"
 
   install -m 640 "$STAGE/compose.yml" "$ROOT/compose.yml.new" && mv -f "$ROOT/compose.yml.new" "$ROOT/compose.yml"
-  mkdir -p "$ROOT/caddy"
+  mkdir -p "$ROOT/caddy" && chmod 755 "$ROOT/caddy" # the proxy reads it with no capabilities
   if ! cmp -s "$STAGE/caddy/Caddyfile" "$ROOT/caddy/Caddyfile"; then
     install -m 644 "$STAGE/caddy/Caddyfile" "$ROOT/caddy/Caddyfile"
     changed=1

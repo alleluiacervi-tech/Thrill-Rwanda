@@ -58,6 +58,14 @@ export async function generateMetadata(): Promise<Metadata> {
       title: `${name} — Flights & Rwanda travel`,
       description,
     },
+    // Ownership proof for Google Search Console and Bing Webmaster Tools: the
+    // tag's content value, set on the host (docs/FARES_SEO_PAYMENTS_PLAN.md).
+    verification: {
+      google: process.env.GOOGLE_SITE_VERIFICATION?.trim() || undefined,
+      other: process.env.BING_SITE_VERIFICATION?.trim()
+        ? { "msvalidate.01": process.env.BING_SITE_VERIFICATION.trim() }
+        : undefined,
+    },
     robots: {
       index: process.env.SOFT_LAUNCH_PRIVATE !== "true",
       follow: true,
