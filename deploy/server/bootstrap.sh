@@ -153,7 +153,10 @@ EOF
 sysctl --system >/dev/null
 
 step "$ROOT: scripts, settings, backups"
-install -d -m 750 -o thrill -g thrill "$ROOT" "$ROOT/bin" "$ROOT/caddy"
+install -d -m 750 -o thrill -g thrill "$ROOT" "$ROOT/bin"
+# 755: the proxy container reads its Caddyfile here with every capability
+# dropped, so even its root user needs the folder open. Nothing secret in it.
+install -d -m 755 -o thrill -g thrill "$ROOT/caddy"
 # The backup job runs as uid 1000 (node) inside its container.
 install -d -m 700 -o 1000 -g 1000 "$ROOT/backups"
 for script in "$HERE"/bin/*; do install -m 750 -o thrill -g thrill "$script" "$ROOT/bin/"; done
