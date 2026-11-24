@@ -18,7 +18,7 @@ docker_disk=$(df --output=pcent /var/lib/docker 2>/dev/null | tail -n 1 | tr -dc
 memory=$(awk '/MemTotal/{t=$2} /MemAvailable/{a=$2} END{printf "%d", (t-a)*100/t}' /proc/meminfo)
 [ "$memory" -ge "$MEMORY_LIMIT" ] && problems+=("memory ${memory}% used")
 
-for service in db app scheduler caddy; do
+for service in db app scheduler proxy; do
   state=$(docker ps --filter "label=com.docker.compose.project=thrill" --filter "label=com.docker.compose.service=$service" \
     --format '{{.Status}}' | head -n 1)
   case "$state" in

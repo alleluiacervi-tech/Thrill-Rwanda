@@ -1,0 +1,32 @@
+# thrillrwanda.com on the server's own Caddy, beside the other sites it serves.
+# Installed once as /etc/caddy/sites/thrillrwanda.caddy by
+# deploy/server/setup-shared-host.sh (INSTALL_SITE=1), after DNS points here.
+# The main Caddyfile already has: import /etc/caddy/sites/*
+# Caddy gets and renews the certificate itself.
+
+www.thrillrwanda.com {
+	redir https://thrillrwanda.com{uri} permanent
+}
+
+thrillrwanda.com {
+	encode zstd gzip
+
+	# Scheduled-job routes are for the scheduler inside the server only.
+	@cron path /api/cron/*
+	respond @cron 404
+
+	request_body {
+		max_size 25MB
+	}
+
+	header -Server
+
+	# Thrill's own proxy container (compose service "proxy"), loopback only.
+	reverse_proxy 127.0.0.1:4100 {
+		lb_try_duration 10s
+	}
+
+	# Access log to Caddy's journal, like the other sites on this server
+	# (journalctl -u caddy). A log file would need the caddy user to own it.
+	log
+}

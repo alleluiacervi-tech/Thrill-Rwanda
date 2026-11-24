@@ -6,7 +6,7 @@
 #
 # Repository secrets:   VPS_HOST, VPS_SSH_KEY, VPS_KNOWN_HOSTS
 # Repository variables: DEPLOY_ENABLED ("true" once the server is ready),
-#                       SITE_URL (default https://thrillrwanda.com), VPS_PORT (22),
+#                       VPS_USER (default thrill), SITE_URL (default https://thrillrwanda.com), VPS_PORT (22),
 #                       VERIFY_PUBLIC ("false" until DNS points at the server)
 # The site's own secrets never come here; they live in /opt/thrill/.env.
 # Setup: docs/VPS_DEPLOYMENT.md
@@ -235,13 +235,14 @@ jobs:
         env:
           HOST: ${{ secrets.VPS_HOST }}
           PORT: ${{ vars.VPS_PORT || '22' }}
+          SSH_USER: ${{ vars.VPS_USER || 'thrill' }}
           RELEASE: ${{ steps.pick.outputs.release }}
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           printf '%s\n%s\n' "$GITHUB_ACTOR" "$TOKEN" | ssh -i ~/.ssh/deploy_key -p "$PORT" \
             -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
             -o ServerAliveInterval=15 -o ConnectTimeout=20 \
-            "deploy@$HOST" "deploy $RELEASE"
+            "$SSH_USER@$HOST" "deploy $RELEASE"
 
       - name: Confirm from the internet
         id: verify
@@ -267,9 +268,10 @@ jobs:
         env:
           HOST: ${{ secrets.VPS_HOST }}
           PORT: ${{ vars.VPS_PORT || '22' }}
+          SSH_USER: ${{ vars.VPS_USER || 'thrill' }}
         run: |
           ssh -i ~/.ssh/deploy_key -p "$PORT" -o IdentitiesOnly=yes -o StrictHostKeyChecking=yes -o BatchMode=yes \
-            "deploy@$HOST" "rollback" </dev/null
+            "$SSH_USER@$HOST" "rollback" </dev/null
           echo "::warning::Rolled back to the previous release."
 
       - name: Remove the key
