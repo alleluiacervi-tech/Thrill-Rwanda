@@ -23,7 +23,7 @@ export const site = {
   legalName: "Thrill Rwanda",
   tagline: "Rwanda's volcanic peaks, forests and savannahs.",
   description:
-    "A Rwanda-focused travel demo inspired by Volcanoes National Park, Nyungwe and Akagera. Listings, prices, contacts and payment details are sample configuration and must be verified before launch.",
+    "Request a checked flight quotation or plan your Rwanda trip with Thrill Rwanda. Stays, transport and group travel start with your brief.",
   url: siteUrl(),
   locale: "en_RW",
   contact: {
@@ -32,7 +32,7 @@ export const site = {
     phoneAlt: null,
     phoneAltHref: null,
     whatsapp: "https://wa.me/250786261104",
-    email: "info@thrillrwanda.com",
+    email: "contact@thrillrwanda.com",
     address: "Kigali, Rwanda",
     city: "Kigali",
     country: "Rwanda",
