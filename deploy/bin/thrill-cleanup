@@ -2,11 +2,14 @@
 # Frees disk without touching data. Runs after every deploy and weekly
 # (thrill-cleanup.timer).
 #
-# Removes:  our release images other than the newest KEEP_RELEASES (default 4)
-#           dangling images, containers stopped for more than a day, build cache
+# The server is shared with other projects, so this only ever touches Thrill's
+# own images and containers (by repository name and compose-project label).
+#
+# Removes:  Thrill release images other than the newest KEEP_RELEASES (default 4)
+#           Thrill's untagged images, Thrill containers stopped for over a day
 #           optimised images nobody has requested for 30 days
-# Never:    volumes (database, certificates, image cache), the backups folder,
-#           or any image a container still uses
+# Never:    volumes (database, image cache), the backups folder, any image a
+#           container still uses, or anything belonging to another project
 set -Eeuo pipefail
 ROOT=/opt/thrill
 KEEP=${KEEP_RELEASES:-4}
@@ -28,9 +31,13 @@ for kind in app tools; do
   done < <(docker image ls "$IMAGE_REPO-$kind" --no-trunc --format '{{.Tag}} {{.ID}}')
 done
 
-docker image prune -f >/dev/null
-docker container prune -f --filter until=24h >/dev/null
-docker builder prune -f --keep-storage 1GB >/dev/null 2>&1 || true
+# Untagged leftovers of our own images only (they keep their title label).
+for kind in app tools; do
+  docker image prune -f --filter "label=org.opencontainers.image.title=thrill-rwanda-$kind" >/dev/null
+done
+docker container prune -f --filter "label=com.docker.compose.project=thrill" --filter until=24h >/dev/null
+# No builder prune: nothing is built on this server, and the build cache
+# belongs to the other projects.
 
 if [ -n "$current" ]; then
   docker run --rm --network none -v thrill_next-cache:/cache --entrypoint find "$IMAGE_REPO-tools:$current" \

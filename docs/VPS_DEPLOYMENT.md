@@ -10,7 +10,7 @@ How we got here, and what is still to do: [VPS_ROLLOUT_PLAN.md](VPS_ROLLOUT_PLAN
 | `migrate` | Applies database migrations for a new release, then exits. |
 | `app` | The website. During a deploy two run side by side for a few seconds. |
 | `scheduler` | Sends queued notifications and reconciles payments every 5 minutes, makes the encrypted backup at 02:30, runs document maintenance at 04:00 and releases expired holds at 05:00 (Kigali time). |
-| `caddy` | HTTPS. Gets and renews the certificate by itself and spreads requests over the running `app` containers. |
+| `proxy` | Spreads requests over the running `app` containers, on `127.0.0.1:4100` only. HTTPS is done by the server's own Caddy, which also serves the other sites on this server (`/etc/caddy/sites/thrillrwanda.caddy`). |
 
 On the server everything lives in `/opt/thrill`:
 
@@ -19,7 +19,7 @@ On the server everything lives in `/opt/thrill`:
   .env            the site's settings and secrets (mode 600, never leaves the server)
   ops.env         heartbeat URLs and the off-site backup target (host scripts only)
   compose.yml     written by each deploy from the release's own image
-  caddy/Caddyfile written by each deploy
+  caddy/Caddyfile the proxy's settings, written by each deploy
   bin/            deploy-gate, thrill, thrill-cleanup, thrill-watch, thrill-offsite
   backups/        nightly encrypted backups (also copied off the server)
   .release        the release that is live, e.g. sha-1a2b3c4d5e6f
@@ -50,9 +50,13 @@ in one release and drop the old one in a later release, never both in the same o
 
 - **Automatic:** when the confirmation step fails.
 - **By hand from GitHub:** Actions → *Deploy to the VPS* → *Run workflow*, with an earlier tag (from `releases.log` or GHCR). This skips the build and runs no migrations.
-- **On the server:** `ssh deploy@SERVER rollback` (only with the deploy key) returns to the most recent other release. The last 4 releases' images are kept on the server for this.
+- **On the server:** `ssh thrill@SERVER rollback` (only with the deploy key) returns to the most recent other release. The last 4 releases' images are kept on the server for this.
 
 ## 1. Set up the server (once)
+
+> **The current server (152.239.122.192, Hostinger) is shared.** It already serves ora.luxury, sawacars.com and api.ubirwanda.cloud. On it, Thrill was set up with [`setup-shared-host.sh`](../deploy/server/setup-shared-host.sh), which only adds Thrill's own pieces: the `thrill` user, `/opt/thrill`, the `thrill-*` timers, the `thrill` compose project and, after DNS, one Caddy site file. Server-wide settings and the other projects were left as they were, and were checked unchanged afterwards. **Never run `bootstrap.sh` on it.** The steps below are for a future dedicated, empty server.
+>
+> On the shared server, after DNS points here: `INSTALL_SITE=1 bash /root/thrill-deploy/server/setup-shared-host.sh`. It adds the Caddy site, checks the whole Caddy configuration, and only then reloads it gracefully.
 
 Ubuntu 24.04, 2 vCPU, 4 GB memory, 60 GB disk. No builds happen on the server, so 2 GB with swap also works.
 
@@ -77,7 +81,7 @@ Ubuntu 24.04, 2 vCPU, 4 GB memory, 60 GB disk. No builds happen on the server, s
 3. **Store the printed `BACKUP_ENCRYPTION_KEY` in the owner's password manager.** Without it no backup can be opened.
 4. Fill in the rest of `/opt/thrill/.env`: Resend, Cloudinary, Duffel, the admin-mail password and payments.
    ```sh
-   sudo -u deploy nano /opt/thrill/.env
+   sudo -u thrill nano /opt/thrill/.env
    ```
 5. In GitHub, under *Settings → Secrets and variables → Actions*:
    - **Secrets:**
@@ -129,9 +133,9 @@ sudo $T start app scheduler
 
 ```sh
 sudo /opt/thrill/bin/thrill ps                         # all up, app "healthy"
-sudo /opt/thrill/bin/thrill logs -f --tail 100 app caddy
+sudo /opt/thrill/bin/thrill logs -f --tail 100 app proxy
 sudo /opt/thrill/bin/thrill logs -f scheduler          # one line per job: "backup ok", "enquiry-notifications HTTP 200"
-sudo -u deploy /opt/thrill/bin/deploy-gate status      # live release and containers
+sudo -u thrill /opt/thrill/bin/deploy-gate status      # live release and containers
 cat /opt/thrill/releases.log
 systemctl list-timers 'thrill-*'                       # watch, off-site copy, cleanup
 ```

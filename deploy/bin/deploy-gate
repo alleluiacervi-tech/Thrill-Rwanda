@@ -188,13 +188,13 @@ deploy() { # deploy RELEASE [rollback]
   roll_out_app "$release"
 
   compose up -d --no-deps scheduler >/dev/null
-  if [ -z "$(compose ps -q caddy)" ]; then
-    compose up -d --no-deps caddy >/dev/null
+  if [ -z "$(compose ps -q proxy)" ]; then
+    compose up -d --no-deps proxy >/dev/null
   else
-    compose up -d --no-deps caddy >/dev/null # recreates only if its image or settings changed
+    compose up -d --no-deps proxy >/dev/null # recreates only if its image or settings changed
     if [ "${CADDY_CHANGED:-0}" = 1 ]; then
-      compose exec -T caddy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
-        || log "warning: caddy reload failed; the previous Caddyfile is still in use"
+      compose exec -T proxy caddy reload --config /etc/caddy/Caddyfile --adapter caddyfile \
+        || log "warning: proxy reload failed; the previous Caddyfile is still in use"
     fi
   fi
 

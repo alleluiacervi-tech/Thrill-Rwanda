@@ -143,7 +143,7 @@ never add `ports:` to `db` or `app`.
   - `shared_buffers=512MB`, `effective_cache_size=2GB`, `max_connections=60` (done as `command:` flags, with `work_mem` and `maintenance_work_mem`);
   - `log_min_duration_statement=1000`, with `log_parameter_max_length=0` so customer values never reach the log.
 - [x] Set `DATABASE_POOL_MAX` to match (10 per container, which still fits during a rollout with two `app` containers plus the scheduler, migrate and backup).
-- [ ] Decide Neon: start fresh (the default), or run the `pg_dump`/`pg_restore` steps in VPS_DEPLOYMENT.md §4 before go-live.
+- [x] Decide Neon: **fresh database** (decided 2026-11-24). Nothing is carried over; the Neon database is removed after cutover (Phase 8).
 - [x] Take a backup before every deploy, as the first step of the deploy gate, so a bad migration can be undone.
 - [ ] Off-server copies are handled in Phase 7.
 
@@ -408,3 +408,24 @@ Can start as soon as the server has an IP address, and runs alongside Phase 2.
   - Nothing has run on a server.
 
   **Next:** the inputs above (server, DNS, keys), then Phase 6.
+- 2026-11-24 — **Server found to be shared** (Hostinger, 4 vCPU, 15 GB memory, 193 GB disk, Ubuntu 24.04, Docker 29). It already runs ora.luxury (with the server's own Postgres 18), sawacars.com (4 subdomains, compose project `sawa`) and api.ubirwanda.cloud, all behind the server's own Caddy. **Rule: never change or remove anything of theirs.** The plan changed accordingly:
+  - Thrill's Caddy container became an internal `proxy` on `127.0.0.1:4100`. The server's Caddy terminates HTTPS through one added site file (`deploy/host-caddy/`).
+  - The deploy user is `thrill`, because `deploy` already belongs to another project.
+  - `thrill-cleanup` only touches Thrill's images and containers; there is no global prune.
+  - `bootstrap.sh` is kept for a future dedicated server only. `setup-shared-host.sh` is add-only.
+  - The server's SSH, firewall, Docker settings, fail2ban and update settings are already in place and were left as they were. The Phase 1 `[s]` items do not apply to this server.
+  - The other projects' weekly `docker volume prune` only removes unnamed volumes on Docker 29, so Thrill's named volumes are safe.
+- 2026-11-24 — **Set up on the server (add-only).** Done:
+  - user `thrill` (uid 1001, docker group, deploy key with forced command; a shell command and an interactive shell were both refused in testing);
+  - `/opt/thrill` with generated secrets, and the three timers;
+  - the **fresh database**: `thrill-db-1`, Postgres 17.12, empty, no published port.
+
+  Before and after the setup, the other sites' responses and the six other containers were identical, and the checksums of the server's Caddyfile, `sshd_config`, `daemon.json`, firewall rules and the `deploy` user's keys were unchanged.
+
+  **Next:** GitHub secrets, DNS, the Caddy site, then the merge and first deploy.
+- 2026-11-24 — **DNS and HTTPS live.**
+  - DNS: A records for `@` and `www` point to 152.239.122.192; MX and TXT records are untouched.
+  - GitHub: the secrets `VPS_HOST`, `VPS_KNOWN_HOSTS` and `VPS_SSH_KEY` and the variable `VERIFY_PUBLIC=false` are set. The deploy key was replaced once, because the first one was pasted into a chat.
+  - Caddy: `/etc/caddy/sites/thrillrwanda.caddy` was added. The first reload was refused because `caddy validate` had run as root and created a log file the caddy user could not open. Caddy kept its old configuration and the other sites were unaffected. Fix: the site now logs to the journal, validation runs as the caddy user, and the file is taken out again if a reload fails.
+  - Result: a Let's Encrypt certificate was issued. `www` and `http://` redirect to the apex. The site returns 502 until the first deploy. The other sites answered the same before and after.
+  - **Next:** commit, merge to `main`, `DEPLOY_ENABLED=true`, then the first deploy.

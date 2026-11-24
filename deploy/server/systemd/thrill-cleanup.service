@@ -5,6 +5,6 @@ Requires=docker.service
 
 [Service]
 Type=oneshot
-User=deploy
-Group=deploy
+User=thrill
+Group=thrill
 ExecStart=/opt/thrill/bin/thrill-cleanup

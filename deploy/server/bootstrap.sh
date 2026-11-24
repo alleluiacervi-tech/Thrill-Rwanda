@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
-# One-time setup of a fresh Ubuntu 24.04 server for Thrill Rwanda (Phase 1 of
-# docs/VPS_ROLLOUT_PLAN.md). Safe to run again; each step checks first.
+# One-time setup of a fresh, EMPTY Ubuntu 24.04 server for Thrill Rwanda
+# (Phase 1 of docs/VPS_ROLLOUT_PLAN.md). Safe to run again; each step checks first.
+#
+# NOT for a server that already hosts other sites: this changes SSH, the
+# firewall and Docker's settings for the whole machine. For a shared server
+# use setup-shared-host.sh, which only adds Thrill's own pieces.
 #
 # From your machine:
 #   scp -r deploy root@SERVER:/root/thrill-deploy
@@ -37,17 +41,17 @@ apt-get update -q
 apt-get -y -q full-upgrade
 apt-get -y -q install ca-certificates curl gnupg ufw fail2ban unattended-upgrades rclone jq
 
-step "Users: ops (people, sudo) and deploy (GitHub Actions, no shell)"
+step "Users: ops (people, sudo) and thrill (GitHub Actions deploys, no shell)"
 id ops >/dev/null 2>&1 || adduser --disabled-password --gecos "Thrill Rwanda operator" ops
 usermod -aG sudo ops
-id deploy >/dev/null 2>&1 || adduser --disabled-password --gecos "Thrill Rwanda deploys" deploy
+id thrill >/dev/null 2>&1 || adduser --disabled-password --gecos "Thrill Rwanda deploys" thrill
 install -d -m 700 -o ops -g ops /home/ops/.ssh
 grep -qxF "$OPS_SSH_KEY" /home/ops/.ssh/authorized_keys 2>/dev/null || echo "$OPS_SSH_KEY" >>/home/ops/.ssh/authorized_keys
 chown ops:ops /home/ops/.ssh/authorized_keys && chmod 600 /home/ops/.ssh/authorized_keys
-install -d -m 700 -o deploy -g deploy /home/deploy/.ssh
+install -d -m 700 -o thrill -g thrill /home/thrill/.ssh
 # Forced command: this key can only ask deploy-gate for deploy, rollback or status.
-echo "restrict,command=\"$ROOT/bin/deploy-gate\" $DEPLOY_SSH_KEY" >/home/deploy/.ssh/authorized_keys
-chown deploy:deploy /home/deploy/.ssh/authorized_keys && chmod 600 /home/deploy/.ssh/authorized_keys
+echo "restrict,command=\"$ROOT/bin/deploy-gate\" $DEPLOY_SSH_KEY" >/home/thrill/.ssh/authorized_keys
+chown thrill:thrill /home/thrill/.ssh/authorized_keys && chmod 600 /home/thrill/.ssh/authorized_keys
 if passwd -S ops | awk '{exit ($2 == "P") ? 1 : 0}'; then
   echo "Choose a password for ops. It is only for sudo; SSH stays key-only."
   passwd ops
@@ -60,7 +64,7 @@ PasswordAuthentication no
 KbdInteractiveAuthentication no
 PubkeyAuthentication yes
 AuthenticationMethods publickey
-AllowUsers ops deploy
+AllowUsers ops thrill
 MaxAuthTries 3
 LoginGraceTime 30
 X11Forwarding no
@@ -125,7 +129,7 @@ cat >/etc/docker/daemon.json <<'EOF'
 }
 EOF
 systemctl restart docker
-usermod -aG docker deploy
+usermod -aG docker thrill
 
 step "Swap ($SWAP_SIZE) and kernel network settings"
 if ! swapon --show | grep -q .; then
@@ -149,29 +153,27 @@ EOF
 sysctl --system >/dev/null
 
 step "$ROOT: scripts, settings, backups"
-install -d -m 750 -o deploy -g deploy "$ROOT" "$ROOT/bin" "$ROOT/caddy"
+install -d -m 750 -o thrill -g thrill "$ROOT" "$ROOT/bin" "$ROOT/caddy"
 # The backup job runs as uid 1000 (node) inside its container.
 install -d -m 700 -o 1000 -g 1000 "$ROOT/backups"
-for script in "$HERE"/bin/*; do install -m 750 -o deploy -g deploy "$script" "$ROOT/bin/"; done
-[ -f "$ROOT/compose.yml" ] || install -m 640 -o deploy -g deploy "$HERE/compose.yml" "$ROOT/compose.yml"
-[ -f "$ROOT/caddy/Caddyfile" ] || install -m 644 -o deploy -g deploy "$HERE/caddy/Caddyfile" "$ROOT/caddy/Caddyfile"
+for script in "$HERE"/bin/*; do install -m 750 -o thrill -g thrill "$script" "$ROOT/bin/"; done
+[ -f "$ROOT/compose.yml" ] || install -m 640 -o thrill -g thrill "$HERE/compose.yml" "$ROOT/compose.yml"
+[ -f "$ROOT/caddy/Caddyfile" ] || install -m 644 -o thrill -g thrill "$HERE/caddy/Caddyfile" "$ROOT/caddy/Caddyfile"
 
 if [ ! -f "$ROOT/.env" ]; then
-  install -m 600 -o deploy -g deploy "$HERE/.env.example" "$ROOT/.env"
+  install -m 600 -o thrill -g thrill "$HERE/.env.example" "$ROOT/.env"
   fill() { sed -i "s|^$1=.*|$1=$2|" "$ROOT/.env"; }
   fill POSTGRES_PASSWORD "$(openssl rand -hex 32)"
   fill BETTER_AUTH_SECRET "$(openssl rand -hex 32)"
   fill CRON_SECRET "$(openssl rand -hex 32)"
   BACKUP_KEY=$(openssl rand -base64 32)
   fill BACKUP_ENCRYPTION_KEY "$BACKUP_KEY"
-  fill SITE_DOMAIN "$SITE_DOMAIN"
   fill NEXT_PUBLIC_SITE_URL "https://$SITE_DOMAIN"
   fill BETTER_AUTH_URL "https://$SITE_DOMAIN"
-  fill ACME_EMAIL "$ACME_EMAIL"
   NEW_BACKUP_KEY=1
 fi
 if [ ! -f "$ROOT/ops.env" ]; then
-  install -m 640 -o root -g deploy /dev/null "$ROOT/ops.env"
+  install -m 640 -o root -g thrill /dev/null "$ROOT/ops.env"
   cat >"$ROOT/ops.env" <<'EOF'
 # Host-only settings for thrill-watch and thrill-offsite (not given to containers).
 # Heartbeat URLs from healthchecks.io (or similar): one check per line below.
@@ -190,6 +192,21 @@ install -m 644 "$HERE"/server/systemd/*.service "$HERE"/server/systemd/*.timer /
 systemctl daemon-reload
 systemctl enable --now thrill-watch.timer thrill-offsite.timer thrill-cleanup.timer >/dev/null
 
+step "Caddy on the server: HTTPS for $SITE_DOMAIN, forwarding to Thrill's proxy"
+if ! command -v caddy >/dev/null; then
+  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/gpg.key | gpg --dearmor -o /usr/share/keyrings/caddy-stable-archive-keyring.gpg
+  curl -fsSL https://dl.cloudsmith.io/public/caddy/stable/debian.deb.txt -o /etc/apt/sources.list.d/caddy-stable.list
+  apt-get update -q
+  apt-get -y -q install caddy
+fi
+install -d /etc/caddy/sites
+install -d -o caddy -g caddy /var/log/caddy
+printf '{\n\temail %s\n}\n\nimport /etc/caddy/sites/*\n' "$ACME_EMAIL" >/etc/caddy/Caddyfile
+install -m 644 "$HERE/host-caddy/thrillrwanda.caddy" /etc/caddy/sites/thrillrwanda.caddy
+caddy validate --config /etc/caddy/Caddyfile --adapter caddyfile >/dev/null
+systemctl enable caddy >/dev/null
+systemctl reload-or-restart caddy
+
 step "Done"
 ip4=$(curl -fsS -4 -m 5 https://api.ipify.org 2>/dev/null || hostname -I | awk '{print $1}')
 cat <<EOF
@@ -205,7 +222,7 @@ Next steps (docs/VPS_ROLLOUT_PLAN.md):
       VPS_SSH_KEY      the PRIVATE half of the deploy key (never stored on this server)
 
  3. Fill in the remaining values in $ROOT/.env (Resend, Cloudinary, Duffel, mail ...):
-      sudo -u deploy nano $ROOT/.env
+      sudo -u thrill nano $ROOT/.env
 
  4. DNS at Spaceship: A @ and A www -> $ip4 (leave MX and TXT records alone).
 EOF
