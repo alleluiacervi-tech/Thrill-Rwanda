@@ -53,7 +53,7 @@ export default async function FlightsPage({ searchParams }: { searchParams: Prom
   await requirePublicService("FLIGHT");
   const [{ publications }, live, query] = await Promise.all([getSite(), getFareBoard(), searchParams]);
   // Sample fares to review the design locally; never in production.
-  const fares: FareBoard = process.env.NODE_ENV !== "production" && query.fares === "sample" ? sampleFareBoard() : live;
+  const fares: FareBoard = process.env.NODE_ENV !== "production" && query.fares === "sample" ? sampleFareBoard(query.source === "skyscanner" ? "skyscanner" : "duffel") : live;
   const priced = fares.cheap.length > 0 || fares.deals.length > 0;
 
   return (

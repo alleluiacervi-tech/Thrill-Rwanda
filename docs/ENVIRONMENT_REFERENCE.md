@@ -19,7 +19,7 @@ Use `.env.example` for local placeholders; never commit actual `.env` files. Use
 | IMAGE_REPO | Registry path of the release images | Optional; default `ghcr.io/alleluiacervi-tech/thrill-rwanda`. VPS only |
 | BACKUP_HEARTBEAT_URL | Heartbeat pinged after each nightly backup (`/fail` on failure) | Optional; contains a check token, so treat it as a low-grade secret. VPS only |
 | GOOGLE_SITE_VERIFICATION / BING_SITE_VERIFICATION | Content value of the Search Console / Bing HTML-tag verification, rendered as meta tags | Optional; public by design |
-| FARE_WATCH_ENABLED | `true` runs the daily fare check that feeds the /flights fares board | Needs a live `DUFFEL_ACCESS_TOKEN` and `DUFFEL_ALLOW_LIVE=true`; sandbox fares are never stored |
+| SKYSCANNER_API_KEY / SKYSCANNER_MARKET / SKYSCANNER_CURRENCY | Skyscanner Indicative Prices key for the /flights fares board (market defaults to UK, currency to USD) | Key secret, from the Skyscanner partner programme. The source itself (Off, Duffel, Skyscanner) is chosen in Admin → Fares; Duffel needs a live token and `DUFFEL_ALLOW_LIVE=true` |
 | RESEND_API_KEY / EMAIL_FROM | Email adapter and approved sender | API key secret; real domain/inbox validation required |
 | URUBUTOPAY_ENABLED / URUBUTOPAY_ENVIRONMENT / URUBUTOPAY_LIVE_APPROVED | UrubutoPay collection gates | Default off; live requires production identity and saved Admin routing approval |
 | URUBUTOPAY_API_KEY / URUBUTOPAY_MERCHANT_CODE / URUBUTOPAY_SERVICE_CODE | UrubutoPay merchant authentication | Server-side; separate merchant keys and services per environment |

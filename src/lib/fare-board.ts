@@ -1,5 +1,7 @@
 import { db } from "@/lib/db";
 import { allDestinations, type Destination } from "@/lib/flight-destinations";
+import type { FareSource } from "@/lib/fare-sources";
+import { getFareSource } from "@/lib/fare-watch";
 import { bestDeals, cheapestFares, formatFare, HISTORY_DAYS, trendingDestinations, type FareRow } from "@/lib/fare-board-rules";
 
 /** One row on the board, ready to render: no Dates, so it crosses to the client as is. */
@@ -20,9 +22,11 @@ export type FareBoard = {
   trending: { place: Destination; rank: number; fare?: BoardFare }[];
   /** When the newest fare on the board was found, "2026-11-24". */
   checkedOn: string | null;
+  /** Where the prices came from, for the footnote and any credit the source requires. */
+  source: FareSource;
 };
 
-const EMPTY: FareBoard = { cheap: [], deals: [], trending: [], checkedOn: null };
+const EMPTY: FareBoard = { cheap: [], deals: [], trending: [], checkedOn: null, source: "off" };
 const byCode = new Map(allDestinations.map((place) => [place.code, place]));
 
 function toBoard(row: FareRow, note?: string): BoardFare | null {
@@ -42,9 +46,13 @@ function toBoard(row: FareRow, note?: string): BoardFare | null {
 export async function getFareBoard(now = new Date()): Promise<FareBoard> {
   try {
     const since = new Date(now.getTime() - HISTORY_DAYS * 86_400_000);
+    // Only the source chosen in Admin → Fares; switched off, no price shows at all.
+    const source = await getFareSource();
     const [rows, enquiries] = await Promise.all([
-      db.fareSnapshot.findMany({
-        where: { checkedAt: { gte: since } },
+      source === "off"
+        ? Promise.resolve([])
+        : db.fareSnapshot.findMany({
+        where: { source, checkedAt: { gte: since } },
         select: { destination: true, departureDate: true, currency: true, totalMinor: true, airline: true, stops: true, checkedAt: true },
       }),
       db.enquiry.findMany({ where: { service: "FLIGHT", createdAt: { gte: since } }, select: { details: true } }),
@@ -62,7 +70,7 @@ export async function getFareBoard(now = new Date()): Promise<FareBoard> {
       .map((place, i) => ({ place, rank: i + 1, fare: fareFor.get(place.code) }));
     const newest = cheapRows.reduce<Date | null>((max, row) => (!max || row.checkedAt > max ? row.checkedAt : max), null);
 
-    return { cheap: cheap.slice(0, 8), deals: deals.slice(0, 8), trending, checkedOn: newest?.toISOString().slice(0, 10) ?? null };
+    return { cheap: cheap.slice(0, 8), deals: deals.slice(0, 8), trending, checkedOn: newest?.toISOString().slice(0, 10) ?? null, source };
   } catch {
     return EMPTY;
   }

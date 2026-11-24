@@ -1,8 +1,9 @@
 import { runObservedWorker } from "@/lib/worker-health";
-import { fareWatchState, runFareWatch } from "@/lib/fare-watch";
+import { getFareSource, runFareWatch } from "@/lib/fare-watch";
 
-// Daily fare check for the public fares board (src/lib/fare-watch.ts).
-// Called by the VPS scheduler with "Authorization: Bearer <CRON_SECRET>".
+// Daily fare check for the public fares board (src/lib/fare-watch.ts), from the
+// source chosen in Admin → Fares. Called by the VPS scheduler with
+// "Authorization: Bearer <CRON_SECRET>".
 
 export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
@@ -14,9 +15,9 @@ export async function GET(request: Request) {
   if (request.headers.get("authorization") !== `Bearer ${secret}`) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
-  const state = fareWatchState();
-  if (!state.ok) return Response.json({ skipped: state.reason });
+  const source = await getFareSource();
+  if (source === "off") return Response.json({ skipped: "Fares are switched off in Admin → Fares." });
 
-  const saved = await runObservedWorker("fare-watch", () => runFareWatch(), (value) => value);
-  return Response.json({ saved });
+  const result = await runObservedWorker("fare-watch", () => runFareWatch(new Date(), source), (value) => value.saved);
+  return Response.json(result);
 }
