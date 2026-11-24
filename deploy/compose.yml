@@ -10,7 +10,11 @@
 
 name: thrill
 
-x-database-url: &database-url "postgresql://thrill:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/thrill_rwanda"
+# sslmode=disable: "db" is a container on this compose project's private
+# network, so traffic never leaves the server, and the Postgres image serves
+# no TLS. Without it the app's pg pool treats "db" as off-box, demands TLS,
+# and every query fails (src/lib/db-adapter.ts).
+x-database-url: &database-url "postgresql://thrill:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/thrill_rwanda?sslmode=disable"
 
 x-hardened: &hardened
   security_opt: ["no-new-privileges:true"]

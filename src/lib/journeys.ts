@@ -36,7 +36,7 @@ export const journeyImages = {
   // The one stand-in left: a lodge interior, until there is a photograph of one.
   lodge: photo("photo-1779216175784-a67b6da108bb"),
   honeymoon: "/media/photos/lake-kivu-islands.jpeg",
-  cityTour: "/media/photos/kigali-skyline.jpg",
+  cityTour: "/media/photos/kigali-city-centre-aerial.png",
   cityCentre: "/media/photos/kigali-convention-centre-day.jpg",
   safari: "/media/photos/silverback-bamboo.jpg",
   flights: "/media/photos/rwandair-takeoff.jpg",
@@ -200,7 +200,7 @@ export const collections: Collection[] = [
     titleEm: "its own story.",
     lede: "A guided day through Kigali's hills: its history, its markets, its art and its coffee, with someone who lives here.",
     image: journeyImages.cityTour,
-    imagePosition: "center 45%",
+    imagePosition: "center 50%",
     facts: [
       { label: "How it is bought", value: "Written quote" },
       { label: "Length", value: "Half or full day" },
