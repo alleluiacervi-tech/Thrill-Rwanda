@@ -1,5 +1,6 @@
+import { aviasalesLink, aviasalesLinks } from "@/lib/aviasales";
 import { db } from "@/lib/db";
-import { allDestinations, type Destination } from "@/lib/flight-destinations";
+import { allDestinations, KIGALI, type Destination } from "@/lib/flight-destinations";
 import type { FareSource } from "@/lib/fare-sources";
 import { getFareSource, POPULAR_KEY } from "@/lib/fare-watch";
 import { bestDeals, cheapestFares, formatFare, HISTORY_DAYS, manualFares, trendingDestinations, type FareRow } from "@/lib/fare-board-rules";
@@ -14,6 +15,8 @@ export type BoardFare = {
   stops: number;
   /** "18% below this route's 30-day average", for deals only. */
   note?: string;
+  /** Aviasales' search for this route and day, with our partner marker. Aviasales prices only, never the desk's. */
+  bookUrl?: string;
 };
 
 export type FareBoard = {
@@ -32,10 +35,11 @@ const EMPTY: FareBoard = { cheap: [], deals: [], trending: [], popular: [], chec
 const POPULAR_MAX_AGE_DAYS = 7;
 const byCode = new Map(allDestinations.map((place) => [place.code, place]));
 
-function toBoard(row: FareRow, note?: string): BoardFare | null {
+function toBoard(row: FareRow, note?: string, bookUrl?: string | null): BoardFare | null {
   const place = byCode.get(row.destination);
   if (!place) return null;
   return {
+    ...(bookUrl ? { bookUrl } : {}),
     place,
     date: row.departureDate.toISOString().slice(0, 10),
     price: formatFare(row.totalMinor, row.currency),
@@ -66,12 +70,19 @@ export async function getFareBoard(now = new Date()): Promise<FareBoard> {
     const desk = manualFares(deskRows, now);
     const deskCodes = new Set(desk.cheap.map((row) => row.destination));
     const cheapRows = [...desk.cheap, ...cheapestFares(rows, now).filter((row) => !deskCodes.has(row.destination))];
-    const cheap = cheapRows.map((row) => toBoard(row)).filter((row): row is BoardFare => row !== null);
+    // Aviasales found these prices, so a traveller who would rather book there
+    // can, through our partner link. The desk's own fares are sold by the desk.
+    const links = source === "travelpayouts" ? aviasalesLinks() : null;
+    const bookUrl = (row: FareRow, placement: string) =>
+      links && !deskCodes.has(row.destination)
+        ? aviasalesLink(links, { origin: KIGALI.code, destination: row.destination, date: row.departureDate.toISOString().slice(0, 10), placement })
+        : null;
+    const cheap = cheapRows.map((row) => toBoard(row, undefined, bookUrl(row, "fares_cheap"))).filter((row): row is BoardFare => row !== null);
     const deals = [
       ...desk.deals.map((row) => toBoard(row, row.dealNote ?? undefined)),
       ...bestDeals(rows, now)
         .filter((deal) => !deskCodes.has(deal.destination))
-        .map((deal) => toBoard(deal, `${Math.round(deal.below * 100)}% below this route's ${HISTORY_DAYS}-day average`)),
+        .map((deal) => toBoard(deal, `${Math.round(deal.below * 100)}% below this route's ${HISTORY_DAYS}-day average`, bookUrl(deal, "fares_deals"))),
     ].filter((row): row is BoardFare => row !== null);
     const fareFor = new Map(cheap.map((fare) => [fare.place.code, fare]));
     const trending = trendingDestinations(enquiries.map((e) => e.details))
