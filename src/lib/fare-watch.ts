@@ -23,7 +23,10 @@ import type { DuffelOffer, DuffelOfferRequest } from "@/lib/duffel/types";
 import { isFareSource, sourceReadiness, type FareSource } from "@/lib/fare-sources";
 import { KIGALI } from "@/lib/flight-destinations";
 import { indicativeCheapest, skyscannerConfig } from "@/lib/skyscanner";
-import { cachedCheapest, travelpayoutsConfig } from "@/lib/travelpayouts";
+import { cachedCheapest, popularDestinations, travelpayoutsConfig } from "@/lib/travelpayouts";
+
+/** Where the daily popular-destinations list is kept (src/lib/fare-board.ts reads it). */
+export const POPULAR_KEY = `popular:${KIGALI.code}`;
 
 export const WATCHED = ["NBO", "EBB", "DAR", "ZNZ", "ADD", "JNB", "LOS", "DXB", "DOH", "IST", "LHR", "BRU"] as const;
 const OFFSETS_DAYS = [14, 21, 30, 45, 63];
@@ -179,6 +182,19 @@ export async function runFareWatch(now = new Date(), chosen?: FareSource): Promi
     }
   }
   await Promise.all(Array.from({ length: CONCURRENCY }, worker));
+  if (source === "travelpayouts") {
+    // Where travellers search to fly from Kigali: the Trending tab's fallback.
+    try {
+      const config = travelpayoutsConfig();
+      const codes = config ? await popularDestinations(config, KIGALI.code) : [];
+      if (codes.length) {
+        const data = { codes, fetchedAt: now.toISOString() };
+        await db.fareInsight.upsert({ where: { key: POPULAR_KEY }, update: { data }, create: { key: POPULAR_KEY, data } });
+      }
+    } catch {
+      // The fares above still count; yesterday's list stays.
+    }
+  }
   await db.fareSnapshot.deleteMany({ where: { checkedAt: { lt: new Date(now.getTime() - KEEP_DAYS * 86_400_000) } } });
   return result;
 }

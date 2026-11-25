@@ -73,6 +73,32 @@ function Path({ label }: { label?: string }) {
   );
 }
 
+/**
+ * Guide prices for the departure calendar: the cheapest one-way fare seen per
+ * day between two airports (/api/fares/calendar). Empty until both ends are
+ * airports, when fares are off, or when nothing is known for the route.
+ */
+function useFareCalendar(origin: string, destination: string) {
+  const from = airportCodeOf(origin);
+  const to = airportCodeOf(destination);
+  const key = from && to && from !== to ? `${from}-${to}` : "";
+  const [loaded, setLoaded] = useState<{ key: string; prices: Record<string, string> }>({ key: "", prices: {} });
+  useEffect(() => {
+    if (!key) return;
+    const controller = new AbortController();
+    fetch(`/api/fares/calendar?from=${from}&to=${to}`, { signal: controller.signal })
+      .then((response) => (response.ok ? response.json() : null))
+      .then((body: { currency: string | null; days: Record<string, { price: number }> } | null) => {
+        if (!body?.currency) return setLoaded({ key, prices: {} });
+        const money = new Intl.NumberFormat("en-US", { style: "currency", currency: body.currency, maximumFractionDigits: 0 });
+        setLoaded({ key, prices: Object.fromEntries(Object.entries(body.days).map(([day, fare]) => [day, money.format(Math.ceil(fare.price))])) });
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [key, from, to]);
+  return key && loaded.key === key ? loaded.prices : undefined;
+}
+
 export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: string; today: string }) {
   const [state, action, pending] = useActionState(submitFlightEnquiry, initial);
   const [route, setRoute] = useState(initialRoute);
@@ -106,6 +132,7 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
   const tripLabel = tripTypes.find(([value]) => value === tripType)![1];
   const max = latestDate(today);
   const nights = nightsBetween(route.departureDate, route.returnDate);
+  const calendar = useFareCalendar(route.origin, route.destination);
   const recentRaw = useSyncExternalStore(subscribeRecent, readRecent, () => "");
   const recent = useMemo(() => {
     try {
@@ -275,6 +302,8 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
           <DropField id="flight-departure" icon={<CalendarDays />} label="Departure" title="Choose your departure date"
             value={fieldDate(route.departureDate)} placeholder="Add date" open={panel === "dep"} onOpenChange={toggle("dep")}>
             <Calendar value={route.departureDate} min={today} max={max}
+              prices={calendar}
+              priceNote="Lowest one-way economy fare for one adult seen in recent searches, as a guide. The desk checks and confirms your fare in writing."
               rangeEnd={tripType === "RETURN" && route.returnDate ? route.returnDate : undefined}
               onPick={day => {
                 setRoute(old => ({ ...old, departureDate: day, returnDate: old.returnDate && old.returnDate < day ? "" : old.returnDate }));

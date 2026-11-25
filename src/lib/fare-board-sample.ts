@@ -32,5 +32,6 @@ export function sampleFareBoard(source: "duffel" | "skyscanner" = "duffel"): Far
     ],
     checkedOn: "2026-11-24",
     source,
+    popular: [],
   };
 }

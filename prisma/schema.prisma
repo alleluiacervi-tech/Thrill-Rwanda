@@ -1672,3 +1672,12 @@ model FareSnapshot {
   @@index([checkedAt])
   @@map("fare_snapshots")
 }
+
+/// Small facts fetched for the flights page, one row per key, e.g.
+/// "popular:KGL" = the destinations travellers search for from Kigali.
+model FareInsight {
+  key       String   @id
+  data      Json
+  updatedAt DateTime @updatedAt @map("updated_at") @db.Timestamptz
+  @@map("fare_insights")
+}

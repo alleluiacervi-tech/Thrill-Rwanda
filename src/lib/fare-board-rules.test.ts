@@ -4,7 +4,7 @@ import { describe, expect, it, vi } from "vitest";
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ db: {} }));
 import { bestDeals, cheapestFares, formatFare, manualFares, trendingDestinations, type FareRow } from "./fare-board-rules";
-import { cheapestCached } from "./travelpayouts";
+import { calendarDays, cheapestCached } from "./travelpayouts";
 import { cheapestOffer, plannedSearches, WATCHED } from "./fare-watch";
 import { sourceReadiness } from "./fare-sources";
 import { cheapestQuote, type IndicativeResponse } from "./skyscanner";
@@ -201,5 +201,24 @@ describe("Travelpayouts cached prices", () => {
     };
     expect(cheapestCached(body, "NBO", now)).toEqual({ departureDate: "2026-12-18", amount: 215, airline: "RwandAir", stops: 0 });
     expect(cheapestCached({ success: false, data: [] }, "NBO", now)).toBeNull();
+  });
+});
+
+describe("price calendar", () => {
+  it("keeps one cheapest future price per day, with the airline's name", () => {
+    const days = calendarDays({
+      success: true,
+      data: {
+        "2026-12-07": { price: 238, airline: "KQ", transfers: 0, departure_at: "2026-12-07T08:50:00+02:00" },
+        "2026-12-12": { price: 329, airline: "WB", transfers: 1 },
+        "2026-11-20": { price: 99, airline: "WB", transfers: 0 },
+        "2026-12-13": { price: 0, airline: "WB", transfers: 0 },
+      },
+    }, now);
+    expect(days).toEqual({
+      "2026-12-07": { price: 238, airline: "Kenya Airways", stops: 0 },
+      "2026-12-12": { price: 329, airline: "RwandAir", stops: 1 },
+    });
+    expect(calendarDays({ success: false }, now)).toEqual({});
   });
 });

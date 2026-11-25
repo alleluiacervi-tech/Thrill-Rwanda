@@ -65,6 +65,8 @@ export function Calendar({
   rangeStart,
   rangeEnd,
   onPick,
+  prices,
+  priceNote,
 }: {
   value: string;
   min: string;
@@ -72,6 +74,10 @@ export function Calendar({
   rangeStart?: string;
   rangeEnd?: string;
   onPick: (iso: string) => void;
+  /** Lowest known fare per day, already formatted ("$238"); the cheapest is marked. */
+  prices?: Record<string, string>;
+  /** What the prices are, shown under the months. */
+  priceNote?: string;
 }) {
   const months = useMonthsShown();
   const initial = value || (rangeStart && rangeStart > min ? rangeStart : min);
@@ -94,6 +100,14 @@ export function Calendar({
   const tabbable = focus >= view && focus < viewEnd ? focus : view < min ? min : view;
   const firstMonth = monthOf(min);
   const lastMonth = addMonths(monthOf(max), -(months - 1));
+  const priced = !!prices && Object.keys(prices).length > 0;
+  // The cheapest day in view, compared on the digits of the formatted price.
+  const amount = (label: string) => Number(label.replace(/[^0-9.]/g, ""));
+  const inView = priced ? Object.entries(prices!).filter(([day]) => day >= view && day < viewEnd && day >= min && day <= max) : [];
+  const cheapest = inView.length ? inView.reduce((best, entry) => (amount(entry[1]) < amount(best[1]) ? entry : best))[0] : undefined;
+  // The cheapest bookable day anywhere, so a phone showing one month can jump to it.
+  const bookable = priced ? Object.entries(prices!).filter(([day]) => day >= min && day <= max) : [];
+  const best = bookable.length ? bookable.reduce((a, b) => (amount(b[1]) < amount(a[1]) ? b : a)) : undefined;
 
   function move(to: string) {
     const next = to < min ? min : to > max ? max : to;
@@ -141,7 +155,7 @@ export function Calendar({
             <div key={month} className={s.month} role="grid" aria-label={monthTitle.format(toDate(month))}>
               <p className={s.monthTitle} aria-hidden>{monthTitle.format(toDate(month))}</p>
               <div className={s.weekdays} aria-hidden>{weekdays.map((day) => <span key={day}>{day}</span>)}</div>
-              <div className={s.days}>
+              <div className={cn(s.days, priced && s.daysPriced)}>
                 {Array.from({ length: lead }, (_, j) => <span key={`blank-${j}`} aria-hidden />)}
                 {Array.from({ length }, (_, j) => {
                   const day = addDays(month, j);
@@ -155,7 +169,7 @@ export function Calendar({
                       tabIndex={day === tabbable ? 0 : -1}
                       disabled={disabled}
                       aria-pressed={day === value}
-                      aria-label={fullDate.format(toDate(day))}
+                      aria-label={`${fullDate.format(toDate(day))}${prices?.[day] && !disabled ? `, from ${prices[day]}${day === cheapest ? ", cheapest shown" : ""}` : ""}`}
                       className={cn(
                         s.day,
                         edge && s.dayEdge,
@@ -163,12 +177,14 @@ export function Calendar({
                         lo && hi && lo !== hi && day === hi && s.dayEnd,
                         lo && hi && day > lo && day < hi && s.dayIn,
                         day === min && s.dayToday,
+                        day === cheapest && s.dayCheapest,
                       )}
                       onMouseEnter={() => setHover(day)}
                       onFocus={() => setFocus(day)}
                       onClick={() => onPick(day)}
                     >
                       {j + 1}
+                      {priced ? <span className={s.dayPrice} aria-hidden>{!disabled ? (prices![day] ?? "") : ""}</span> : null}
                     </button>
                   );
                 })}
@@ -177,6 +193,16 @@ export function Calendar({
           );
         })}
       </div>
+      {priced && priceNote ? (
+        <p className={s.calendarNote}>
+          {best ? (
+            <button type="button" className={s.calendarBest} onClick={() => { move(best[0]); onPick(best[0]); }}>
+              Cheapest seen: {fullDate.format(toDate(best[0]))}, from {best[1]}
+            </button>
+          ) : null}
+          {priceNote}
+        </p>
+      ) : null}
     </div>
   );
 }
