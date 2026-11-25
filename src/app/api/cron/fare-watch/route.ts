@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     return Response.json({ error: "Unauthorized" }, { status: 401 });
   }
   const source = await getFareSource();
-  if (source === "off") return Response.json({ skipped: "Fares are switched off in Admin → Fares." });
+  if (source === "off" || source === "manual") return Response.json({ skipped: `Nothing to fetch: the price source is ${source}.` });
 
   const result = await runObservedWorker("fare-watch", () => runFareWatch(new Date(), source), (value) => value.saved);
   return Response.json(result);

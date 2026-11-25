@@ -129,7 +129,7 @@ export default async function FlightsPage({ searchParams }: { searchParams: Prom
               </h2>
               <p className="mt-5 text-[1.0625rem] leading-relaxed text-forest-100/80">
                 {priced
-                  ? "Fares our daily check found this week. Choose one and we fill in the search above with the city and date; the desk then checks it for you."
+                  ? "Recent fares from Kigali, checked by our desk or our daily fare check. Choose one and we fill in the search above with the city and date; the desk then checks it for you."
                   : "The routes our desk is asked for most. Choose a city on the board or the globe and we fill in the search above; pick your dates and we do the rest."}
               </p>
             </div>

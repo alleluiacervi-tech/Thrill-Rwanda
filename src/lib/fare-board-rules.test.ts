@@ -3,7 +3,8 @@ import { describe, expect, it, vi } from "vitest";
 // The daily check talks to Duffel and the database; these tests cover only its pure parts.
 vi.mock("server-only", () => ({}));
 vi.mock("@/lib/db", () => ({ db: {} }));
-import { bestDeals, cheapestFares, formatFare, trendingDestinations, type FareRow } from "./fare-board-rules";
+import { bestDeals, cheapestFares, formatFare, manualFares, trendingDestinations, type FareRow } from "./fare-board-rules";
+import { cheapestCached } from "./travelpayouts";
 import { cheapestOffer, plannedSearches, WATCHED } from "./fare-watch";
 import { sourceReadiness } from "./fare-sources";
 import { cheapestQuote, type IndicativeResponse } from "./skyscanner";
@@ -164,5 +165,41 @@ describe("Skyscanner cached prices", () => {
     const elsewhere = quote("70", 18, { outboundLeg: { ...quote("70", 18).outboundLeg, destinationPlaceId: "ebb" } });
     expect(cheapestQuote(body({ old, gone, elsewhere, ok: quote("400", 18) }), "NBO", now)?.amount).toBe(400);
     expect(cheapestQuote({}, "NBO", now)).toBeNull();
+  });
+});
+
+describe("desk fares", () => {
+  const desk = (destination: string, usd: number, entered: number, until: number, dealNote: string | null = null) => ({
+    ...fare(destination, usd, entered),
+    validUntil: new Date(now.getTime() + until * 86_400_000),
+    dealNote,
+  });
+
+  it("shows each route's latest valid fare, even just one, and lists deal lines as deals", () => {
+    const rows = [desk("NBO", 300, 3, 5), desk("NBO", 280, 1, 5, "Holiday special"), desk("DXB", 500, 0, -1)];
+    const { cheap, deals } = manualFares(rows, now);
+    expect(cheap.map((r) => [r.destination, r.totalMinor / 100])).toEqual([["NBO", 280]]);
+    expect(deals.map((r) => r.dealNote)).toEqual(["Holiday special"]);
+  });
+
+  it("drops a fare whose flight has left", () => {
+    expect(manualFares([{ ...desk("NBO", 300, 0, 5), departureDate: new Date("2026-11-20T00:00:00Z") }], now).cheap).toEqual([]);
+  });
+});
+
+describe("Travelpayouts cached prices", () => {
+  it("takes the cheapest future fare to the airport asked for, naming the airline", () => {
+    const body = {
+      success: true,
+      currency: "usd",
+      data: [
+        { price: 320, airline: "KQ", departure_at: "2026-12-10T08:00:00+02:00", transfers: 1, destination: "NBO" },
+        { price: 215, airline: "WB", departure_at: "2026-12-18T06:30:00+02:00", transfers: 0, destination: "NBO" },
+        { price: 99, airline: "WB", departure_at: "2026-11-20T06:30:00+02:00", transfers: 0, destination: "NBO" },
+        { price: 50, airline: "UR", departure_at: "2026-12-18T06:30:00+02:00", transfers: 0, destination: "EBB" },
+      ],
+    };
+    expect(cheapestCached(body, "NBO", now)).toEqual({ departureDate: "2026-12-18", amount: 215, airline: "RwandAir", stops: 0 });
+    expect(cheapestCached({ success: false, data: [] }, "NBO", now)).toBeNull();
   });
 });

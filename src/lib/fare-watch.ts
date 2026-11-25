@@ -1,6 +1,9 @@
 /**
  * The daily fare check behind the public fares board.
  *
+ * Fares the desk types in (source "manual") are not fetched; they are shown
+ * alongside whichever source is chosen (src/lib/fare-board.ts).
+ *
  * Once a day it asks the source chosen in Admin → Fares for one-way economy
  * fares for one adult from Kigali to the destinations below, and stores the
  * cheapest found for each.
@@ -8,6 +11,8 @@
  * - Duffel: a live search for one date per destination, rotating 2 to 9 weeks
  *   ahead, so a dozen searches a day build a picture of every route over a week.
  *   Only with a LIVE token: sandbox offers are invented and never shown.
+ * - Travelpayouts: Aviasales' cached prices from recent searches, for the
+ *   month of that date; cheapest one found.
  * - Skyscanner: cached prices for the month of that same date; the cheapest
  *   quote Skyscanner found in the last 4 days, stored with the time it found it.
  */
@@ -18,6 +23,7 @@ import type { DuffelOffer, DuffelOfferRequest } from "@/lib/duffel/types";
 import { isFareSource, sourceReadiness, type FareSource } from "@/lib/fare-sources";
 import { KIGALI } from "@/lib/flight-destinations";
 import { indicativeCheapest, skyscannerConfig } from "@/lib/skyscanner";
+import { cachedCheapest, travelpayoutsConfig } from "@/lib/travelpayouts";
 
 export const WATCHED = ["NBO", "EBB", "DAR", "ZNZ", "ADD", "JNB", "LOS", "DXB", "DOH", "IST", "LHR", "BRU"] as const;
 const OFFSETS_DAYS = [14, 21, 30, 45, 63];
@@ -102,6 +108,24 @@ function skyscannerSearch(now: Date): Search {
   };
 }
 
+function travelpayoutsSearch(now: Date): Search {
+  const config = travelpayoutsConfig();
+  if (!config) throw new Error("Travelpayouts is not configured");
+  return async (destination, departureDate) => {
+    const fare = await cachedCheapest(config, KIGALI.code, destination, departureDate.slice(0, 7), now);
+    if (!fare) return null;
+    return {
+      departureDate: fare.departureDate,
+      currency: config.currency,
+      totalMinor: toMinor(fare.amount.toFixed(2), config.currency),
+      airline: fare.airline,
+      stops: fare.stops,
+      // The cache gives no time of its own; this is when we read it.
+      checkedAt: now,
+    };
+  };
+}
+
 export type FareWatchResult = { source: FareSource; saved: number; searched: number; failed: number; skipped?: string };
 
 /** Runs today's checks against the chosen source. Never throws for one route failing. */
@@ -109,9 +133,10 @@ export async function runFareWatch(now = new Date(), chosen?: FareSource): Promi
   const source = chosen ?? (await getFareSource());
   const ready = sourceReadiness(source);
   if (source === "off") return { source, saved: 0, searched: 0, failed: 0, skipped: "Fares are switched off in Admin → Fares." };
+  if (source === "manual") return { source, saved: 0, searched: 0, failed: 0, skipped: "Fares come from the desk: add them in Admin → Flight fares." };
   if (!ready.ok) return { source, saved: 0, searched: 0, failed: 0, skipped: ready.reason };
 
-  const search = source === "duffel" ? duffelSearch(now) : skyscannerSearch(now);
+  const search = source === "duffel" ? duffelSearch(now) : source === "skyscanner" ? skyscannerSearch(now) : travelpayoutsSearch(now);
   const queue = plannedSearches(now);
   const result: FareWatchResult = { source, saved: 0, searched: queue.length, failed: 0 };
 

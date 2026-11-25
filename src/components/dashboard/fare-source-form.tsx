@@ -2,8 +2,9 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, RefreshCw } from "lucide-react";
-import { runFareCheckNow, setFareSource, type FareActionState } from "@/app/actions/fares";
-import { FormBanner } from "@/components/dashboard/listing-fields";
+import { addDeskFare, runFareCheckNow, setFareSource, type FareActionState } from "@/app/actions/fares";
+import { FormBanner, Labelled, fieldCls } from "@/components/dashboard/listing-fields";
+import { destinationRegions } from "@/lib/flight-destinations";
 import { StatusPill } from "@/components/dashboard/dash-ui";
 import { Button } from "@/components/ui/button";
 import type { FareSource } from "@/lib/fare-sources";
@@ -36,7 +37,7 @@ export function FareSourceForm({ current, options }: { current: FareSource; opti
   const [state, action, pending] = useActionState(setFareSource, initial);
   return (
     <form action={action} className="space-y-4">
-      <fieldset className="grid gap-3 lg:grid-cols-3">
+      <fieldset className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
         <legend className="sr-only">Price source</legend>
         {options.map((option) => (
           <label
@@ -93,6 +94,60 @@ export function RunFareCheck({ disabled }: { disabled: boolean }) {
         </Button>
         {pending ? <span className="text-sm text-[var(--ink-muted)]">This can take a couple of minutes. Keep this page open.</span> : null}
       </div>
+    </form>
+  );
+}
+
+/** A fare the desk checked itself: shown on /flights until "show until", beside fetched fares. */
+export function DeskFareForm({ today }: { today: string }) {
+  const [state, action, pending] = useActionState(addDeskFare, initial);
+  return (
+    <form action={action} className="space-y-4" key={state.status === "done" ? state.message : "form"}>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Labelled label="Destination">
+          <select name="destination" required className={fieldCls} defaultValue="">
+            <option value="" disabled>Choose a city</option>
+            {destinationRegions.map((region) => (
+              <optgroup key={region.id} label={region.label}>
+                {region.places.map((place) => (
+                  <option key={place.code} value={place.code}>{place.city}</option>
+                ))}
+              </optgroup>
+            ))}
+          </select>
+        </Labelled>
+        <Labelled label="Departure date">
+          <input type="date" name="departureDate" required min={today} className={fieldCls} />
+        </Labelled>
+        <Labelled label="One-way fare" hint="Economy, one adult, all taxes">
+          <span className="flex gap-2">
+            <input type="number" name="price" required min="1" step="any" inputMode="decimal" placeholder="245" className={cn(fieldCls, "min-w-0")} />
+            <select name="currency" className={cn(fieldCls, "w-24 shrink-0 px-3")} defaultValue="USD">
+              <option>USD</option>
+              <option>RWF</option>
+              <option>EUR</option>
+            </select>
+          </span>
+        </Labelled>
+        <Labelled label="Show until" hint="It leaves the board after this day">
+          <input type="date" name="validUntil" required min={today} className={fieldCls} />
+        </Labelled>
+        <Labelled label="Airline">
+          <input name="airline" maxLength={60} placeholder="RwandAir" className={fieldCls} />
+        </Labelled>
+        <Labelled label="Stops">
+          <select name="stops" className={fieldCls} defaultValue="0">
+            <option value="0">Nonstop</option>
+            <option value="1">1 stop</option>
+            <option value="2">2 stops</option>
+          </select>
+        </Labelled>
+        <Labelled label="Deal line (optional)" hint="Also lists it under Best deals" className="sm:col-span-2">
+          <input name="dealNote" maxLength={60} placeholder="Holiday special, 12 seats left" className={fieldCls} />
+        </Labelled>
+      </div>
+      <Done state={state} />
+      <Button type="submit" disabled={pending}>{pending ? "Adding…" : "Add fare"}</Button>
     </form>
   );
 }

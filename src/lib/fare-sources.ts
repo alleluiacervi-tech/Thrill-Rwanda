@@ -5,13 +5,15 @@
  */
 import { duffelAvailability } from "@/lib/duffel/config";
 
-export const FARE_SOURCES = ["off", "duffel", "skyscanner"] as const;
+export const FARE_SOURCES = ["off", "manual", "travelpayouts", "duffel", "skyscanner"] as const;
 export type FareSource = (typeof FARE_SOURCES)[number];
 
 export const isFareSource = (value: unknown): value is FareSource => FARE_SOURCES.includes(value as FareSource);
 
 export const FARE_SOURCE_LABEL: Record<FareSource, string> = {
   off: "Off",
+  manual: "Our desk only",
+  travelpayouts: "Travelpayouts",
   duffel: "Duffel",
   skyscanner: "Skyscanner",
 };
@@ -20,7 +22,12 @@ export type SourceReadiness = { ok: true } | { ok: false; reason: string };
 
 /** Whether a source can run on this server, and if not, what is missing, in words the admin can act on. */
 export function sourceReadiness(source: FareSource, env: Record<string, string | undefined> = process.env): SourceReadiness {
-  if (source === "off") return { ok: true };
+  if (source === "off" || source === "manual") return { ok: true };
+  if (source === "travelpayouts") {
+    return env.TRAVELPAYOUTS_TOKEN?.trim()
+      ? { ok: true }
+      : { ok: false, reason: "Needs TRAVELPAYOUTS_TOKEN in the server settings (Travelpayouts dashboard, API token)." };
+  }
   if (source === "skyscanner") {
     return env.SKYSCANNER_API_KEY?.trim()
       ? { ok: true }

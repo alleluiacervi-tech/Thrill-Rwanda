@@ -43,6 +43,13 @@ destinations people ask for, as before.
   - All four tabs are always visible; a tab without data lists the popular routes (with distance from Kigali) or explains what it will show.
   - *Accept:* tests for readiness and Skyscanner quote parsing; the switch changes /flights at once; typecheck, lint, tests and build pass.
 
+- [x] **6. Desk fares and Travelpayouts.**
+  - Sources: Off, Our desk only, Travelpayouts, Duffel, Skyscanner. Desk fares show beside any API source and win on their route; Off hides everything.
+  - The desk adds a fare in Admin → Flight fares: city, date, price and currency, airline, stops, "show until", and an optional deal line that also lists it under Best deals.
+  - Travelpayouts adapter (`src/lib/travelpayouts.ts`, Aviasales v3 `prices_for_dates`): cheapest cached one-way fare per route for the month.
+  - Migration `20261125150000_manual_fares` (additive): `valid_until`, `deal_note`.
+  - *Not yet seen:* a real Travelpayouts response (the exact v3 response fields could not be read from their docs; the first "Check fares now" confirms them).
+
 ## Definitions (what the board claims)
 
 | Tab | Shows | Shown when |

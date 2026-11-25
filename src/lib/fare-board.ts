@@ -2,7 +2,7 @@ import { db } from "@/lib/db";
 import { allDestinations, type Destination } from "@/lib/flight-destinations";
 import type { FareSource } from "@/lib/fare-sources";
 import { getFareSource } from "@/lib/fare-watch";
-import { bestDeals, cheapestFares, formatFare, HISTORY_DAYS, trendingDestinations, type FareRow } from "@/lib/fare-board-rules";
+import { bestDeals, cheapestFares, formatFare, HISTORY_DAYS, manualFares, trendingDestinations, type FareRow } from "@/lib/fare-board-rules";
 
 /** One row on the board, ready to render: no Dates, so it crosses to the client as is. */
 export type BoardFare = {
@@ -46,23 +46,29 @@ function toBoard(row: FareRow, note?: string): BoardFare | null {
 export async function getFareBoard(now = new Date()): Promise<FareBoard> {
   try {
     const since = new Date(now.getTime() - HISTORY_DAYS * 86_400_000);
-    // Only the source chosen in Admin → Fares; switched off, no price shows at all.
+    // Switched off, no price shows at all. Otherwise the desk's own fares, plus
+    // the fetched ones from the source chosen in Admin → Flight fares.
     const source = await getFareSource();
-    const [rows, enquiries] = await Promise.all([
-      source === "off"
-        ? Promise.resolve([])
-        : db.fareSnapshot.findMany({
-        where: { source, checkedAt: { gte: since } },
-        select: { destination: true, departureDate: true, currency: true, totalMinor: true, airline: true, stops: true, checkedAt: true },
-      }),
+    const select = { destination: true, departureDate: true, currency: true, totalMinor: true, airline: true, stops: true, checkedAt: true, validUntil: true, dealNote: true } as const;
+    const fetching = source !== "off" && source !== "manual";
+    const [deskRows, rows, enquiries] = await Promise.all([
+      source === "off" ? Promise.resolve([]) : db.fareSnapshot.findMany({ where: { source: "manual", validUntil: { gte: now } }, select }),
+      fetching ? db.fareSnapshot.findMany({ where: { source, checkedAt: { gte: since } }, select }) : Promise.resolve([]),
       db.enquiry.findMany({ where: { service: "FLIGHT", createdAt: { gte: since } }, select: { details: true } }),
     ]);
 
-    const cheapRows = cheapestFares(rows, now);
+    // The desk's fares stand on their own word and win on their route; fetched
+    // ones go through the freshness and deal rules.
+    const desk = manualFares(deskRows, now);
+    const deskCodes = new Set(desk.cheap.map((row) => row.destination));
+    const cheapRows = [...desk.cheap, ...cheapestFares(rows, now).filter((row) => !deskCodes.has(row.destination))];
     const cheap = cheapRows.map((row) => toBoard(row)).filter((row): row is BoardFare => row !== null);
-    const deals = bestDeals(rows, now)
-      .map((deal) => toBoard(deal, `${Math.round(deal.below * 100)}% below this route's ${HISTORY_DAYS}-day average`))
-      .filter((row): row is BoardFare => row !== null);
+    const deals = [
+      ...desk.deals.map((row) => toBoard(row, row.dealNote ?? undefined)),
+      ...bestDeals(rows, now)
+        .filter((deal) => !deskCodes.has(deal.destination))
+        .map((deal) => toBoard(deal, `${Math.round(deal.below * 100)}% below this route's ${HISTORY_DAYS}-day average`)),
+    ].filter((row): row is BoardFare => row !== null);
     const fareFor = new Map(cheap.map((fare) => [fare.place.code, fare]));
     const trending = trendingDestinations(enquiries.map((e) => e.details))
       .map((trend) => byCode.get(trend.code))

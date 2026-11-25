@@ -1,12 +1,15 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { z } from "zod";
 import { db } from "@/lib/db";
 import { requireAdmin } from "@/lib/session";
 import { logActivity } from "@/lib/activity";
 import { FARE_SOURCE_LABEL, isFareSource, sourceReadiness } from "@/lib/fare-sources";
 import { getFareSource, runFareWatch } from "@/lib/fare-watch";
 import { runObservedWorker } from "@/lib/worker-health";
+import { toMinor } from "@/lib/duffel/mapping";
+import { allDestinations, KIGALI } from "@/lib/flight-destinations";
 
 export type FareActionState =
   | { status: "idle" }
@@ -17,7 +20,7 @@ export type FareActionState =
 export async function setFareSource(_prev: FareActionState, formData: FormData): Promise<FareActionState> {
   const admin = await requireAdmin();
   const source = formData.get("source");
-  if (!isFareSource(source)) return { status: "error", message: "Choose Off, Duffel or Skyscanner." };
+  if (!isFareSource(source)) return { status: "error", message: "Choose a price source." };
   const ready = sourceReadiness(source);
   if (!ready.ok) return { status: "error", message: `${FARE_SOURCE_LABEL[source]} can't be used yet. ${ready.reason}` };
 
@@ -38,7 +41,9 @@ export async function setFareSource(_prev: FareActionState, formData: FormData):
     message:
       source === "off"
         ? "Fares are off. The flights page no longer shows any price."
-        : `${FARE_SOURCE_LABEL[source]} is now the price source. The next check runs at 06:15 Kigali time, or run one now.`,
+        : source === "manual"
+          ? "The flights page now shows only the fares your desk adds below."
+          : `${FARE_SOURCE_LABEL[source]} is now the price source, beside any desk fares. The next check runs at 06:15 Kigali time, or run one now.`,
   };
 }
 
@@ -46,7 +51,7 @@ export async function setFareSource(_prev: FareActionState, formData: FormData):
 export async function runFareCheckNow(_prev: FareActionState): Promise<FareActionState> {
   await requireAdmin();
   const source = await getFareSource();
-  if (source === "off") return { status: "error", message: "Choose a price source first." };
+  if (source === "off" || source === "manual") return { status: "error", message: "Choose an API source first. Desk fares need no check." };
   try {
     const result = await runObservedWorker("fare-watch", () => runFareWatch(new Date(), source), (value) => value.saved);
     revalidatePath("/flights");
@@ -60,4 +65,68 @@ export async function runFareCheckNow(_prev: FareActionState): Promise<FareActio
   } catch {
     return { status: "error", message: "The check failed. Try again in a few minutes; if it keeps failing, check the key in the server settings." };
   }
+}
+
+/* ------------------------------------------------- fares typed in by the desk */
+
+const deskFare = z.object({
+  destination: z.enum(allDestinations.map((place) => place.code) as [string, ...string[]], { message: "Choose a destination." }),
+  departureDate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose the departure date."),
+  price: z.coerce.number({ message: "Enter the fare." }).positive("Enter the fare.").max(100_000_000, "That fare looks too high."),
+  currency: z.enum(["USD", "RWF", "EUR"]),
+  airline: z.string().trim().max(60, "Keep the airline under 60 characters."),
+  stops: z.coerce.number().int().min(0).max(3),
+  validUntil: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Choose until when the fare shows."),
+  dealNote: z.string().trim().max(60, "Keep the deal line under 60 characters.").transform((v) => v || null),
+});
+
+/** A fare the desk checked itself. It shows on /flights until its "show until" date, beside any fetched fares. */
+export async function addDeskFare(_prev: FareActionState, formData: FormData): Promise<FareActionState> {
+  const admin = await requireAdmin();
+  const parsed = deskFare.safeParse(Object.fromEntries(["destination", "departureDate", "price", "currency", "airline", "stops", "validUntil", "dealNote"].map((k) => [k, formData.get(k) ?? ""])));
+  if (!parsed.success) return { status: "error", message: parsed.error.issues[0]?.message ?? "Check the fare." };
+  const fare = parsed.data;
+  const today = new Date().toISOString().slice(0, 10);
+  if (fare.departureDate <= today) return { status: "error", message: "The departure date must be after today." };
+  if (fare.validUntil < today) return { status: "error", message: "\"Show until\" can't be in the past." };
+  if (fare.validUntil > fare.departureDate) return { status: "error", message: "\"Show until\" must be on or before the departure date." };
+
+  await db.fareSnapshot.create({
+    data: {
+      origin: KIGALI.code,
+      destination: fare.destination,
+      departureDate: new Date(`${fare.departureDate}T00:00:00Z`),
+      currency: fare.currency,
+      totalMinor: toMinor(fare.price.toFixed(fare.currency === "RWF" ? 0 : 2), fare.currency),
+      airline: fare.airline,
+      stops: fare.stops,
+      source: "manual",
+      // Shown through the end of that day in Kigali (UTC+2).
+      validUntil: new Date(`${fare.validUntil}T21:59:59Z`),
+      dealNote: fare.dealNote,
+    },
+  });
+  const city = allDestinations.find((place) => place.code === fare.destination)?.city ?? fare.destination;
+  await logActivity(admin.id, {
+    action: "settings.update",
+    area: "Settings",
+    target: "Flight fares",
+    summary: `Added a desk fare: Kigali to ${city}, ${fare.departureDate}, ${fare.currency} ${fare.price}`,
+  });
+  revalidatePath("/flights");
+  revalidatePath("/admin/fares");
+  return { status: "done", message: `Added Kigali to ${city}. It shows on the flights page until ${fare.validUntil}.` };
+}
+
+/** Takes a desk fare off the board straight away. */
+export async function removeDeskFare(formData: FormData) {
+  const admin = await requireAdmin();
+  const id = String(formData.get("id") ?? "");
+  if (!/^[0-9a-f-]{36}$/.test(id)) return;
+  const removed = await db.fareSnapshot.deleteMany({ where: { id, source: "manual" } });
+  if (removed.count) {
+    await logActivity(admin.id, { action: "settings.update", area: "Settings", target: "Flight fares", summary: "Removed a desk fare" });
+  }
+  revalidatePath("/flights");
+  revalidatePath("/admin/fares");
 }
