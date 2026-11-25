@@ -818,7 +818,7 @@ model SiteSettings {
   /// asks to avoid autoplay video unless the founder chooses it.
   heroVideo      Boolean @default(true) @map("hero_video")
 
-  /// Where the public flights board gets its prices: off | duffel | skyscanner.
+  /// Where the public flights board gets its prices: off | manual | duffel | skyscanner.
   /// Off also hides prices already stored. Keys stay in the server environment.
   fareSource     String  @default("off") @map("fare_source")
 
@@ -1660,8 +1660,12 @@ model FareSnapshot {
   airline       String   @default("")
   /// -1: connecting, number of stops not given (Skyscanner only says direct or not).
   stops         Int      @default(0)
-  /// duffel | skyscanner. The board shows only the source chosen in Admin → Fares.
+  /// manual | duffel | skyscanner. The board shows only the source chosen in Admin → Fares.
   source        String   @default("duffel")
+  /// Manual fares only: the desk's own date after which the fare leaves the board.
+  validUntil    DateTime? @map("valid_until") @db.Timestamptz
+  /// Manual fares only: a short line shown under the fare, which also lists it under Best deals.
+  dealNote      String?  @map("deal_note")
   /// When the price was found: our search time for Duffel, the quote's own time for Skyscanner.
   checkedAt     DateTime @default(now()) @map("checked_at") @db.Timestamptz
   @@index([destination, checkedAt])

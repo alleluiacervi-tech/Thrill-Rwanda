@@ -2,7 +2,8 @@ import Link from "next/link";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
 import { Panel, StatGrid, StatTile, StatusPill } from "@/components/dashboard/dash-ui";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
-import { FareSourceForm, RunFareCheck, type SourceOption } from "@/components/dashboard/fare-source-form";
+import { DeskFareForm, FareSourceForm, RunFareCheck, type SourceOption } from "@/components/dashboard/fare-source-form";
+import { removeDeskFare } from "@/app/actions/fares";
 import { db } from "@/lib/db";
 import { formatFare } from "@/lib/fare-board-rules";
 import { FARE_SOURCE_LABEL, sourceReadiness } from "@/lib/fare-sources";
@@ -17,17 +18,27 @@ const OPTIONS: Omit<SourceOption, "ready" | "reason">[] = [
   {
     value: "off",
     title: "Off",
-    body: "No prices on the flights page. The board lists popular routes, and travellers ask the desk for a fare.",
+    body: "No prices on the flights page, not even desk fares. The board lists popular routes, and travellers ask the desk for a fare.",
+  },
+  {
+    value: "manual",
+    title: "Our desk only",
+    body: "Only the fares your team adds below. Nothing is fetched.",
+  },
+  {
+    value: "travelpayouts",
+    title: "Travelpayouts",
+    body: "Aviasales' cached lowest fares from recent traveller searches, checked each morning. Quiet routes may have none. Desk fares show alongside.",
   },
   {
     value: "duffel",
     title: "Duffel",
-    body: "A live search each morning for one date per route. Exact fares airlines are selling, with airline and stops.",
+    body: "A live search each morning for one date per route. Exact fares airlines are selling, with airline and stops. Desk fares show alongside.",
   },
   {
     value: "skyscanner",
     title: "Skyscanner",
-    body: "Skyscanner's cached lowest fares for the month, up to 4 days old. Shown as guide prices, with the \"Powered by Skyscanner\" credit they require.",
+    body: "Skyscanner's cached lowest fares for the month, up to 4 days old. Shown as guide prices, with the \"Powered by Skyscanner\" credit they require. Desk fares show alongside.",
   },
 ];
 
@@ -37,11 +48,13 @@ const when = (date: Date) =>
 
 export default async function AdminFaresPage() {
   await requireAdmin("/admin/fares");
-  const [source, heartbeat, latest, total] = await Promise.all([
+  const now = new Date();
+  const [source, heartbeat, latest, total, desk] = await Promise.all([
     getFareSource(),
     db.workerHeartbeat.findUnique({ where: { name: "fare-watch" } }),
     db.fareSnapshot.findMany({ orderBy: { checkedAt: "desc" }, take: 24 }),
     db.fareSnapshot.count(),
+    db.fareSnapshot.findMany({ where: { source: "manual", validUntil: { gte: now } }, orderBy: { checkedAt: "desc" } }),
   ]);
   const options: SourceOption[] = OPTIONS.map((option) => {
     const ready = sourceReadiness(option.value);
@@ -75,8 +88,35 @@ export default async function AdminFaresPage() {
         <FareSourceForm current={source} options={options} />
       </Panel>
 
+      <Panel
+        title="Fares from our desk"
+        description={source === "off" ? "Fares are off, so these don't show until you choose a source above." : "Fares your team checked. Each shows on the flights page until its last day, and replaces a fetched fare on the same route."}
+        className="mb-6"
+      >
+        <DeskFareForm today={now.toISOString().slice(0, 10)} />
+        {desk.length ? (
+          <ul className="mt-6 divide-y divide-[var(--line)] border-t border-[var(--line)]">
+            {desk.map((fare) => (
+              <li key={fare.id} className="flex flex-wrap items-center justify-between gap-3 py-3 text-sm">
+                <span>
+                  <span className="font-medium">Kigali to {city.get(fare.destination) ?? fare.destination}</span>, {fare.departureDate.toISOString().slice(0, 10)},{" "}
+                  <span className="tnum font-medium">{formatFare(fare.totalMinor, fare.currency)}</span>
+                  {fare.airline ? `, ${fare.airline}` : ""}
+                  {fare.dealNote ? <span className="ml-2"><StatusPill tone="warn">{fare.dealNote}</StatusPill></span> : null}
+                  <span className="block text-xs text-[var(--ink-muted)]">Shows until {fare.validUntil ? when(fare.validUntil) : "removed"}</span>
+                </span>
+                <form action={removeDeskFare}>
+                  <input type="hidden" name="id" value={fare.id} />
+                  <button type="submit" className="text-xs font-medium text-clay-700 hover:underline">Remove</button>
+                </form>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </Panel>
+
       <Panel title="Check now" description="The check runs every morning at 06:15. Run it now after switching source, or to refresh the board." className="mb-6">
-        <RunFareCheck disabled={source === "off"} />
+        <RunFareCheck disabled={source === "off" || source === "manual"} />
       </Panel>
 
       <Panel

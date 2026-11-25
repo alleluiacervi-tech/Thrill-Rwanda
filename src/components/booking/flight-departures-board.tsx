@@ -165,7 +165,11 @@ export function FlightRoutes({ formId, fares, children }: { formId: string; fare
                       ? "Ranked by the flight requests our desk received in the last 30 days."
                       : fares.source === "skyscanner"
                         ? "Lowest one-way economy fare for one adult that Skyscanner found in the last 4 days. A guide price: the desk confirms yours in writing."
-                        : `Lowest one-way economy fare for one adult, found by our daily check${fares.checkedOn ? ` on ${dateText(fares.checkedOn)}` : ""}. Fares change by the hour; the desk confirms yours in writing.`}
+                        : fares.source === "travelpayouts"
+                          ? `Lowest one-way economy fare for one adult seen in recent Aviasales searches, checked${fares.checkedOn ? ` on ${dateText(fares.checkedOn)}` : ""}. A guide price: the desk confirms yours in writing.`
+                          : fares.source === "manual"
+                          ? `One-way economy fare for one adult, checked by our Kigali desk${fares.checkedOn ? ` on ${dateText(fares.checkedOn)}` : ""}. Seats at this price can sell out; the desk confirms yours in writing.`
+                          : `Lowest one-way economy fare for one adult, found by our daily check${fares.checkedOn ? ` on ${dateText(fares.checkedOn)}` : ""}. Fares change by the hour; the desk confirms yours in writing.`}
           </p>
           {/* Skyscanner's usage guidelines: "Powered by" and their mark, linking to skyscanner.net, wherever their prices show. */}
           {fares.source === "skyscanner" && prices ? (

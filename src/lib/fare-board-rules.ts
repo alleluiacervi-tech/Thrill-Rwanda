@@ -30,6 +30,26 @@ export const MIN_TREND_ENQUIRIES = 10;
 
 const DAY = 86_400_000;
 
+export type ManualRow = FareRow & { validUntil: Date | null; dealNote: string | null };
+
+/**
+ * Fares the desk typed in (Admin → Flight fares). Per destination, the most
+ * recently entered fare that is still valid and not yet departed. Cheapest
+ * first within each currency; a fare with a deal note is also a deal. No
+ * minimum count: each one is the desk's own word.
+ */
+export function manualFares(rows: ManualRow[], now: Date): { cheap: ManualRow[]; deals: ManualRow[] } {
+  const latest = new Map<string, ManualRow>();
+  for (const row of rows) {
+    if (!row.validUntil || row.validUntil.getTime() < now.getTime()) continue;
+    if (row.departureDate.getTime() < startOfDay(now)) continue;
+    const held = latest.get(row.destination);
+    if (!held || row.checkedAt > held.checkedAt) latest.set(row.destination, row);
+  }
+  const cheap = [...latest.values()].sort((a, b) => a.currency.localeCompare(b.currency) || toUnits(a) - toUnits(b));
+  return { cheap, deals: cheap.filter((row) => row.dealNote) };
+}
+
 /** One fare per destination: the cheapest found in the fresh window, cheapest first. */
 export function cheapestFares(rows: FareRow[], now: Date): FareRow[] {
   const list = freshFares(rows, now).sort((a, b) => toUnits(a) - toUnits(b));
