@@ -21,7 +21,7 @@ Use `.env.example` for local placeholders; never commit actual `.env` files. Use
 | GOOGLE_SITE_VERIFICATION / BING_SITE_VERIFICATION | Content value of the Search Console / Bing HTML-tag verification, rendered as meta tags | Optional; public by design |
 | TRAVELPAYOUTS_TOKEN / TRAVELPAYOUTS_CURRENCY | Travelpayouts (Aviasales Data API) token for cached fares on the /flights board; currency defaults to USD | Token secret, from the Travelpayouts dashboard (Tools, API). Choose Travelpayouts in Admin → Fares |
 | SKYSCANNER_API_KEY / SKYSCANNER_MARKET / SKYSCANNER_CURRENCY | Skyscanner Indicative Prices key for the /flights fares board (market defaults to UK, currency to USD) | Key secret, from the Skyscanner partner programme. The source itself (Off, Duffel, Skyscanner) is chosen in Admin → Fares; Duffel needs a live token and `DUFFEL_ALLOW_LIVE=true` |
-| RESEND_API_KEY / EMAIL_FROM | Email adapter and approved sender | API key secret; real domain/inbox validation required |
+| RESEND_API_KEY / EMAIL_FROM | Email adapter and approved sender | API key secret; real domain/inbox validation required. Optional: without them, enquiry, quote, booking and password emails go out through the business mailbox (MAIL_USER / MAIL_PASSWORD over SMTP) |
 | URUBUTOPAY_ENABLED / URUBUTOPAY_ENVIRONMENT / URUBUTOPAY_LIVE_APPROVED | UrubutoPay collection gates | Default off; live requires production identity and saved Admin routing approval |
 | URUBUTOPAY_API_KEY / URUBUTOPAY_MERCHANT_CODE / URUBUTOPAY_SERVICE_CODE | UrubutoPay merchant authentication | Server-side; separate merchant keys and services per environment |
 | URUBUTOPAY_APPROVED_METHODS / URUBUTOPAY_MIN_RWF / URUBUTOPAY_MAX_RWF | Contracted channels and limits | Record the verified scope from BK TecHouse |

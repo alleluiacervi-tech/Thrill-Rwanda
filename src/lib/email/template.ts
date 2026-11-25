@@ -153,15 +153,22 @@ export function renderEmail(c: EmailContent, brand: SiteInfo = buildSite(null)):
   return { subject: c.subject, html, text };
 }
 
-/** Sends through Resend with HTML and plain text. Returns skipped when email isn't configured. */
+/** Sends through Resend, or the business mailbox without it, with HTML and plain text. Returns skipped when neither is configured. */
 export async function sendRendered(
   to: string,
   email: RenderedEmail,
   opts: { replyTo?: string } = {},
 ) {
-  const apiKey = process.env.RESEND_API_KEY;
-  const from = process.env.EMAIL_FROM;
-  if (!apiKey || !from) return { skipped: true as const };
+  const { emailChannel, sendViaMailbox } = await import("@/lib/email/smtp");
+  const channel = emailChannel();
+  if (!channel) return { skipped: true as const };
+  if (channel === "smtp") {
+    // The mailbox is the real inbox, so replies come straight back to it.
+    await sendViaMailbox({ to, subject: email.subject, html: email.html, text: email.text, replyTo: opts.replyTo });
+    return { skipped: false as const };
+  }
+  const apiKey = process.env.RESEND_API_KEY!;
+  const from = process.env.EMAIL_FROM!;
 
   const { Resend } = await import("resend");
   const { error } = await new Resend(apiKey).emails.send({
