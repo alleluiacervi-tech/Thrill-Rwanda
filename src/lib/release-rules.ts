@@ -131,7 +131,8 @@ export function environmentChecks(env: NodeJS.ProcessEnv = process.env) {
     },
     {
       key: "email_sender",
-      ok: !!env.RESEND_API_KEY && !!env.EMAIL_FROM,
+      // Resend, or the business mailbox (MAIL_USER/MAIL_PASSWORD) that sends without it.
+      ok: (!!env.RESEND_API_KEY && !!env.EMAIL_FROM) || (!!env.MAIL_USER && !!env.MAIL_PASSWORD),
       detail:
         "Email provider credentials and sender are present (delivery still requires verification)",
     },

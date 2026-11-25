@@ -47,10 +47,8 @@ export const auth = betterAuth({
     // lock people out of an account they just created.
     requireEmailVerification: false,
     async sendResetPassword({ user, url }) {
-      const apiKey = process.env.RESEND_API_KEY;
-      const from = process.env.EMAIL_FROM;
-
-      if (!apiKey || !from) {
+      const { emailChannel } = await import("@/lib/email/smtp");
+      if (!emailChannel()) {
         console.warn(resetDeliveryNotice(process.env.NODE_ENV, url));
         return;
       }

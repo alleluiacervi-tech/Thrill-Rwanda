@@ -14,6 +14,7 @@ import {
 } from "@/lib/quote-render";
 import type { QuoteSnapshot } from "@/lib/quote-rules";
 import { canUseEnquiries } from "@/lib/enquiry-workflow";
+import { emailChannel, sendViaMailbox, SmtpDeliveryError } from "@/lib/email/smtp";
 import type { Prisma, NotificationJobStatus } from "@/generated/prisma/client";
 
 export class NotificationDeliveryError extends Error {
@@ -36,6 +37,15 @@ export const sendOutboxEmail: EmailTransport = async (
   email,
   idempotencyKey,
 ) => {
+  // Without Resend, the business mailbox sends it (src/lib/email/smtp.ts).
+  if (emailChannel() === "smtp") {
+    try {
+      return await sendViaMailbox({ to, subject: email.subject, html: email.html, text: email.text, replyTo: email.replyTo, key: idempotencyKey });
+    } catch (error) {
+      if (error instanceof SmtpDeliveryError) throw new NotificationDeliveryError(error.code, error.retryable);
+      throw new NotificationDeliveryError("PROVIDER_TEMPORARY", true);
+    }
+  }
   const response = await fetch("https://api.resend.com/emails", {
     method: "POST",
     headers: {
@@ -356,8 +366,7 @@ export async function processNotificationBatch(
       }
       if (!(
         options.emailConfigured ??
-        (!!options.send ||
-          !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM))
+        (!!options.send || emailChannel() !== null)
       )) {
         await finish("BLOCKED", "EMAIL_CONFIGURATION_MISSING");
         continue;

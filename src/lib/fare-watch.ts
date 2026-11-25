@@ -112,7 +112,13 @@ function travelpayoutsSearch(now: Date): Search {
   const config = travelpayoutsConfig();
   if (!config) throw new Error("Travelpayouts is not configured");
   return async (destination, departureDate) => {
-    const fare = await cachedCheapest(config, KIGALI.code, destination, departureDate.slice(0, 7), now);
+    // The cache only holds what travellers searched, so a quiet month can be
+    // empty: try the next month before giving up on the route for today.
+    const [year, month] = departureDate.split("-").map(Number);
+    const next = new Date(Date.UTC(year, month, 1)).toISOString().slice(0, 7);
+    const fare =
+      (await cachedCheapest(config, KIGALI.code, destination, departureDate.slice(0, 7), now)) ??
+      (await cachedCheapest(config, KIGALI.code, destination, next, now));
     if (!fare) return null;
     return {
       departureDate: fare.departureDate,
