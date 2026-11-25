@@ -2,7 +2,7 @@
 
 import { useCallback, useMemo, useState } from "react";
 import Image from "next/image";
-import { ArrowRight, ChevronRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, ChevronRight } from "lucide-react";
 import { allDestinations, destinationRegions, KIGALI, PICK_DESTINATION_EVENT, placeLabel, popularDestinations, type Destination, type DestinationPick } from "@/lib/flight-destinations";
 import type { BoardFare, FareBoard } from "@/lib/fare-board";
 import { FlightGlobe } from "./flight-globe";
@@ -150,9 +150,16 @@ export function FlightRoutes({ formId, fares, children }: { formId: string; fare
             ) : (
               <ul className={s.rows} key={view}>
                 {fareRows.map((fare) => (
-                  <li key={fare.place.code}>
+                  <li key={fare.place.code} className={fare.bookUrl ? s.bookable : undefined}>
                     <Row place={fare.place} onChoose={() => choose(fare.place, fare.date)} {...hover}
                       meta={fareMeta(fare)} note={fare.note} price={fare.price} />
+                    {/* The row asks our desk; this books on Aviasales instead, in a new tab. */}
+                    {fare.bookUrl ? (
+                      <a className={s.book} href={fare.bookUrl} target="_blank" rel="sponsored noopener noreferrer"
+                        aria-label={`Book ${fare.place.city} on ${dateText(fare.date)} yourself on Aviasales (opens in a new tab)`}>
+                        Or book it yourself on Aviasales <ArrowUpRight size={14} aria-hidden />
+                      </a>
+                    ) : null}
                   </li>
                 ))}
               </ul>
@@ -180,6 +187,12 @@ export function FlightRoutes({ formId, fares, children }: { formId: string; fare
                           ? `One-way economy fare for one adult, checked by our Kigali desk${fares.checkedOn ? ` on ${dateText(fares.checkedOn)}` : ""}. Seats at this price can sell out; the desk confirms yours in writing.`
                           : `Lowest one-way economy fare for one adult, found by our daily check${fares.checkedOn ? ` on ${dateText(fares.checkedOn)}` : ""}. Fares change by the hour; the desk confirms yours in writing.`}
           </p>
+          {fareRows.some((fare) => fare.bookUrl) ? (
+            <p className={s.disclose}>
+              Aviasales links are partner links: Aviasales sells and issues that ticket, and we may earn a commission. Choose the
+              row instead to book through our Kigali desk.
+            </p>
+          ) : null}
           {/* Skyscanner's usage guidelines: "Powered by" and their mark, linking to skyscanner.net, wherever their prices show. */}
           {fares.source === "skyscanner" && prices ? (
             <a className={s.credit} href="https://www.skyscanner.net" target="_blank" rel="noopener noreferrer">

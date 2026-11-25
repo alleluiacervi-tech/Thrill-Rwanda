@@ -6,6 +6,7 @@ import { DeskFareForm, FareSourceForm, RunFareCheck, type SourceOption } from "@
 import { removeDeskFare } from "@/app/actions/fares";
 import { db } from "@/lib/db";
 import { formatFare } from "@/lib/fare-board-rules";
+import { aviasalesLinks } from "@/lib/aviasales";
 import { FARE_SOURCE_LABEL, sourceReadiness } from "@/lib/fare-sources";
 import { getFareSource, WATCHED } from "@/lib/fare-watch";
 import { allDestinations } from "@/lib/flight-destinations";
@@ -58,7 +59,15 @@ export default async function AdminFaresPage() {
   ]);
   const options: SourceOption[] = OPTIONS.map((option) => {
     const ready = sourceReadiness(option.value);
-    return { ...option, ready: ready.ok, reason: ready.ok ? undefined : ready.reason };
+    const body =
+      option.value !== "travelpayouts"
+        ? option.body
+        : `${option.body} ${
+            aviasalesLinks()
+              ? "Each fare also links to Aviasales, with your partner marker, for travellers who would rather book there."
+              : "Add TRAVELPAYOUTS_MARKER to the server settings to also link each fare to Aviasales and earn commission."
+          }`;
+    return { ...option, body, ready: ready.ok, reason: ready.ok ? undefined : ready.reason };
   });
   const failed = heartbeat?.errorCode != null;
 

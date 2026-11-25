@@ -156,6 +156,24 @@
 .emptyAction:hover { background: var(--color-sun-400); }
 .emptyAction:focus-visible { outline: 2px solid var(--color-sun-300); outline-offset: 2px; }
 
+/* A fare Aviasales found: the row books with our desk, the line under it on Aviasales. */
+.bookable { border-bottom: 1px solid rgb(255 255 255 / 0.07); padding-bottom: 0.65rem; }
+.bookable .row { border-bottom: 0; }
+.book {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin: -0.4rem 0 0 5rem;
+  font-size: 0.82rem;
+  color: rgb(255 255 255 / 0.72);
+  text-decoration: underline;
+  text-decoration-color: rgb(255 255 255 / 0.3);
+  text-underline-offset: 3px;
+}
+.book:hover { color: var(--color-sun-300); text-decoration-color: currentColor; }
+.book:focus-visible { outline: 2px solid var(--color-sun-300); outline-offset: 2px; border-radius: 4px; }
+.disclose { margin-top: 0.5rem; padding: 0 1rem; font-size: 0.78rem; color: rgb(255 255 255 / 0.55); }
+
 .foot { margin-top: 1.25rem; padding: 0 1rem; font-size: 0.88rem; color: rgb(255 255 255 / 0.65); }
 
 /* The credit Skyscanner requires beside its prices. */
@@ -174,13 +192,15 @@
 @media (max-width: 900px) {
   .row { grid-template-columns: auto minmax(0, 1fr) auto; gap: 0.9rem; }
   .city { font-size: 1.2rem; }
+  .book { margin-left: 4.65rem; }
 }
 @media (max-width: 520px) {
   .row { padding: 0.75rem 0.25rem; }
   .flag { width: 2.4rem; height: 2.4rem; }
   .action { padding: 0.5rem; font-size: 0; gap: 0; }
   .action svg { width: 1.1rem; height: 1.1rem; }
-  .foot { padding: 0 0.25rem; }
+  .foot, .disclose { padding: 0 0.25rem; }
+  .book { margin-left: 3.55rem; }
   .empty { padding: 1.25rem 0.25rem 0.25rem; }
   .views { gap: 1.25rem; }
   .views button { font-size: 1rem; }
