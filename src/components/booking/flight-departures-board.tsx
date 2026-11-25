@@ -62,18 +62,25 @@ export function FlightRoutes({ formId, fares, children }: { formId: string; fare
 
   const fareRows = useMemo(() => (view === "cheap" ? fares.cheap : view === "deals" ? fares.deals : []), [view, fares]);
   const empty = view !== "all" && fares[view].length === 0;
+  // Until our own requests can rank Trending: where travellers search from Kigali, or our usual list.
+  const searched = view === "trending" && empty && fares.popular.length > 0;
+  const fallback = searched ? fares.popular : popularDestinations.map((place) => ({ place, fare: undefined as BoardFare | undefined }));
   const lit =
     view === "all"
       ? destinationRegions.find((item) => item.id === region)!.places.map((place) => place.code)
       : empty
-        ? popularDestinations.map((place) => place.code)
+        ? fallback.map((item) => item.place.code)
         : view === "trending"
           ? fares.trending.map((t) => t.place.code)
           : fareRows.map((fare) => fare.place.code);
   const prices = useMemo(() => {
-    const list = view === "trending" ? fares.trending.flatMap((t) => (t.fare ? [t.fare] : [])) : fareRows;
+    const list = searched
+      ? fares.popular.flatMap((p) => (p.fare ? [p.fare] : []))
+      : view === "trending"
+        ? fares.trending.flatMap((t) => (t.fare ? [t.fare] : []))
+        : fareRows;
     return list.length ? Object.fromEntries(list.map((fare) => [fare.place.code, fare.price])) : undefined;
-  }, [view, fares, fareRows]);
+  }, [view, fares, fareRows, searched]);
 
   const hover = { onFocus: setFocus };
 
@@ -123,10 +130,10 @@ export function FlightRoutes({ formId, fares, children }: { formId: string; fare
               </div>
             ) : empty ? (
               <ul className={s.rows} key={`${view}-popular`}>
-                {popularDestinations.map((place) => (
+                {fallback.map(({ place, fare }) => (
                   <li key={place.code}>
                     <Row place={place} meta={placeMeta(place)} action={view === "cheap" ? "Get fare" : "Plan route"}
-                      onChoose={() => choose(place)} {...hover} />
+                      price={fare?.price} onChoose={() => choose(place, fare?.date)} {...hover} />
                   </li>
                 ))}
               </ul>
@@ -159,7 +166,9 @@ export function FlightRoutes({ formId, fares, children }: { formId: string; fare
                 ? "Fares change by the hour; the desk confirms yours in writing."
                 : view === "cheap" && empty
                   ? "Prices from our daily fare check appear here. Until then, choose a city and the desk sends you today's lowest fare in writing."
-                  : view === "trending" && empty
+                  : searched
+                    ? "Where travellers searching from Kigali want to fly this week, from Aviasales searches; not in any order. Prices are the lowest one-way fares we found."
+                    : view === "trending" && empty
                     ? "The routes our travellers ask for most. Once a month of requests is counted, this list ranks them."
                     : view === "trending"
                       ? "Ranked by the flight requests our desk received in the last 30 days."

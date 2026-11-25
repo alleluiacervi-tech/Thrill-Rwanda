@@ -50,6 +50,11 @@ destinations people ask for, as before.
   - Migration `20261125150000_manual_fares` (additive): `valid_until`, `deal_note`.
   - *Not yet seen:* a real Travelpayouts response (the exact v3 response fields could not be read from their docs; the first "Check fares now" confirms them).
 
+- [x] **7. Price calendar and popular routes (Travelpayouts).**
+  - Departure calendar in the search form shows the cheapest one-way price seen per day (`/api/fares/calendar`, Aviasales v3 `grouped_prices`, cached 6 hours), marks the cheapest day in view, and offers "Cheapest seen" to jump to it. Nothing shows when fares are Off.
+  - The daily check (Travelpayouts source) also stores where travellers search to fly from Kigali (`/v1/city-directions`) in `fare_insights`. Trending shows it, unranked, until our own requests can rank the tab. Its round-trip prices are never shown.
+  - Data is sparse: Aviasales only knows days people searched recently (2 to 3 per route in November 2026).
+
 ## Definitions (what the board claims)
 
 | Tab | Shows | Shown when |

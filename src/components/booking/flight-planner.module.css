@@ -349,6 +349,36 @@
 .dayEdge::after,
 .dayEdge:hover:not(:disabled)::after { border-color: var(--color-forest-900); background: var(--color-forest-900); }
 
+/* Prices under the days: the cells grow into soft squares to hold two lines. */
+.daysPriced .day {
+  display: grid;
+  place-content: center;
+  gap: 0.05rem;
+  aspect-ratio: auto;
+  min-height: 3.1rem;
+  border-radius: 0.75rem;
+  line-height: 1.1;
+}
+.daysPriced .day::after { border-radius: 0.75rem; }
+.dayPrice { min-height: 0.8rem; font-size: 0.66rem; font-weight: 600; color: var(--color-forest-700); letter-spacing: -0.01em; }
+.dayCheapest .dayPrice { font-weight: 800; color: var(--color-forest-800); }
+.dayCheapest::after { background: var(--color-forest-50); border-color: var(--color-forest-300); }
+.dayEdge .dayPrice { color: var(--color-sun-300); }
+.dayIn .dayPrice { color: var(--color-forest-800); }
+.calendarBest {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.86rem;
+  font-weight: 700;
+  color: var(--color-forest-800);
+  text-align: left;
+  text-decoration: underline 1.5px var(--color-forest-300);
+  text-underline-offset: 3px;
+}
+.calendarBest:hover { text-decoration-color: var(--color-forest-800); }
+.calendarBest:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.calendarNote { margin-top: 0.75rem; max-width: 36rem; font-size: 0.78rem; line-height: 1.45; color: var(--ink-muted); }
+
 /* =============================================================== travellers */
 
 .party { display: grid; gap: 1.1rem; width: 21rem; }
