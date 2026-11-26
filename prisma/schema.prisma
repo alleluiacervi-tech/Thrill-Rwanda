@@ -822,6 +822,18 @@ model SiteSettings {
   /// Off also hides prices already stored. Keys stay in the server environment.
   fareSource     String  @default("off") @map("fare_source")
 
+  // Online flight booking (Duffel). Off until an administrator opens it.
+  flightOnline         Boolean   @default(false) @map("flight_online")
+  /// Rwandan francs per US dollar, set by the desk; Duffel charges in dollars, travellers pay in francs.
+  flightUsdRwf         Int?      @map("flight_usd_rwf")
+  flightRateSetAt      DateTime? @map("flight_rate_set_at") @db.Timestamptz
+  /// Added to the converted fare against rate movement before the ticket is bought.
+  flightFxBufferPercent Int      @default(3) @map("flight_fx_buffer_percent") @db.SmallInt
+  /// The business's fee per traveller, in francs.
+  flightFeeRwf         Int       @default(0) @map("flight_fee_rwf")
+  /// The staff member who owns online bookings on the desk.
+  flightOwnerId        String?   @map("flight_owner_id") @db.Uuid
+
   // A message across the top of the site.
   announcement   String?
   announcementOn Boolean @default(false) @map("announcement_on")

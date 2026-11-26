@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useActionState, useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
 import {
   ArrowLeftRight, ArrowRight, CalendarDays, Check, History, Mail, MessageCircle, Pencil, Phone, Plane, PlaneLanding,
@@ -99,8 +100,10 @@ function useFareCalendar(origin: string, destination: string) {
   return key && loaded.key === key ? loaded.prices : undefined;
 }
 
-export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: string; today: string }) {
+/** `bookOnline`: live fares and online booking are open, so the search goes to them first. */
+export function FlightEnquiryForm({ submissionKey, today, bookOnline = false }: { submissionKey: string; today: string; bookOnline?: boolean }) {
   const [state, action, pending] = useActionState(submitFlightEnquiry, initial);
+  const router = useRouter();
   const [route, setRoute] = useState(initialRoute);
   const [tripType, setTripType] = useState<(typeof tripTypes)[number][0]>("RETURN");
   const multi = tripType === "MULTI_CITY";
@@ -185,6 +188,20 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
     return () => window.removeEventListener(PICK_DESTINATION_EVENT, pick);
   }, []);
 
+  function onlineSearch() {
+    if (!bookOnline || multi || nonstop || party > 9) return null;
+    const from = airportCodeOf(route.origin);
+    const to = airportCodeOf(route.destination);
+    if (!from || !to) return null;
+    const query = new URLSearchParams({ from, to, depart: route.departureDate });
+    if (tripType === "RETURN" && route.returnDate) query.set("return", route.returnDate);
+    if (count.adults !== 1) query.set("adults", String(count.adults));
+    if (count.children) query.set("children", String(count.children));
+    if (count.infants) query.set("infants", String(count.infants));
+    if (route.cabin !== "ECONOMY") query.set("cabin", route.cabin);
+    return query.toString();
+  }
+
   function editRoute() {
     setReview(false);
     requestAnimationFrame(() => {
@@ -263,6 +280,12 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
       if (problem) return;
       setPanel(null);
       remember();
+      // Live fares, when the trip is one the online shop can book; the desk handles the rest.
+      const online = onlineSearch();
+      if (online && (event.nativeEvent as SubmitEvent).submitter?.getAttribute("value") !== "desk") {
+        router.push(`/flights/book?${online}`);
+        return;
+      }
       setReview(true);
     }}>
       <div className={s.topline}>
@@ -373,11 +396,17 @@ export function FlightEnquiryForm({ submissionKey, today }: { submissionKey: str
         </DropField>
 
         <button type="submit" className={s.go}>
-          <span>Continue</span>
+          <span>{bookOnline ? "Search flights" : "Continue"}</span>
           <ArrowRight size={18} aria-hidden />
         </button>
       </div>
       {issue && <p role="alert" className={s.issue}>{issue}</p>}
+      {bookOnline ? (
+        <p className={s.deskInstead}>
+          Live fares you can book and pay for here.{" "}
+          <button type="submit" value="desk">Prefer our desk to find your fare? Send a request</button>
+        </p>
+      ) : null}
       {recent.length > 0 && !multi ? (
         <div className={s.recent}>
           <span className={s.recentLabel}><History size={14} aria-hidden /> Recent</span>

@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { CheckCircle2, Loader2, Plane, Plug, RefreshCw, Search, TriangleAlert } from "lucide-react";
-import { addLiveFares, bookLiveFare, checkDuffel, clearLiveAttempt, refreshLiveTickets, searchLiveFares } from "@/app/actions/duffel";
+import { addLiveFares, bookLiveFare, checkDuffel, clearLiveAttempt, payLiveHold, refreshLiveTickets, searchLiveFares } from "@/app/actions/duffel";
 import { formatQuoteMoney } from "@/lib/quote-rules";
 import type { DuffelMode } from "@/lib/duffel/config";
 import type { FareResult } from "@/lib/duffel/mapping";
@@ -246,6 +246,7 @@ export function DuffelBooking({
   }
 
   const attempting = externalStatus === "ATTEMPTING";
+  const held = !!orderId && (externalStatus === "HELD" || externalStatus === "NEEDS_DESK") && status === "READY_TO_TICKET";
   return (
     <div className="space-y-3 rounded-[var(--radius-card)] border border-[var(--line)] bg-[var(--paper)] p-4">
       <div className="flex flex-wrap items-center justify-between gap-3">
@@ -262,6 +263,14 @@ export function DuffelBooking({
         <Notice kind="error">
           A booking attempt is marked on this file and its result is not confirmed. Check the Duffel dashboard for an order on this client before doing anything else.
         </Notice>
+      ) : null}
+      {externalStatus === "NEEDS_DESK" ? (
+        <Notice kind="error">
+          Online ticketing stopped and handed this booking to the desk. The reason is in the case timeline. Check the fare with the client before booking or paying.
+        </Notice>
+      ) : null}
+      {externalStatus === "HELD" && orderId ? (
+        <Notice kind="ok">The seats are held with Duffel. Once payment is verified, online ticketing pays the hold and issues the tickets.</Notice>
       ) : null}
       {message ? <Notice kind={message.kind}>{message.text}</Notice> : null}
 
@@ -282,6 +291,24 @@ export function DuffelBooking({
           >
             {busy === "book" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Plane className="size-4" aria-hidden />}
             {busy === "book" ? "Booking… this can take a minute" : "Book and ticket"}
+          </button>
+        ) : null}
+        {held ? (
+          <button
+            type="button"
+            disabled={busy !== null}
+            className={primary}
+            onClick={() => {
+              const ok = window.confirm(
+                mode === "sandbox"
+                  ? "Pay this hold in the Duffel sandbox? It uses test data; no real ticket is issued."
+                  : "Pay this hold from the Duffel balance? This issues real tickets and spends real balance.",
+              );
+              if (ok) void act("book", () => payLiveHold({ reference, version }));
+            }}
+          >
+            {busy === "book" ? <Loader2 className="size-4 animate-spin" aria-hidden /> : <Plane className="size-4" aria-hidden />}
+            {busy === "book" ? "Paying… this can take a minute" : "Pay held booking and ticket"}
           </button>
         ) : null}
         {status === "TICKETING" && orderId ? (

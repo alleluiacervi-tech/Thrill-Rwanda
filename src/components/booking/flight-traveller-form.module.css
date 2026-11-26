@@ -1,0 +1,49 @@
+.form { display: grid; gap: 1rem; }
+
+.person { display: grid; gap: 1rem; padding: 1.25rem 1.5rem 1.5rem; border-radius: 1rem; background: #fff; border: 1px solid var(--color-bone-300); }
+.person legend { display: flex; flex-wrap: wrap; align-items: baseline; gap: 0.25rem 0.75rem; padding: 0; float: left; width: 100%; margin-bottom: 0.25rem; }
+.person legend span { font-family: var(--font-display); font-size: 1.2rem; color: var(--color-forest-950); }
+.person legend small { font-size: 0.82rem; color: var(--color-bone-600); }
+
+/* Twelve columns: title, given names, surname; then date of birth and the passport, a quarter each. */
+.grid { display: grid; grid-template-columns: repeat(12, minmax(0, 1fr)); gap: 0.9rem 1rem; clear: both; }
+.grid > label { grid-column: span 3; }
+.grid > .title { grid-column: span 2; }
+.grid > .name { grid-column: span 5; }
+.grid > .third { grid-column: span 4; }
+.grid label { display: grid; gap: 0.35rem; font-size: 0.85rem; font-weight: 700; color: var(--color-forest-900); }
+.grid input, .grid select {
+  width: 100%; min-height: 2.9rem; padding: 0.6rem 0.8rem; border-radius: 0.65rem;
+  border: 1px solid var(--color-bone-400); background: var(--color-bone-50);
+  font-size: 1rem; font-weight: 400; color: var(--color-bone-900);
+}
+.grid input:focus-visible, .grid select:focus-visible { outline: 2px solid var(--color-forest-600); outline-offset: 1px; border-color: var(--color-forest-600); background: #fff; }
+.grid input::placeholder { color: var(--color-bone-500); }
+
+.summary { display: grid; gap: 1rem; padding: 1.5rem; border-radius: 1rem; background: var(--color-forest-950); color: #fff; }
+.summary dl { display: grid; gap: 0.5rem; }
+.summary dl div { display: flex; justify-content: space-between; gap: 1rem; font-size: 0.95rem; color: rgb(255 255 255 / 0.8); }
+.summary dd { font-variant-numeric: tabular-nums; }
+.summary .sum { padding-top: 0.75rem; border-top: 1px solid rgb(255 255 255 / 0.18); color: #fff; }
+.summary .sum dt { font-weight: 700; }
+.summary .sum dd { font-family: var(--font-display); font-size: 1.6rem; }
+.accept { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 0.75rem; align-items: start; font-size: 0.9rem; line-height: 1.5; color: rgb(255 255 255 / 0.85); }
+.accept input { width: 1.2rem; height: 1.2rem; margin-top: 0.15rem; accent-color: var(--color-sun-500); }
+.accept a { color: var(--color-sun-300); text-decoration: underline; text-underline-offset: 3px; }
+.error { padding: 0.75rem 1rem; border-radius: 0.6rem; background: #fff; color: #9b1c1c; font-weight: 700; font-size: 0.92rem; }
+.go {
+  display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem; width: 100%; padding: 0.95rem 1.25rem; border-radius: 999px;
+  background: var(--color-sun-500); color: var(--color-forest-950); font-weight: 800; font-size: 1rem;
+}
+.go:hover { background: var(--color-sun-400); }
+.go:disabled { opacity: 0.7; cursor: progress; }
+.go:focus-visible { outline: 2px solid var(--color-sun-300); outline-offset: 3px; }
+.small { font-size: 0.82rem; color: rgb(255 255 255 / 0.65); }
+
+@media (max-width: 720px) {
+  .person { padding: 1rem; }
+  .grid { grid-template-columns: minmax(0, 1fr); }
+  .grid > label, .grid > .title, .grid > .name, .grid > .third { grid-column: 1 / -1; }
+  .grid > .title { max-width: 10rem; }
+  .summary { padding: 1.25rem 1rem; }
+}

@@ -15,6 +15,8 @@ import { todayInRwanda } from "@/lib/flight-enquiry-schema";
 import { journeyImages, type Faq } from "@/lib/journeys";
 import { requirePublicService } from "@/lib/publication";
 import { getSite } from "@/lib/settings";
+import { shopAvailability } from "@/lib/flight-shop";
+import { getCurrentUser } from "@/lib/session";
 
 export const dynamic = "force-dynamic";
 export const metadata: Metadata = {
@@ -51,7 +53,10 @@ const faqs: Faq[] = [
 
 export default async function FlightsPage({ searchParams }: { searchParams: Promise<Record<string, string | string[] | undefined>> }) {
   await requirePublicService("FLIGHT");
-  const [{ publications }, live, query] = await Promise.all([getSite(), getFareBoard(), searchParams]);
+  const [{ publications }, live, query, viewer] = await Promise.all([getSite(), getFareBoard(), searchParams, getCurrentUser()]);
+  // Live fares open to this visitor: everyone once Admin opens online booking, staff before that.
+  const shop = await shopAvailability(viewer);
+  const online = shop.open && !!shop.pricing && !!shop.ownerId;
   // Sample fares to review the design locally; never in production.
   const fares: FareBoard = process.env.NODE_ENV !== "production" && query.fares === "sample" ? sampleFareBoard(query.source === "skyscanner" ? "skyscanner" : "duffel") : live;
   const priced = fares.cheap.length > 0 || fares.deals.length > 0;
@@ -93,7 +98,7 @@ export default async function FlightsPage({ searchParams }: { searchParams: Prom
 
           <div id={FORM_ID} className="mt-10 scroll-mt-24 sm:mt-12">
             <AirportDirectoryProvider>
-              <FlightEnquiryForm submissionKey={randomUUID()} today={todayInRwanda()} />
+              <FlightEnquiryForm submissionKey={randomUUID()} today={todayInRwanda()} bookOnline={online} />
             </AirportDirectoryProvider>
           </div>
 

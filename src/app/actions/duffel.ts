@@ -8,6 +8,7 @@ import {
   addFares,
   bookWithDuffel,
   clearDuffelAttempt,
+  payHeldBooking,
   refreshDuffelTickets,
   searchFares,
   testDuffelConnection,
@@ -92,6 +93,22 @@ export async function bookLiveFare(input: { reference: string; version: number }
         ? `Booked and ticketed. Reference ${data.pnr}.`
         : `Booked. Reference ${data.pnr}. Ticket numbers are not issued yet${data.waitingFor.length ? ` for ${data.waitingFor.join(", ")}` : ""}.`,
     };
+  });
+}
+
+export async function payLiveHold(input: { reference: string; version: number }): Promise<DuffelResult<BookingOutcome>> {
+  const actor = await requireEnquiryStaff();
+  const parsed = head.safeParse(input);
+  if (!parsed.success) return bad;
+  return guard(async () => {
+    const data = await payHeldBooking(actor.id, parsed.data);
+    await logActivity(actor.id, {
+      action: "ticketing.duffel.pay-hold", area: "Enquiries", target: parsed.data.reference,
+      summary: `Paid the Duffel hold for ${parsed.data.reference} (${data.mode}), reference ${data.pnr}.`,
+      changes: { orderId: data.orderId, mode: data.mode, issued: data.issued },
+    });
+    refresh(parsed.data.reference);
+    return { ok: true, data, message: data.issued ? `Paid and ticketed. Reference ${data.pnr}.` : `Paid. Reference ${data.pnr}. Ticket numbers are not issued yet.` };
   });
 }
 

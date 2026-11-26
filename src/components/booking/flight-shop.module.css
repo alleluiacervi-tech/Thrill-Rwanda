@@ -1,0 +1,124 @@
+/* Online booking: search summary, fare list and the fare page. Bone paper, forest ink, one gold action. */
+
+.page { background: var(--color-bone-100); color: var(--color-bone-900); padding: 2rem 0 5rem; min-height: 60vh; }
+.head { display: grid; gap: 1.25rem; margin-bottom: 2rem; }
+.title { font-family: var(--font-display); font-size: clamp(1.9rem, 4vw, 2.6rem); line-height: 1.1; color: var(--color-forest-950); }
+.lede { max-width: 40rem; color: var(--color-bone-700); }
+
+/* ---- search summary ---- */
+.summary {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 2rem;
+  padding: 1.1rem 1.4rem; border-radius: 1rem;
+  background: var(--color-forest-950); color: #fff;
+}
+.summaryRoute { display: flex; align-items: center; gap: 0.75rem; font-family: var(--font-display); font-size: 1.35rem; }
+.summaryPlane { width: 1.1rem; height: 1.1rem; color: var(--color-sun-400); }
+.summaryFacts { display: flex; flex-wrap: wrap; gap: 0.4rem 1.5rem; font-size: 0.9rem; color: rgb(255 255 255 / 0.8); }
+.summaryFacts li { display: inline-flex; align-items: center; gap: 0.4rem; }
+.summaryFacts svg { width: 1rem; height: 1rem; color: var(--color-forest-300); }
+.change {
+  margin-left: auto; padding: 0.5rem 1rem; border-radius: 999px; font-size: 0.88rem; font-weight: 700;
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3); color: #fff;
+}
+.change:hover { background: rgb(255 255 255 / 0.1); }
+.change:focus-visible, .select:focus-visible, .secondary:focus-visible { outline: 2px solid var(--color-sun-500); outline-offset: 2px; }
+
+.count { margin: 0 0 0.75rem; font-size: 0.9rem; color: var(--color-bone-600); }
+
+/* ---- fares ---- */
+.fares { display: grid; gap: 0.75rem; }
+.fare {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.5rem; align-items: center;
+  padding: 1.25rem 1.5rem; border-radius: 1rem; background: #fff;
+  border: 1px solid var(--color-bone-300);
+}
+.fare:hover { border-color: var(--color-forest-300); }
+.fareMain { display: grid; gap: 0.9rem; min-width: 0; }
+.airline { display: inline-flex; align-items: center; gap: 0.6rem; font-weight: 700; font-size: 0.95rem; color: var(--color-forest-950); }
+.airline img { width: 1.75rem; height: 1.75rem; object-fit: contain; }
+.airlineCode {
+  display: inline-grid; place-items: center; width: 1.75rem; height: 1.75rem; border-radius: 50%;
+  background: var(--color-forest-100); font-size: 0.7rem; color: var(--color-forest-800);
+}
+
+.leg { display: grid; grid-template-columns: auto minmax(6rem, 1fr) auto; align-items: center; gap: 1rem; position: relative; }
+.legLabel { grid-column: 1 / -1; font-size: 0.78rem; font-weight: 700; color: var(--color-lake-700); margin-bottom: -0.5rem; }
+.time { display: grid; gap: 0.1rem; }
+.time:last-of-type { text-align: right; }
+.time b { font-family: var(--font-display); font-size: 1.5rem; font-variant-numeric: tabular-nums; line-height: 1; color: var(--color-bone-900); }
+.time sup { margin-left: 0.15rem; font-family: var(--font-sans, inherit); font-size: 0.7rem; color: var(--color-clay-700); }
+.time small { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.04em; color: var(--color-bone-600); }
+.track { display: grid; gap: 0.3rem; text-align: center; font-size: 0.78rem; color: var(--color-bone-600); }
+.line { position: relative; display: flex; justify-content: space-evenly; align-items: center; height: 2px; background: var(--color-bone-400); }
+.line i { width: 0.55rem; height: 0.55rem; border-radius: 50%; background: #fff; box-shadow: 0 0 0 2px var(--color-clay-600); }
+
+.fareMeta { display: flex; flex-wrap: wrap; align-items: center; gap: 0.4rem; font-size: 0.82rem; color: var(--color-bone-700); }
+.fareMeta svg { width: 0.95rem; height: 0.95rem; color: var(--color-forest-600); }
+.fareMeta span { margin-left: 0.5rem; padding: 0.1rem 0.55rem; border-radius: 999px; background: var(--color-lake-50); color: var(--color-lake-800); font-weight: 700; }
+
+.fareBuy { display: grid; justify-items: end; gap: 0.75rem; padding-left: 1.5rem; border-left: 1px dashed var(--color-bone-300); }
+.total { display: grid; justify-items: end; }
+.total small { font-size: 0.75rem; color: var(--color-bone-600); }
+.total b { font-family: var(--font-display); font-size: 1.6rem; font-variant-numeric: tabular-nums; color: var(--color-forest-950); }
+.select {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.65rem 1.25rem; border-radius: 999px;
+  background: var(--color-sun-500); color: var(--color-forest-950); font-weight: 800;
+}
+.select:hover { background: var(--color-sun-400); }
+
+/* ---- notices ---- */
+.notice { display: grid; justify-items: start; gap: 0.75rem; padding: 2rem; border-radius: 1rem; background: #fff; border: 1px solid var(--color-bone-300); }
+.noticeTitle { font-family: var(--font-display); font-size: 1.5rem; color: var(--color-forest-950); }
+.noticeBody { max-width: 38rem; color: var(--color-bone-700); line-height: 1.6; }
+.noticeBody a { color: var(--color-forest-800); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.secondary {
+  display: inline-flex; align-items: center; gap: 0.4rem; padding: 0.6rem 1.1rem; border-radius: 999px;
+  font-weight: 700; color: var(--color-forest-900); box-shadow: inset 0 0 0 1px var(--color-forest-300);
+}
+.secondary:hover { background: var(--color-forest-100); }
+.test ul { margin-top: 0.25rem; padding-left: 1.1rem; list-style: disc; font-weight: 400; }
+.test {
+  padding: 0.6rem 1rem; border-radius: 0.6rem; font-size: 0.88rem; font-weight: 700;
+  background: var(--color-sun-100); color: var(--color-sun-900); box-shadow: inset 0 0 0 1px var(--color-sun-300);
+}
+.foot { margin-top: 1.5rem; font-size: 0.88rem; color: var(--color-bone-600); max-width: 46rem; }
+.foot a { color: var(--color-forest-800); font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+
+/* ---- fare page ---- */
+.chosen { display: grid; grid-template-columns: minmax(0, 1fr) 20rem; gap: 1.5rem; align-items: start; }
+.panel { display: grid; gap: 1.25rem; padding: 1.5rem; border-radius: 1rem; background: #fff; border: 1px solid var(--color-bone-300); }
+.panelTitle { font-family: var(--font-display); font-size: 1.25rem; color: var(--color-forest-950); }
+.flights { display: grid; gap: 0.6rem; }
+.flight { display: grid; grid-template-columns: 5.5rem minmax(0, 1fr); gap: 0.75rem; font-size: 0.92rem; padding: 0.6rem 0; border-top: 1px solid var(--color-bone-200); }
+.flight:first-child { border-top: 0; }
+.flight b { font-variant-numeric: tabular-nums; }
+.flight small { display: block; color: var(--color-bone-600); }
+.rules { display: grid; gap: 0.5rem; font-size: 0.9rem; }
+.rules dt { font-weight: 700; color: var(--color-forest-900); }
+.rules dd { color: var(--color-bone-700); margin-bottom: 0.4rem; }
+.pay { position: sticky; top: 6rem; }
+.payTotal { display: flex; justify-content: space-between; align-items: baseline; }
+.payTotal b { font-family: var(--font-display); font-size: 2rem; color: var(--color-forest-950); font-variant-numeric: tabular-nums; }
+.payNote { font-size: 0.85rem; color: var(--color-bone-600); line-height: 1.5; }
+.go {
+  display: inline-flex; justify-content: center; align-items: center; gap: 0.5rem; width: 100%; padding: 0.9rem 1.25rem; border-radius: 999px;
+  background: var(--color-sun-500); color: var(--color-forest-950); font-weight: 800; font-size: 1rem;
+}
+.go:hover { background: var(--color-sun-400); }
+.go:disabled { opacity: 0.6; cursor: not-allowed; }
+.go:focus-visible { outline: 2px solid var(--color-forest-800); outline-offset: 2px; }
+
+@media (max-width: 900px) {
+  .chosen { grid-template-columns: minmax(0, 1fr); }
+  .pay { position: static; }
+}
+@media (max-width: 640px) {
+  .page { padding-top: 1.25rem; }
+  .summary { padding: 1rem; }
+  .change { margin-left: 0; }
+  .fare { grid-template-columns: minmax(0, 1fr); gap: 1rem; padding: 1rem; }
+  .fareBuy { grid-auto-flow: column; justify-content: space-between; align-items: center; padding: 0.9rem 0 0; border-left: 0; border-top: 1px dashed var(--color-bone-300); }
+  .total { justify-items: start; }
+  .leg { gap: 0.6rem; grid-template-columns: auto minmax(4rem, 1fr) auto; }
+  .time b { font-size: 1.25rem; }
+}
