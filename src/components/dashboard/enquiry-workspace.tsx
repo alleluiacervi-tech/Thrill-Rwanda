@@ -37,6 +37,7 @@ import { paginate } from "@/lib/pagination";
 import { searchTerm } from "@/lib/table-query";
 import { flightLegSchema, todayInRwanda } from "@/lib/flight-enquiry-schema";
 import type { Prisma } from "@/generated/prisma/client";
+import { ChangeSummary } from "@/components/dashboard/change-summary";
 
 type Params = Record<string, string | string[] | undefined>;
 const stamp = (d: Date | null) =>
@@ -275,6 +276,20 @@ export async function EnquiryDetail({
     where: { id: { in: emailJobIds }, enquiryId: row.id, kind: "STAFF_EMAIL" },
     select: { id: true, status: true, lastError: true },
   }) : [];
+  // People named in the timeline's changes (owner changes), shown by name.
+  const peopleIds = [
+    ...new Set(
+      row.activities.flatMap((a) =>
+        JSON.stringify(a.changes ?? {}).match(/[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}/gi) ?? [],
+      ),
+    ),
+  ];
+  const people = Object.fromEntries(
+    (peopleIds.length
+      ? await db.user.findMany({ where: { id: { in: peopleIds } }, select: { id: true, fullName: true } })
+      : []
+    ).map((u) => [u.id, u.fullName ?? "a team member"]),
+  );
   const owners =
     actor.role === "ADMIN"
       ? await db.user.findMany({
@@ -528,11 +543,7 @@ export async function EnquiryDetail({
             {message && <p className="font-semibold">{message.subject}</p>}
             {job && <p>{job.status === "SENT" ? "Accepted by email provider" : label(job.status)}{job.lastError && ` · ${label(job.lastError)}`}</p>}
             {a.body && <p className="whitespace-pre-wrap">{a.body}</p>}
-            {!message && (
-            <pre className="mt-3 whitespace-pre-wrap break-words text-xs">
-              {JSON.stringify(a.changes, null, 2)}
-            </pre>
-            )}
+            {!message && <ChangeSummary changes={a.changes} names={people} />}
           </article>
           );
         })}

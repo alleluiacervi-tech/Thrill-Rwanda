@@ -14,6 +14,7 @@ import {
 import { db } from "@/lib/db";
 import { paginate } from "@/lib/pagination";
 import { requireSuperAdmin } from "@/lib/session";
+import { ChangeSummary } from "@/components/dashboard/change-summary";
 
 export const metadata = {
   title: "Activity log",
@@ -180,9 +181,7 @@ export default async function ActivityLogPage({
                     {changes ? (
                       <details className="mt-1">
                         <summary className="cursor-pointer text-2xs text-[var(--ink-faint)]">Details</summary>
-                        <pre className="mt-1 max-w-xl overflow-x-auto whitespace-pre-wrap break-words rounded bg-[var(--paper-sunken)] p-2 text-2xs">
-                          {JSON.stringify(changes, null, 2)}
-                        </pre>
+                        <ChangeSummary changes={changes} className="max-w-xl text-xs" />
                       </details>
                     ) : null}
                   </Td>

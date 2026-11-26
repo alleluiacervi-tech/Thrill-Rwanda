@@ -15,6 +15,7 @@ import {
   type FormField,
 } from "@/components/dashboard/finance-forms";
 import type { EnquiryActor } from "@/lib/enquiry-workflow";
+import { ChangeSummary } from "@/components/dashboard/change-summary";
 
 export async function FinancialWorkspace({
   enquiry,
@@ -646,9 +647,7 @@ async function FinanceRecords({
             Kigali
           </p>
           <p className="whitespace-pre-wrap">{o.evidence}</p>
-          <pre className="mt-2 whitespace-pre-wrap break-words text-xs">
-            {JSON.stringify(o.changes, null, 2)}
-          </pre>
+          <ChangeSummary changes={o.changes} />
         </article>
       ))}
     </>

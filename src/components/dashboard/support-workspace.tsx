@@ -10,6 +10,7 @@ import {
   type OperationsField,
 } from "@/components/dashboard/operations-form";
 import { SUPPORT_CATEGORIES, SUPPORT_STATUSES } from "@/lib/launch-rules";
+import { ChangeSummary } from "@/components/dashboard/change-summary";
 export async function SupportWorkspace({ q = "" }: { q?: string }) {
   const actor = await requireEnquiryStaff();
   if (isFinance(actor)) notFound();
@@ -198,7 +199,7 @@ export async function SupportWorkspace({ q = "" }: { q?: string }) {
                       {r.activities.map((a) => (
                         <li key={a.id} className="text-xs text-[var(--ink-muted)]">
                           <span className="tnum font-medium text-[var(--ink)]">{when(a.createdAt)}</span>
-                          <pre className="mt-1 whitespace-pre-wrap break-words font-mono text-2xs">{JSON.stringify(a.changes, null, 2)}</pre>
+                          <ChangeSummary changes={a.changes} className="text-xs" />
                         </li>
                       ))}
                     </ol>
