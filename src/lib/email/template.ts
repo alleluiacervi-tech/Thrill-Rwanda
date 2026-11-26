@@ -157,7 +157,7 @@ export function renderEmail(c: EmailContent, brand: SiteInfo = buildSite(null)):
 export async function sendRendered(
   to: string,
   email: RenderedEmail,
-  opts: { replyTo?: string } = {},
+  opts: { replyTo?: string; senderService?: string } = {},
 ) {
   const { emailChannel, sendViaMailbox } = await import("@/lib/email/smtp");
   const channel = emailChannel();
@@ -168,7 +168,8 @@ export async function sendRendered(
     return { skipped: false as const };
   }
   const apiKey = process.env.RESEND_API_KEY!;
-  const from = process.env.EMAIL_FROM!;
+  const { resendSender } = await import("@/lib/email/sender");
+  const from = resendSender(opts.senderService)!;
 
   const { Resend } = await import("resend");
   const { error } = await new Resend(apiKey).emails.send({

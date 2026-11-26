@@ -43,6 +43,7 @@ type NotifyInput = {
 
 async function sendEmail(to: Recipient, input: NotifyInput) {
   const { title, body, href, email } = input;
+  const senderService = input.type.split(".", 1)[0]?.toUpperCase();
   return sendRendered(
     to.email,
     renderEmail({
@@ -55,6 +56,7 @@ async function sendEmail(to: Recipient, input: NotifyInput) {
       note: email?.note,
       tone: email?.tone,
     }, await getSite()),
+    { senderService },
   );
 }
 
