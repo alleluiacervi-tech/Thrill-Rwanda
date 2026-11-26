@@ -1,4 +1,5 @@
 "use client";
+import { useFlashAction } from "@/components/dashboard/flash";
 import { useActionState } from "react";
 import { saveEnquiryTriage } from "@/app/actions/enquiry-triage";
 import { Button } from "@/components/ui/button";
@@ -28,7 +29,7 @@ export function EnquiryTriageForm({
   owners: { id: string; fullName: string }[];
   transitions: string[];
 }) {
-  const [state, action, pending] = useActionState(saveEnquiryTriage, {
+  const [state, action, pending] = useActionState(useFlashAction(saveEnquiryTriage), {
     status: "idle",
   } as EnquiryActionState);
   return (
@@ -44,7 +45,7 @@ export function EnquiryTriageForm({
       </p>
       <input type="hidden" name="reference" value={reference} />
       <input type="hidden" name="version" value={version} />
-      {state.message && (
+      {state.status === "error" && state.message && (
         <p role={state.status === "error" ? "alert" : "status"}>
           {state.message}
         </p>

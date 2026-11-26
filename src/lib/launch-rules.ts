@@ -149,3 +149,27 @@ export type OperationsState = {
   status: "idle" | "ok" | "error";
   message?: string;
 };
+
+/** What an offer still lacks before it can be approved, in words an editor can act on. */
+export function offerApprovalGaps(
+  tour: {
+    images: unknown[];
+    description: string | null;
+    itinerary: string;
+    suitability: string;
+    inclusions: unknown[];
+    exclusions: unknown[];
+  },
+  providerActive: boolean,
+): string[] {
+  const short = (text: string | null) => (text?.trim().length ?? 0) < 10;
+  return [
+    !providerActive && "the provider must be verified and active",
+    !tour.images.length && "add at least one photo",
+    short(tour.description) && "write a description (10+ characters)",
+    short(tour.itinerary) && "write the itinerary (10+ characters)",
+    short(tour.suitability) && "say who it suits (10+ characters)",
+    !tour.inclusions.length && "list what's included",
+    !tour.exclusions.length && "list what's not included",
+  ].filter((gap): gap is string => typeof gap === "string");
+}

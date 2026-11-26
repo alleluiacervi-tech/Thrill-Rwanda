@@ -8,6 +8,7 @@ import {
   csvCell,
   supportSchema,
   policySchema,
+  offerApprovalGaps,
 } from "./launch-rules";
 import { resetDeliveryNotice } from "./auth-notice";
 import { documentDeadline } from "./document-access";
@@ -127,5 +128,26 @@ describe("launch controls and operational boundaries", () => {
       ["bad", "bad"],
     ])
       expect(() => reportRange(...(dates as [string, string]))).toThrow();
+  });
+});
+
+describe("offer approval gaps", () => {
+  const complete = {
+    images: ["a.jpg"],
+    description: "A full day on Lake Kivu.",
+    itinerary: "Boat ride, lunch, coffee farm.",
+    suitability: "Suitable for all ages.",
+    inclusions: ["Boat"],
+    exclusions: ["Tips"],
+  };
+  it("is empty for a complete offer from an active provider", () => {
+    expect(offerApprovalGaps(complete, true)).toEqual([]);
+  });
+  it("names exactly what is missing", () => {
+    expect(offerApprovalGaps({ ...complete, suitability: "All ages", images: [] }, true)).toEqual([
+      "add at least one photo",
+      "say who it suits (10+ characters)",
+    ]);
+    expect(offerApprovalGaps(complete, false)).toEqual(["the provider must be verified and active"]);
   });
 });

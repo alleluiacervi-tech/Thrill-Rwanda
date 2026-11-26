@@ -1,4 +1,5 @@
 "use client";
+import { useFlashAction } from "@/components/dashboard/flash";
 import { useActionState, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 import {
@@ -17,7 +18,8 @@ const input = "mt-1 w-full rounded-lg border border-[var(--line-strong)] bg-whit
 const small = "text-xs font-semibold uppercase tracking-[0.1em] text-[var(--ink-muted)]";
 
 function Notice({ state }: { state: TicketingActionState }) {
-  if (!state.message) return null;
+  // Successes are announced page-wide (see flash.tsx); errors stay with the form.
+  if (!state.message || state.status !== "error") return null;
   return (
     <p role={state.status === "error" ? "alert" : "status"}
       className={cn("rounded-lg border px-3 py-2 text-sm", state.status === "error" ? "border-[#9b2c1f] bg-[#fdf0ee] text-[#7d2217]" : "border-forest-800/30 bg-forest-50 text-forest-900")}>
@@ -33,7 +35,7 @@ const kigaliToIso = (value: string) => (value ? new Date(`${value}:00+02:00`).to
 /* ------------------------------------------------------------------ open */
 
 export function OpenTicketingForm({ reference }: { reference: string }) {
-  const [state, action, pending] = useActionState(openTicketingFile, idle);
+  const [state, action, pending] = useActionState(useFlashAction(openTicketingFile), idle);
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="reference" value={reference} />
@@ -100,7 +102,7 @@ function SegmentRows({ segments, onChange }: { segments: SegmentDraft[]; onChang
 
 export function OptionsEditor({ reference, version, initial, currency }: { reference: string; version: number; initial: OptionDraft[]; currency: string }) {
   const [options, setOptions] = useState<OptionDraft[]>(initial.length ? initial : [blankOption(currency)]);
-  const [state, action, pending] = useActionState(saveOptions, idle);
+  const [state, action, pending] = useActionState(useFlashAction(saveOptions), idle);
   const set = (i: number, patch: Partial<OptionDraft>) => setOptions(options.map((o, n) => (n === i ? { ...o, ...patch } : o)));
   const payload = JSON.stringify(options.map((o) => ({ ...o, validUntil: kigaliToIso(o.validUntil) })));
   return (
@@ -136,7 +138,7 @@ export function OptionsEditor({ reference, version, initial, currency }: { refer
 export function ShareAndChoose({ reference, version, shared, options, selectedId }: {
   reference: string; version: number; shared: boolean; options: { id: string; label: string }[]; selectedId: string | null;
 }) {
-  const [state, action, pending] = useActionState(chooseOption, idle);
+  const [state, action, pending] = useActionState(useFlashAction(chooseOption), idle);
   return (
     <div className="space-y-4">
       {!shared && <ActionButton action={shareOptions} fields={{ reference, version: String(version) }} variant="quiet">Share options with the client</ActionButton>}
@@ -163,7 +165,7 @@ const blankTraveller = (kind = "ADULT"): TravellerDraft => ({ kind, title: "", g
 
 export function TravellerEditor({ reference, version, initial, readOnly }: { reference: string; version: number; initial: TravellerDraft[]; readOnly?: boolean }) {
   const [list, setList] = useState<TravellerDraft[]>(initial.length ? initial : [blankTraveller()]);
-  const [state, action, pending] = useActionState(saveTravellerList, idle);
+  const [state, action, pending] = useActionState(useFlashAction(saveTravellerList), idle);
   const set = (i: number, patch: Partial<TravellerDraft>) => setList(list.map((p, n) => (n === i ? { ...p, ...patch } : p)));
   return (
     <form action={action} className="space-y-4">
@@ -201,7 +203,7 @@ export function TravellerEditor({ reference, version, initial, readOnly }: { ref
 /* ------------------------------------------------------------------ status */
 
 export function MovePanel({ reference, version, status, partner }: { reference: string; version: number; status: TicketingStatus; partner: string }) {
-  const [state, action, pending] = useActionState(moveTicketing, idle);
+  const [state, action, pending] = useActionState(useFlashAction(moveTicketing), idle);
   const options = nextTicketingStatuses(status);
   const wording: Record<string, string> = {
     AWAITING_PAYMENT: "Move to awaiting payment", OPTIONS: "Reopen fare options", READY_TO_TICKET: status === "TICKETING" ? "Release the partner hold" : "Mark ready to ticket",
@@ -240,7 +242,7 @@ export function MovePanel({ reference, version, status, partner }: { reference: 
 export function IssueForm({ reference, version, passengers, pnr, partner }: {
   reference: string; version: number; pnr: string; partner: string; passengers: { id: string; name: string }[];
 }) {
-  const [state, action, pending] = useActionState(recordIssuedTickets, idle);
+  const [state, action, pending] = useActionState(useFlashAction(recordIssuedTickets), idle);
   const [numbers, setNumbers] = useState<Record<string, string>>({});
   const tickets = JSON.stringify(passengers.map((p) => ({ passengerId: p.id, ticketNumber: numbers[p.id] ?? "" })));
   return (
@@ -283,7 +285,7 @@ export function DeliverActions({ reference, version, canEmail, deliveredAt }: { 
 /* ------------------------------------------------------------------ after-sales */
 
 export function StaffRequestForm({ reference, passengers }: { reference: string; passengers: { id: string; name: string }[] }) {
-  const [state, action, pending] = useActionState(raiseStaffRequest, idle);
+  const [state, action, pending] = useActionState(useFlashAction(raiseStaffRequest), idle);
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="reference" value={reference} />
@@ -305,7 +307,7 @@ export function RequestHandler({ reference, version, request, currency, passenge
   request: { id: string; number: number; kind: string; status: string; passengerIds: string[] };
   passengers: { id: string; name: string }[];
 }) {
-  const [state, action, pending] = useActionState(handleRequest, idle);
+  const [state, action, pending] = useActionState(useFlashAction(handleRequest), idle);
   const [numbers, setNumbers] = useState<Record<string, string>>({});
   const next = nextServiceStatuses(request.status as ServiceStatus);
   if (!next.length) return null;
@@ -335,7 +337,7 @@ export function RequestHandler({ reference, version, request, currency, passenge
 
 export function ReviseFlightsForm({ reference, version, requestId, initial }: { reference: string; version: number; requestId: string; initial: SegmentDraft[] }) {
   const [segments, setSegments] = useState(initial);
-  const [state, action, pending] = useActionState(reviseFlights, idle);
+  const [state, action, pending] = useActionState(useFlashAction(reviseFlights), idle);
   return (
     <form action={action} className="space-y-4">
       <input type="hidden" name="reference" value={reference} /><input type="hidden" name="version" value={version} /><input type="hidden" name="requestId" value={requestId} />
@@ -350,7 +352,7 @@ export function ReviseFlightsForm({ reference, version, requestId, initial }: { 
 /* ------------------------------------------------------------------ client */
 
 export function ClientChooseButton({ reference, optionId, chosen }: { reference: string; optionId: string; chosen: boolean }) {
-  const [state, action, pending] = useActionState(clientChooseFare, idle);
+  const [state, action, pending] = useActionState(useFlashAction(clientChooseFare), idle);
   return (
     <form action={action} className="space-y-2">
       <input type="hidden" name="reference" value={reference} /><input type="hidden" name="optionId" value={optionId} />
@@ -361,7 +363,7 @@ export function ClientChooseButton({ reference, optionId, chosen }: { reference:
 }
 
 export function ClientRequestForm({ reference, passengers }: { reference: string; passengers: { id: string; name: string }[] }) {
-  const [state, action, pending] = useActionState(clientRaiseRequest, idle);
+  const [state, action, pending] = useActionState(useFlashAction(clientRaiseRequest), idle);
   return (
     <form action={action} className="space-y-3">
       <input type="hidden" name="reference" value={reference} />

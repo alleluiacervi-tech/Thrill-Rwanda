@@ -1,4 +1,5 @@
 "use client";
+import { useFlashAction } from "@/components/dashboard/flash";
 
 import { useActionState } from "react";
 import { saveBusinessEventUpdate } from "@/app/actions/business-events";
@@ -14,7 +15,7 @@ export function BusinessEventForm({
   milestones?: readonly string[];
 }) {
   const [state, action, pending] = useActionState(
-    saveBusinessEventUpdate,
+    useFlashAction(saveBusinessEventUpdate),
     { status: "idle" } as EnquiryActionState,
   );
   const sourcing = command === "SOURCE";
@@ -51,7 +52,7 @@ export function BusinessEventForm({
       <button type="submit" disabled={pending} className="justify-self-start rounded bg-forest-800 px-4 py-2 text-white">
         {pending ? "Saving…" : "Save update"}
       </button>
-      {state.status !== "idle" && <p role="status">{state.message}</p>}
+      {state.status === "error" && <p role="alert">{state.message}</p>}
     </form>
   );
 }

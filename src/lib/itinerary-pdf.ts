@@ -136,13 +136,19 @@ export async function renderItineraryPdf(data: ItineraryData): Promise<Uint8Arra
     const cx = M + (i % 3) * col;
     const cy = y - Math.floor(i / 3) * 36;
     page.drawText(pdfSafe(k.toUpperCase()), { x: cx, y: cy, size: 7, font: bold, color: MUTED });
-    page.drawText(pdfSafe(v).slice(0, 34), { x: cx, y: cy - 13, size: 10, font: regular, color: INK });
+    // Long values (a full TRQ reference) wrap onto a second, smaller line
+    // instead of running into the next column or off the page.
+    const fit = col - 10;
+    const one = wrap(pdfSafe(v), regular, 10, fit);
+    const lines = one.length > 1 ? wrap(pdfSafe(v), regular, 8.5, fit).slice(0, 2) : one;
+    const size = one.length > 1 ? 8.5 : 10;
+    lines.forEach((line, n) => page.drawText(line, { x: cx, y: cy - 13 - n * 10, size, font: regular, color: INK }));
   });
   y -= 36 * 2 + 14;
 
   /* --------------------------------------------------------------- flights */
   put("Your flights", M, 13, bold, FOREST);
-  y -= 8;
+  y -= 14;
   put("All times are local to each airport.", M, 8, regular, MUTED);
   y -= 18;
   for (const s of data.segments) {
@@ -170,7 +176,7 @@ export async function renderItineraryPdf(data: ItineraryData): Promise<Uint8Arra
   /* ------------------------------------------------------------ travellers */
   need(60);
   put("Travellers and tickets", M, 13, bold, FOREST);
-  y -= 16;
+  y -= 24;
   page.drawRectangle({ x: M, y: y - 6, width, height: 22, color: PAPER });
   put("TRAVELLER", M + 8, 7.5, bold, MUTED, y + 1);
   put("TYPE", M + width * 0.5, 7.5, bold, MUTED, y + 1);

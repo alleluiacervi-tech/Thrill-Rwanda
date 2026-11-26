@@ -2,6 +2,7 @@ import { DashboardHead } from "@/components/dashboard/dashboard-shell";
 import { Panel } from "@/components/dashboard/dash-ui";
 import { MailClient } from "@/components/mail/mail-client";
 import { mailConfig } from "@/lib/mail/config";
+import { warmMail } from "@/lib/mail/imap";
 import { requireAdmin } from "@/lib/session";
 
 export const metadata = { title: "Mail", robots: { index: false, follow: false } };
@@ -18,6 +19,8 @@ const VARS = [
 export default async function MailPage() {
   await requireAdmin("/admin/mail");
   const config = mailConfig();
+  // Sign in to the mailbox now, while the page loads, not when the inbox is first asked for.
+  if (config) warmMail();
 
   return (
     <>

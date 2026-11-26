@@ -124,6 +124,17 @@ function idle() {
   entry.timer.unref?.();
 }
 
+/**
+ * Starts signing in to the mailbox without waiting for it. The Mail page calls
+ * this while it renders, so the 3-4 second IMAP sign-in overlaps page load and
+ * hydration instead of starting only when the browser asks for the inbox.
+ * Errors are left for the real request to report.
+ */
+export function warmMail() {
+  if (!mailConfig() || shared?.client.usable) return;
+  void withMail(async () => undefined).catch(() => {});
+}
+
 /** Closes the shared connection now. For tests and shutdown. */
 export function closeMail() {
   if (shared) release(shared);

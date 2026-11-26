@@ -1,4 +1,5 @@
 "use client";
+import { useFlashAction } from "@/components/dashboard/flash";
 
 import * as React from "react";
 import { useActionState } from "react";
@@ -34,7 +35,7 @@ export function ActionButton({
   confirm?: string;
   className?: string;
 }) {
-  const [state, formAction, pending] = useActionState(action, initial);
+  const [state, formAction, pending] = useActionState(useFlashAction(action), initial);
   const [armed, setArmed] = React.useState(false);
 
   return (
@@ -74,11 +75,6 @@ export function ActionButton({
           className="inline-flex items-start gap-1 text-2xs font-medium text-red-700"
         >
           <AlertTriangle className="mt-px size-3 shrink-0" />
-          {state.message}
-        </span>
-      ) : null}
-      {state.status === "ok" && state.message ? (
-        <span role="status" className="text-2xs text-forest-700">
           {state.message}
         </span>
       ) : null}

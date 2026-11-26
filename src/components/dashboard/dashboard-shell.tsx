@@ -8,6 +8,7 @@ import { DashboardTabs } from "@/components/dashboard/dashboard-tabs";
 import type { NavGroup, NavItem } from "@/components/dashboard/nav-types";
 import { WorkspaceSwitch, type Workspace } from "@/components/dashboard/workspace-switch";
 import { Badge, Container } from "@/components/ui/primitives";
+import { FlashNotice } from "@/components/dashboard/flash";
 
 export type { NavItem, NavGroup };
 
@@ -84,6 +85,7 @@ export function DashboardShell({
         workspaces={workspaces}
       >
         {children}
+        <FlashNotice />
       </SidebarLayout>
     );
   }
@@ -110,6 +112,7 @@ export function DashboardShell({
           {children}
         </Container>
       </main>
+      <FlashNotice />
     </div>
   );
 }

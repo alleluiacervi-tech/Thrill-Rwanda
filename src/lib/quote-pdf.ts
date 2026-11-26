@@ -131,7 +131,13 @@ export async function renderQuotePdf(q: QuoteSnapshot): Promise<Uint8Array> {
     const cx = M + (i % 3) * col;
     const cy = y - Math.floor(i / 3) * 36;
     page.drawText(safe(k.toUpperCase()), { x: cx, y: cy, size: 7, font: bold, color: MUTED });
-    page.drawText(safe(v).slice(0, 48), { x: cx, y: cy - 13, size: 10, font: regular, color: INK });
+    // Fit the column: a long name wraps onto a second, smaller line rather
+    // than being cut off or running into the next column.
+    const fit = col - 10;
+    const one = wrap(safe(v), regular, 10, fit);
+    const lines = one.length > 1 ? wrap(safe(v), regular, 8.5, fit).slice(0, 2) : one;
+    const size = one.length > 1 ? 8.5 : 10;
+    lines.forEach((line, n) => page.drawText(line, { x: cx, y: cy - 13 - n * 10, size, font: regular, color: INK }));
   });
   y -= 36 * 2 + 6;
   text("All times are Kigali time (UTC+2).", M, 7.5, regular, MUTED);

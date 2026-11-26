@@ -5,6 +5,7 @@ import {
   policySchema,
   supportSchema,
   OperationsError,
+  offerApprovalGaps,
 } from "@/lib/launch-rules";
 import {
   canUseEnquiries,
@@ -197,8 +198,7 @@ export async function saveSupportCase(actorId: string, raw: unknown) {
 
 export function offerContentHash(tour: unknown) {
   return createHash("sha256").update(JSON.stringify(tour)).digest("hex");
-}
-export async function approveOffer(
+}export async function approveOffer(
   actorId: string,
   id: string,
   evidence: string,
@@ -219,22 +219,15 @@ export async function approveOffer(
       throw new OperationsError(
         "Offer changed. Reload and review the latest details",
       );
-    if (
-      tour.provider.status !== "VERIFIED" ||
-      !(await tx.provider.findFirst({
+    const providerActive =
+      tour.provider.status === "VERIFIED" &&
+      !!(await tx.provider.findFirst({
         where: { id: tour.providerId, user: { isActive: true } },
         select: { id: true },
-      })) ||
-      !tour.images.length ||
-      (tour.description?.trim().length ?? 0) < 10 ||
-      tour.itinerary.trim().length < 10 ||
-      tour.suitability.trim().length < 10 ||
-      !tour.inclusions.length ||
-      !tour.exclusions.length
-    )
-      throw new OperationsError(
-        "Review description, media, itinerary, suitability, inclusions, exclusions and active verified provider before approval",
-      );
+      }));
+    const missing = offerApprovalGaps(tour, providerActive);
+    if (missing.length)
+      throw new OperationsError(`Before approval: ${missing.join("; ")}.`);
     await tx.tour.update({
       where: { id },
       data: { offerApproval: evidence, isPublished: true },

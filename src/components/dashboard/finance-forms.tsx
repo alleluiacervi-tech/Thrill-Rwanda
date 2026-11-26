@@ -8,6 +8,7 @@ import {
 } from "@/app/actions/finance";
 import type { FinanceActionState } from "@/lib/finance-rules";
 import { Button } from "@/components/ui/button";
+import { useFlashAction } from "@/components/dashboard/flash";
 export type FormField = {
   name: string;
   label: string;
@@ -35,13 +36,15 @@ export function FinanceForm({
   submit?: string;
 }) {
   const [state, action, pending] = useActionState(
-    kind === "supplier"
-      ? recordSupplier
-      : kind === "account"
-        ? recordSettlementAccount
-        : kind === "accountStatus"
-          ? recordAccountStatus
-          : recordFinanceAction,
+    useFlashAction(
+      kind === "supplier"
+        ? recordSupplier
+        : kind === "account"
+          ? recordSettlementAccount
+          : kind === "accountStatus"
+            ? recordAccountStatus
+            : recordFinanceAction,
+    ),
     { status: "idle" } as FinanceActionState,
   );
   return (
@@ -56,8 +59,8 @@ export function FinanceForm({
         {Object.entries(hidden).map(([name, value]) => (
           <input key={name} name={name} type="hidden" value={value} />
         ))}
-        {state.message && (
-          <p role={state.status === "error" ? "alert" : "status"}>
+        {state.status === "error" && state.message && (
+          <p role="alert">
             {state.message}
           </p>
         )}

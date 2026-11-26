@@ -44,7 +44,9 @@ export function formatDateRange(start: Date, end: Date) {
       timeZone: "UTC",
       day: "numeric",
       month: withMonth ? "short" : undefined,
-      year: date.getUTCFullYear() === thisYear ? undefined : "numeric",
+      // A year without a month renders as "2027 (day: 10)", so the year
+      // only rides along with the month.
+      year: withMonth && date.getUTCFullYear() !== thisYear ? "numeric" : undefined,
     }).format(date);
   return `${d(start, !sameMonth)} – ${d(end, true)}`;
 }
