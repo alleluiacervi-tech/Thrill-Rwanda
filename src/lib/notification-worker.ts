@@ -6,6 +6,7 @@ import {
 import { randomUUID } from "node:crypto";
 import { db } from "@/lib/db";
 import { renderEmail, type RenderedEmail } from "@/lib/email/template";
+import { resendSender } from "@/lib/email/sender";
 import { buildSite } from "@/lib/site-config";
 import {
   quoteContentHash,
@@ -345,20 +346,14 @@ export async function processNotificationBatch(
         continue;
       }
       // Freeze exact email bytes before contacting the provider: retries keep the same payload.
-      if (
+      const savedMessage =
         job.message &&
         typeof job.message === "object" &&
-        !Array.isArray(job.message)
-      ) {
-        email = job.message as OutboxEmail;
-      } else {
-        await db.notificationJob.updateMany({
-          where: { id: job.id, leaseToken },
-          data: { message: email },
-        });
-      }
-      if (!email.from && process.env.EMAIL_FROM) {
-        email = { ...email, from: process.env.EMAIL_FROM };
+        !Array.isArray(job.message);
+      if (savedMessage) email = job.message as OutboxEmail;
+      const from = email.from ?? resendSender(job.firstAttemptAt ? undefined : enquiry.service);
+      if (!savedMessage || (!email.from && from)) {
+        email = from ? { ...email, from } : email;
         await db.notificationJob.updateMany({
           where: { id: job.id, leaseToken },
           data: { message: email },
