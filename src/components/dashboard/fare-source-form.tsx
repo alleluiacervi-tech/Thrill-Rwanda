@@ -2,7 +2,7 @@
 
 import { useActionState } from "react";
 import { CheckCircle2, RefreshCw } from "lucide-react";
-import { addDeskFare, runFareCheckNow, setFareSource, type FareActionState } from "@/app/actions/fares";
+import { addDeskFare, runFareCheckNow, saveOnlineBooking, setFareSource, type FareActionState } from "@/app/actions/fares";
 import { FormBanner, Labelled, fieldCls } from "@/components/dashboard/listing-fields";
 import { destinationRegions } from "@/lib/flight-destinations";
 import { StatusPill } from "@/components/dashboard/dash-ui";
@@ -148,6 +148,46 @@ export function DeskFareForm({ today }: { today: string }) {
       </div>
       <Done state={state} />
       <Button type="submit" disabled={pending}>{pending ? "Adding…" : "Add fare"}</Button>
+    </form>
+  );
+}
+
+/** The online booking switch and its terms. Saving also stamps today's rate. */
+export function OnlineBookingForm({ current, staff }: {
+  current: { on: boolean; usdRwf: number | null; bufferPercent: number; feeRwf: number; ownerId: string | null };
+  staff: { id: string; name: string }[];
+}) {
+  const [state, action, pending] = useActionState(saveOnlineBooking, initial);
+  return (
+    <form action={action} className="space-y-4">
+      <label className="flex items-start gap-3 rounded-[var(--radius-card)] border border-[var(--line)] p-4 has-[:checked]:border-forest-700 has-[:checked]:bg-forest-50/60">
+        <input type="checkbox" name="flightOnline" defaultChecked={current.on} className="mt-1 size-4 accent-forest-700" />
+        <span>
+          <span className="font-semibold">Travellers can book and pay online</span>
+          <span className="block text-sm text-[var(--ink-muted)]">
+            Off, only signed-in staff can try the booking pages. On, travellers can, once Duffel is live and payment is available.
+          </span>
+        </span>
+      </label>
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <Labelled label="Francs per US dollar" hint="Today's rate; saving restamps it">
+          <input type="number" name="usdRwf" required min={500} max={10000} step={1} defaultValue={current.usdRwf ?? ""} placeholder="1450" className={fieldCls} />
+        </Labelled>
+        <Labelled label="Rate buffer, %" hint="Covers rate movement until ticketing">
+          <input type="number" name="bufferPercent" required min={0} max={15} step={1} defaultValue={current.bufferPercent} className={fieldCls} />
+        </Labelled>
+        <Labelled label="Service fee per traveller, RWF" hint="Shown as its own line">
+          <input type="number" name="feeRwf" required min={0} step={100} defaultValue={current.feeRwf} className={fieldCls} />
+        </Labelled>
+        <Labelled label="Desk owner" hint="Owns every online booking">
+          <select name="ownerId" required defaultValue={current.ownerId ?? ""} className={fieldCls}>
+            <option value="" disabled>Choose</option>
+            {staff.map((person) => <option key={person.id} value={person.id}>{person.name}</option>)}
+          </select>
+        </Labelled>
+      </div>
+      <Done state={state} />
+      <Button type="submit" disabled={pending}>{pending ? "Saving…" : "Save online booking"}</Button>
     </form>
   );
 }

@@ -264,6 +264,68 @@ export async function bookWithDuffel(actorId: string, input: { reference: string
   }
 }
 
+/**
+ * Pays a Duffel hold made at online checkout, from the Duffel balance, once
+ * the traveller's funds are verified. The held price must still be the price
+ * the traveller accepted; anything else stops for the desk.
+ */
+export async function payHeldBooking(actorId: string, input: { reference: string; version: number }): Promise<BookingOutcome> {
+  let fileId: string | null = null;
+  try {
+    const { file, funding } = await desk(actorId, input.reference);
+    if (!file) throw new TicketingError("Open the ticketing file first.");
+    if (file.status !== "READY_TO_TICKET") throw new TicketingError("Only a file that is ready to ticket can be paid.");
+    // NEEDS_DESK: online ticketing stopped and handed the hold to the desk, who may now pay it.
+    if (!["HELD", "NEEDS_DESK"].includes(file.externalStatus ?? "") || !file.externalOrderId) throw new TicketingError("This file has no Duffel hold to pay.");
+    if (!funding.funded) throw new TicketingError("Verified funds covering the accepted quote are required before paying the airline.");
+    const chosen = selectedOption(file);
+    if (!chosen) throw new TicketingError("Choose a fare first.");
+    const config = requireDuffel();
+    const held = await duffel<DuffelOrder>(`/air/orders/${encodeURIComponent(file.externalOrderId)}`, { config });
+    if (held.cancelled_at) throw new TicketingError("The airline cancelled this hold. Search again with the client and agree a new fare.");
+    const price = toMinor(held.total_amount, held.total_currency);
+    if (held.total_currency !== chosen.currency || price !== chosen.totalMinor) {
+      throw new TicketingError(`The held price is now ${formatQuoteMoney(price, held.total_currency)}, not the ${formatQuoteMoney(chosen.totalMinor, chosen.currency)} the client accepted. Agree the difference with the client before paying.`);
+    }
+    fileId = file.id;
+    if (!held.payment_status?.paid_at) {
+      // Claimed in the database first, so a second run cannot pay twice.
+      const claimed = await db.flightTicketing.updateMany({ where: { id: file.id, externalStatus: { in: ["HELD", "NEEDS_DESK"] } }, data: { externalStatus: "ATTEMPTING", externalAttemptAt: new Date() } });
+      if (claimed.count !== 1) throw new TicketingError("A payment for this hold is already in progress.");
+      try {
+        await duffel<unknown>("/air/payments", {
+          method: "POST",
+          body: { order_id: held.id, payment: { type: "balance", currency: held.total_currency, amount: held.total_amount } },
+          timeoutMs: 135_000,
+          config,
+        });
+      } catch (error) {
+        if (error instanceof DuffelError && !error.info.outcomeUnknown) {
+          await settleAttempt(actorId, input.reference, file.id, { status: "FAILED", kind: "TICKETING_DUFFEL_FAILED", body: `Duffel refused payment for the hold: ${error.message}` });
+        }
+        throw error;
+      }
+    }
+    const order = await duffel<DuffelOrder>(`/air/orders/${encodeURIComponent(held.id)}`, { config });
+    await settleAttempt(actorId, input.reference, file.id, {
+      status: "BOOKED", orderId: order.id, kind: "TICKETING_DUFFEL_BOOKED",
+      body: `Paid the Duffel hold ${order.id}, booking reference ${order.booking_reference} (${config.mode}).`,
+    });
+    try {
+      return await recordBooking(actorId, input.reference, file.id, order, config.mode);
+    } catch (error) {
+      const why = error instanceof Error ? error.message : "an unexpected problem";
+      throw new TicketingError(`Paid with Duffel (order ${order.id}, reference ${order.booking_reference}) but the file could not be updated: ${why} Do not pay again. Record the booking on the file by hand.`);
+    }
+  } catch (error) {
+    if (error instanceof DuffelError && error.info.outcomeUnknown && fileId) {
+      logDuffelFailure("hold payment outcome unknown", error);
+      throw new TicketingError("Duffel did not confirm whether the hold was paid. Do not try again yet: check the order in the Duffel dashboard first.");
+    }
+    throw asTicketingError(error, "pay hold");
+  }
+}
+
 /** Moves the file on and records the tickets, through the same steps as a manual booking. */
 async function recordBooking(actorId: string, reference: string, fileId: string, order: DuffelOrder, mode: DuffelMode): Promise<BookingOutcome> {
   const partner = partnerName(mode);

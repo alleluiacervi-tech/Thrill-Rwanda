@@ -130,3 +130,43 @@ export async function removeDeskFare(formData: FormData) {
   revalidatePath("/flights");
   revalidatePath("/admin/fares");
 }
+
+/* ----------------------------------------------------------- online booking */
+
+const onlineSchema = z.object({
+  flightOnline: z.literal("on").optional(),
+  usdRwf: z.coerce.number().int("Enter the rate in whole francs").min(500, "That rate looks wrong: francs per one US dollar").max(10_000, "That rate looks wrong: francs per one US dollar"),
+  bufferPercent: z.coerce.number().int().min(0).max(15, "Keep the buffer at 15% or less"),
+  feeRwf: z.coerce.number().int().min(0).max(1_000_000),
+  ownerId: z.string().uuid("Choose who handles online bookings"),
+});
+
+/** Online booking terms: the switch, today's rate, the buffer, the fee and the desk owner. */
+export async function saveOnlineBooking(_prev: FareActionState, formData: FormData): Promise<FareActionState> {
+  const admin = await requireAdmin();
+  const parsed = onlineSchema.safeParse(Object.fromEntries(formData));
+  if (!parsed.success) return { status: "error", message: parsed.error.issues[0]?.message ?? "Check the values." };
+  const { usdRwf, bufferPercent, feeRwf, ownerId } = parsed.data;
+  const on = parsed.data.flightOnline === "on";
+  const owner = await db.user.findUnique({ where: { id: ownerId }, select: { isActive: true, role: true, staffRole: true, fullName: true } });
+  if (!owner?.isActive || !(owner.role === "ADMIN" || ["SALES", "OPERATIONS"].includes(owner.staffRole ?? ""))) {
+    return { status: "error", message: "Choose an active administrator, sales or operations member." };
+  }
+  const before = await db.siteSettings.findUnique({ where: { id: 1 }, select: { flightOnline: true, flightUsdRwf: true, flightFxBufferPercent: true, flightFeeRwf: true, flightOwnerId: true } });
+  const data = { flightOnline: on, flightUsdRwf: usdRwf, flightRateSetAt: new Date(), flightFxBufferPercent: bufferPercent, flightFeeRwf: feeRwf, flightOwnerId: ownerId };
+  await db.siteSettings.upsert({ where: { id: 1 }, update: data, create: { id: 1, ...data } });
+  await logActivity(admin.id, {
+    action: "settings.update",
+    area: "Settings",
+    target: "Online flight booking",
+    summary: `${on ? "Opened" : "Closed"} online flight booking at ${usdRwf} RWF per USD, ${bufferPercent}% buffer, RWF ${feeRwf} fee per traveller, owner ${owner.fullName}`,
+    changes: { before, after: data } as never,
+  });
+  revalidatePath("/admin/fares");
+  return {
+    status: "done",
+    message: on
+      ? `Saved. Travellers can book online while the rate is less than 72 hours old; update it each working day.`
+      : "Saved. Online booking stays closed to travellers; staff can still try it.",
+  };
+}

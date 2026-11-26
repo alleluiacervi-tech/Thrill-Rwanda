@@ -2,7 +2,10 @@ import Link from "next/link";
 import { DashboardHead } from "@/components/dashboard/dashboard-shell";
 import { Panel, StatGrid, StatTile, StatusPill } from "@/components/dashboard/dash-ui";
 import { TableShell, Td, Th, Tr } from "@/components/dashboard/data-table";
-import { DeskFareForm, FareSourceForm, RunFareCheck, type SourceOption } from "@/components/dashboard/fare-source-form";
+import { DeskFareForm, FareSourceForm, OnlineBookingForm, RunFareCheck, type SourceOption } from "@/components/dashboard/fare-source-form";
+import { routedPaymentMethods } from "@/lib/collections/routing";
+import { duffelAvailability } from "@/lib/duffel/config";
+import { pricingProblem, RATE_MAX_AGE_HOURS } from "@/lib/flight-shop-rules";
 import { removeDeskFare } from "@/app/actions/fares";
 import { db } from "@/lib/db";
 import { formatFare } from "@/lib/fare-board-rules";
@@ -50,13 +53,42 @@ const when = (date: Date) =>
 export default async function AdminFaresPage() {
   await requireAdmin("/admin/fares");
   const now = new Date();
-  const [source, heartbeat, latest, total, desk] = await Promise.all([
+  const [source, heartbeat, latest, total, desk, settings, staff, payMethods] = await Promise.all([
     getFareSource(),
     db.workerHeartbeat.findUnique({ where: { name: "fare-watch" } }),
     db.fareSnapshot.findMany({ orderBy: { checkedAt: "desc" }, take: 24 }),
     db.fareSnapshot.count(),
     db.fareSnapshot.findMany({ where: { source: "manual", validUntil: { gte: now } }, orderBy: { checkedAt: "desc" } }),
+    db.siteSettings.findUnique({ where: { id: 1 }, select: { flightOnline: true, flightUsdRwf: true, flightRateSetAt: true, flightFxBufferPercent: true, flightFeeRwf: true, flightOwnerId: true } }),
+    db.user.findMany({
+      where: { isActive: true, OR: [{ role: "ADMIN" }, { staffRole: { in: ["SALES", "OPERATIONS"] } }] },
+      select: { id: true, fullName: true },
+      orderBy: { fullName: "asc" },
+    }),
+    // A typical fare, to see whether any payment method takes francs at all.
+    routedPaymentMethods("RWF", 500_000),
   ]);
+  const duffel = duffelAvailability();
+  const rate = pricingProblem({ usdRwf: settings?.flightUsdRwf ?? null, rateSetAt: settings?.flightRateSetAt ?? null }, now);
+  const checks: { label: string; ok: boolean; note: string }[] = [
+    {
+      label: "Duffel",
+      ok: duffel.ok && duffel.config.mode === "live",
+      note: !duffel.ok ? duffel.message : duffel.config.mode === "sandbox" ? "Test token: staff can try the whole flow; travellers can't book." : "Live: real tickets from the Duffel balance.",
+    },
+    {
+      label: "Online payment in francs",
+      ok: payMethods.length > 0,
+      note: payMethods.length ? `Available: ${payMethods.join(", ").replace(/_/g, " ").toLowerCase()}.` : "No payment method takes RWF yet (UrubutoPay credentials and payment routing).",
+    },
+    {
+      label: "Exchange rate",
+      ok: !rate,
+      note: rate === "no-rate" ? "Not set." : rate === "stale-rate" ? `Older than ${RATE_MAX_AGE_HOURS} hours: booking pauses until you save today's.` : `Set ${when(settings!.flightRateSetAt!)}.`,
+    },
+    { label: "Desk owner", ok: !!settings?.flightOwnerId, note: settings?.flightOwnerId ? "Chosen." : "Not chosen." },
+    { label: "Switch", ok: !!settings?.flightOnline, note: settings?.flightOnline ? "On for travellers." : "Off: staff only." },
+  ];
   const options: SourceOption[] = OPTIONS.map((option) => {
     const ready = sourceReadiness(option.value);
     const body =
@@ -95,6 +127,29 @@ export default async function AdminFaresPage() {
         className="mb-6"
       >
         <FareSourceForm current={source} options={options} />
+      </Panel>
+
+      <Panel
+        title="Online booking"
+        description="Travellers search live Duffel fares, enter passport details and pay in francs on thrillrwanda.com/flights/book. After payment is verified the ticket is bought and the itinerary emailed automatically; anything unusual stops for the desk owner."
+        aside={<Link href="/flights/book" className="text-xs font-medium text-lake-700 hover:underline">Try the booking pages</Link>}
+        className="mb-6"
+      >
+        <ul className="mb-5 grid gap-2 sm:grid-cols-2 xl:grid-cols-5">
+          {checks.map((check) => (
+            <li key={check.label} className="rounded-[var(--radius-inset)] border border-[var(--line)] p-3 text-sm">
+              <span className="flex items-center justify-between gap-2 font-semibold">
+                {check.label}
+                <StatusPill tone={check.ok ? "good" : "warn"}>{check.ok ? "Ready" : "Not yet"}</StatusPill>
+              </span>
+              <span className="mt-1 block text-xs leading-relaxed text-[var(--ink-muted)]">{check.note}</span>
+            </li>
+          ))}
+        </ul>
+        <OnlineBookingForm
+          current={{ on: !!settings?.flightOnline, usdRwf: settings?.flightUsdRwf ?? null, bufferPercent: settings?.flightFxBufferPercent ?? 3, feeRwf: settings?.flightFeeRwf ?? 0, ownerId: settings?.flightOwnerId ?? null }}
+          staff={staff.map((person) => ({ id: person.id, name: person.fullName }))}
+        />
       </Panel>
 
       <Panel
