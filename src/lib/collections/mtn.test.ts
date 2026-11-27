@@ -34,6 +34,7 @@ describe("MTN live collections", () => {
     expect(mtnWallet("0788123456")).toBe("250788123456");
     expect(mtnWallet("+250 79 123 4567")).toBe("250791234567");
     expect(mtnWallet("0728123456")).toBeNull();
+    expect(getMtnLiveGateway(env)!.provider.acceptsPhone!("0728123456")).toBe(false);
   });
   it("sends a whole-RWF request and verifies amount, currency and reference", async () => {
     const fetch = vi.fn()

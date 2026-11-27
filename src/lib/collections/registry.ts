@@ -1,5 +1,6 @@
 import type { CollectionProvider } from "./provider";
 import type { CollectionMethod } from "./rules";
+import { getAirtelLiveGateway } from "./airtel";
 import { getMtnLiveGateway } from "./mtn";
 import { getUrubutoProvider } from "./urubuto";
 
@@ -14,10 +15,11 @@ type Environment = Record<string, string | undefined>;
 /**
  * Every collection provider that is configured in this environment, in routing priority order.
  * A method is routed to the first enabled gateway that offers it. Direct providers come ahead of
- * UrubutoPay, so MTN MoMo goes straight to MTN once approved while Airtel and cards stay with UrubutoPay.
+ * UrubutoPay, so MTN MoMo and Airtel Money go straight to the operator once each is approved, and
+ * cards (and either wallet while its direct route is off) stay with UrubutoPay.
  */
 export function configuredGateways(env: Environment = process.env): Gateway[] {
-  return [getMtnLiveGateway(env), getUrubutoProvider(env)].filter((gateway): gateway is Gateway => !!gateway);
+  return [getMtnLiveGateway(env), getAirtelLiveGateway(env), getUrubutoProvider(env)].filter((gateway): gateway is Gateway => !!gateway);
 }
 
 type AttemptIdentity = { provider: string; environment: string; merchantCode: string; serviceCode: string };

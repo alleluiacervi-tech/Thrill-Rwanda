@@ -310,6 +310,9 @@ export async function beginCollection(access: CollectionAccess, input: NewPaymen
     if (amountMinor !== input.expectedMinor) throw new CollectionError("The amount due changed. Refresh and review the new total.");
     const gateway = await routeForMethod(input.method, invoice.currency, amountMinor, tx);
     if (!gateway?.origin) throw new CollectionError("This method is unavailable for the amount or currency.");
+    if (gateway.provider.acceptsPhone && !gateway.provider.acceptsPhone(phone)) {
+      throw new CollectionError(gateway.provider.phoneHint ?? "Enter a number on the selected mobile money network.");
+    }
     const customer = invoice.booking?.customer ?? invoice.financialCase!.enquiry;
     const attempt = await tx.collectionAttempt.create({
       data: {

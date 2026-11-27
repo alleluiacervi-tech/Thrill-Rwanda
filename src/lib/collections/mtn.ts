@@ -50,6 +50,8 @@ function adapter(config: NonNullable<ReturnType<typeof configuration>>): Collect
     merchantCode: config.user,
     serviceCode: "COLLECTIONS",
     getCapabilities: () => ({ methods: ["MOMO"], currencies: ["RWF"], refunds: false, automatedSettlements: false }),
+    acceptsPhone: (phone) => !!mtnWallet(phone),
+    phoneHint: "Enter an MTN MoMo number (it starts with 078 or 079).",
     async createPayment(input) {
       validate(input);
       const phone = mtnWallet(input.phone);
